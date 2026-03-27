@@ -14,13 +14,14 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#1a3047",
+    fontSize: 30,
+    fontWeight: "800",
+    color: "#17324d",
   },
   subtitle: {
     color: "#4f6982",
     marginTop: 2,
+    marginBottom: 14,
   },
   logoutButton: {
     backgroundColor: "#eef4ff",

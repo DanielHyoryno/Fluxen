@@ -10,9 +10,10 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: "#f4f8ff",
+    paddingTop: 32,
   },
   content: {
-    padding: 16,
+    paddingHorizontal: 16,
     paddingBottom: 120,
   },
   title: {

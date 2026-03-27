@@ -14,14 +14,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   title: {
-    fontSize: 28,
+    fontSize: 30,
     fontWeight: "800",
     color: "#17324d",
   },
   subtitle: {
     color: "#4f6982",
     marginTop: 2,
-    marginBottom: 12,
+    marginBottom: 14,
   },
   card: {
     backgroundColor: "#fff",

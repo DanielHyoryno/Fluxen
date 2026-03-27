@@ -4,7 +4,8 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: "#f4f8ff",
-    padding: 16,
+    paddingTop: 56,
+    paddingHorizontal: 16,
     paddingBottom: 120,
   },
   title: {
@@ -14,7 +15,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: 2,
-    marginBottom: 12,
+    marginBottom: 14,
     color: "#4f6982",
   },
   card: {
