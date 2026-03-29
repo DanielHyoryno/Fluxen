@@ -11,6 +11,7 @@ const poolConfig = env.databaseUrl
   ? {
       connectionString: env.databaseUrl,
       ssl: sslConfig,
+      family: 4, // Force IPv4 to avoid Render→Supabase IPv6 issues
     }
   : {
       host: env.db.host,
@@ -19,6 +20,7 @@ const poolConfig = env.databaseUrl
       password: env.db.password,
       database: env.db.name,
       ssl: sslConfig,
+      family: 4,
     };
 
 const pool = new Pool(poolConfig);
