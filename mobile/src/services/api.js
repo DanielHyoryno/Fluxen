@@ -1,7 +1,29 @@
 import { API_BASE_URL } from "../config/api";
 
+const REQUEST_TIMEOUT_MS = 20000;
+
+async function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+  } catch (err) {
+    if (err.name === "AbortError") {
+      throw new Error("Request timed out. Please try again in a moment.");
+    }
+
+    throw new Error("Unable to reach server. Please check your connection and try again.");
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, options);
+  const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, options);
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok || payload.success === false) {
@@ -12,7 +34,7 @@ async function request(path, options = {}) {
 }
 
 async function requestRaw(path, options = {}) {
-  const response = await fetch(`${API_BASE_URL}${path}`, options);
+  const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, options);
 
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));

@@ -243,103 +243,104 @@ export default function DevicesScreen({ navigation }) {
         },
       ]}
     >
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>My Devices</Text>
-          <Text style={styles.subtitle}>{user?.full_name || "User"}</Text>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable style={styles.scanButton} onPress={() => navigation.navigate("BLEScan")}>
-            <Text style={styles.scanText}>Scan BLE</Text>
+      <FlatList
+        style={styles.list}
+        data={loading ? [] : items}
+        keyExtractor={(item) => String(item.id)}
+        renderItem={({ item }) => (
+          <Pressable
+            onPress={() => navigation.navigate("DeviceDashboard", { device: item })}
+            style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.985 : 1 }] }]}
+          >
+            <DeviceCard item={item} onRequestDelete={handleRequestDeleteDevice} />
           </Pressable>
-          <Pressable style={styles.logoutButton} onPress={logout}>
-            <Text style={styles.logoutText}>Logout</Text>
-          </Pressable>
-        </View>
-      </View>
+        )}
+        ListHeaderComponent={(
+          <>
+            <View style={styles.header}>
+              <View>
+                <Text style={styles.title}>My Devices</Text>
+                <Text style={styles.subtitle}>{user?.full_name || "User"}</Text>
+              </View>
+              <View style={styles.headerActions}>
+                <Pressable style={styles.scanButton} onPress={() => navigation.navigate("BLEScan")}>
+                  <Text style={styles.scanText}>Scan BLE</Text>
+                </Pressable>
+                <Pressable style={styles.logoutButton} onPress={logout}>
+                  <Text style={styles.logoutText}>Logout</Text>
+                </Pressable>
+              </View>
+            </View>
 
-      <View style={styles.categoryBox}>
-        <Text style={styles.createTitle}>Category</Text>
-        <Text style={styles.categoryHelpText}>Manage IoT categories in a dedicated page.</Text>
-        <Pressable style={styles.manageCategoryButton} onPress={() => navigation.navigate("ManageCategory")}>
-          <Text style={styles.manageCategoryButtonText}>Manage Category</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.createBox}>
-        <Text style={styles.createTitle}>Add Device</Text>
-        <TextInput
-          style={styles.input}
-          value={deviceCode}
-          onChangeText={setDeviceCode}
-          placeholder="Device code (e.g. BV-ESP32-01)"
-          placeholderTextColor="#8aa0b8"
-          autoCapitalize="characters"
-        />
-        <TextInput
-          style={styles.input}
-          value={deviceName}
-          onChangeText={setDeviceName}
-          placeholder="Device name"
-          placeholderTextColor="#8aa0b8"
-        />
-        <TextInput
-          style={styles.input}
-          value={location}
-          onChangeText={setLocation}
-          placeholder="Location (optional)"
-          placeholderTextColor="#8aa0b8"
-        />
-
-        <Text style={styles.categoryLabel}>Assign Category</Text>
-        <FlatList
-          data={[{ id: null, name: "Uncategorized" }, ...categories]}
-          keyExtractor={(item, index) => String(item.id ?? `uncat-${index}`)}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryChipRow}
-          renderItem={({ item }) => {
-            const active = selectedCategoryId === item.id;
-            return (
-              <Pressable style={[styles.categoryChip, active && styles.categoryChipActive]} onPress={() => setSelectedCategoryId(item.id)}>
-                <Text style={[styles.categoryChipText, active && styles.categoryChipTextActive]}>{item.name}</Text>
+            <View style={styles.categoryBox}>
+              <Text style={styles.createTitle}>Category</Text>
+              <Text style={styles.categoryHelpText}>Manage IoT categories in a dedicated page.</Text>
+              <Pressable style={styles.manageCategoryButton} onPress={() => navigation.navigate("ManageCategory")}>
+                <Text style={styles.manageCategoryButtonText}>Manage Category</Text>
               </Pressable>
-            );
-          }}
-        />
+            </View>
 
-        <Pressable style={styles.primaryButton} onPress={handleCreateDevice} disabled={creating}>
-          {creating ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>Create Device</Text>}
-        </Pressable>
-        {newToken ? <Text style={styles.meta}>New token created. Open dialog to copy.</Text> : null}
-        {newToken ? (
-          <Pressable style={styles.showTokenButton} onPress={() => setTokenDialogOpen(true)}>
-            <Text style={styles.showTokenButtonText}>Show API Token</Text>
-          </Pressable>
-        ) : null}
-      </View>
+            <View style={styles.createBox}>
+              <Text style={styles.createTitle}>Add Device</Text>
+              <TextInput
+                style={styles.input}
+                value={deviceCode}
+                onChangeText={setDeviceCode}
+                placeholder="Device code (e.g. BV-ESP32-01)"
+                placeholderTextColor="#8aa0b8"
+                autoCapitalize="characters"
+              />
+              <TextInput
+                style={styles.input}
+                value={deviceName}
+                onChangeText={setDeviceName}
+                placeholder="Device name"
+                placeholderTextColor="#8aa0b8"
+              />
+              <TextInput
+                style={styles.input}
+                value={location}
+                onChangeText={setLocation}
+                placeholder="Location (optional)"
+                placeholderTextColor="#8aa0b8"
+              />
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+              <Text style={styles.categoryLabel}>Assign Category</Text>
+              <FlatList
+                data={[{ id: null, name: "Uncategorized" }, ...categories]}
+                keyExtractor={(item, index) => String(item.id ?? `uncat-${index}`)}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryChipRow}
+                renderItem={({ item }) => {
+                  const active = selectedCategoryId === item.id;
+                  return (
+                    <Pressable style={[styles.categoryChip, active && styles.categoryChipActive]} onPress={() => setSelectedCategoryId(item.id)}>
+                      <Text style={[styles.categoryChipText, active && styles.categoryChipTextActive]}>{item.name}</Text>
+                    </Pressable>
+                  );
+                }}
+              />
 
-      {loading ? (
-        <ActivityIndicator style={styles.loading} />
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => String(item.id)}
-            renderItem={({ item }) => (
-            <Pressable
-              onPress={() => navigation.navigate("DeviceDashboard", { device: item })}
-              style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.985 : 1 }] }]}
-            >
-              <DeviceCard item={item} onRequestDelete={handleRequestDeleteDevice} />
-            </Pressable>
-          )}
-          ListEmptyComponent={<Text style={styles.empty}>No devices yet</Text>}
-          contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        />
-      )}
+              <Pressable style={styles.primaryButton} onPress={handleCreateDevice} disabled={creating}>
+                {creating ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>Create Device</Text>}
+              </Pressable>
+              {newToken ? <Text style={styles.meta}>New token created. Open dialog to copy.</Text> : null}
+              {newToken ? (
+                <Pressable style={styles.showTokenButton} onPress={() => setTokenDialogOpen(true)}>
+                  <Text style={styles.showTokenButtonText}>Show API Token</Text>
+                </Pressable>
+              ) : null}
+            </View>
+
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            {loading ? <ActivityIndicator style={styles.loading} /> : null}
+          </>
+        )}
+        ListEmptyComponent={!loading ? <Text style={styles.empty}>No devices yet</Text> : null}
+        contentContainerStyle={styles.listContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      />
 
       <Modal transparent visible={tokenDialogOpen} animationType="fade" onRequestClose={() => setTokenDialogOpen(false)}>
         <View style={styles.modalBackdrop}>

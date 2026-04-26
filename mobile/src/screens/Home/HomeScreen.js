@@ -221,7 +221,7 @@ function UsageByCategoryChart({ items }) {
         const fillPct = Math.round((item.totalLiters / chartMax) * 100);
         return (
           <View key={item.categoryName} style={styles.chartRow}>
-            <Text numberOfLines={1} style={styles.chartLabelWide}>
+            <Text numberOfLines={1} style={styles.chartLabel}>
               {item.categoryName}
             </Text>
             <View style={styles.chartTrack}>
@@ -315,7 +315,7 @@ export default function HomeScreen({ navigation }) {
             aggregateByDate[key] = Number(aggregateByDate[key] || 0) + Number(usageByDate[key] || 0);
           }
 
-          usageLiters = Number(usageByDate[today] || 0);
+          usageLiters = dateKeys.reduce((sum, key) => sum + Number(usageByDate[key] || 0), 0);
         }
 
         const latestAt = latest?.measured_at ? new Date(latest.measured_at).getTime() : null;
@@ -568,12 +568,12 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Usage by Device (Today)</Text>
+        <Text style={styles.cardTitle}>Usage by Device ({rangePreset === "day" ? "Selected Day" : "Selected Range"})</Text>
         <UsageByDeviceChart items={deviceRows} />
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Overall Usage by Category (Today)</Text>
+        <Text style={styles.cardTitle}>Overall Usage by Category ({rangePreset === "day" ? "Selected Day" : "Selected Range"})</Text>
         <UsageByCategoryChart items={categoryRows} />
       </View>
 

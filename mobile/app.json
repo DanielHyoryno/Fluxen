@@ -30,11 +30,6 @@
         "android.permission.BLUETOOTH_ADMIN",
         "android.permission.BLUETOOTH_CONNECT",
         "android.permission.BLUETOOTH_SCAN",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.BLUETOOTH",
-        "android.permission.BLUETOOTH_ADMIN",
-        "android.permission.BLUETOOTH_CONNECT",
-        "android.permission.BLUETOOTH_SCAN",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
       "package": "com.anonymous.mobile"
@@ -45,6 +40,12 @@
     "plugins": [
       "react-native-ble-plx",
       "@react-native-community/datetimepicker"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b7c25677-4eaf-4dea-95cf-a1a077c409ad"
+      }
+    },
+    "owner": "danielhyoryno"
   }
 }

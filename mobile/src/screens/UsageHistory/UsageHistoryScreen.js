@@ -193,6 +193,7 @@ export default function UsageHistoryScreen({ route }) {
   const [error, setError] = useState("");
   const [items, setItems] = useState([]);
   const [usageChartType, setUsageChartType] = useState("bar");
+  const [showAllDetails, setShowAllDetails] = useState(false);
   const entryOpacity = useRef(new Animated.Value(0)).current;
   const entryTranslateY = useRef(new Animated.Value(12)).current;
 
@@ -472,6 +473,9 @@ export default function UsageHistoryScreen({ route }) {
     }, chartItems[0]);
   }, [chartItems]);
 
+  const visibleDetailItems = useMemo(() => (showAllDetails ? chartItems : chartItems.slice(0, 10)), [chartItems, showAllDetails]);
+  const hasMoreDetailItems = chartItems.length > 10;
+
   if (loading) {
     return (
       <View style={styles.loadingPage}>
@@ -662,7 +666,7 @@ export default function UsageHistoryScreen({ route }) {
               <Text style={[styles.headerText, styles.historyValue]}>Peak</Text>
             </View>
             <FlatList
-              data={chartItems}
+              data={visibleDetailItems}
               keyExtractor={(item) => item.date}
               scrollEnabled={false}
               renderItem={({ item }) => (
@@ -674,6 +678,11 @@ export default function UsageHistoryScreen({ route }) {
                 </View>
               )}
             />
+            {hasMoreDetailItems ? (
+              <Pressable style={styles.viewMoreButton} onPress={() => setShowAllDetails((prev) => !prev)}>
+                <Text style={styles.viewMoreText}>{showAllDetails ? "View Less" : `View More (${chartItems.length - 10} more)`}</Text>
+              </Pressable>
+            ) : null}
           </>
         )}
         </View>

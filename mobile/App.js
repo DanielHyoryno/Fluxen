@@ -22,7 +22,7 @@ import ProfileScreen from "./src/screens/Profile/ProfileScreen";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
-const TAB_BAR_HEIGHT = 62;
+const TAB_BAR_HEIGHT = 56;
 
 function StartGate({ onStart }) {
   const fade = useRef(new Animated.Value(0)).current;
@@ -229,10 +229,10 @@ function RootNavigator() {
     const isCompactViewport = viewportWidth <= 520;
     const isDesktopViewport = viewportWidth >= 980;
 
-    const tabBarHorizontalInset = isCompactViewport ? 10 : 14;
-    const tabBarBottomInset = isCompactViewport ? 10 : 14;
-    const tabBarHeight = isCompactViewport ? 58 : TAB_BAR_HEIGHT;
-    const desktopTabBarWidth = Math.min(680, Math.max(440, Math.floor(viewportWidth * 0.62)));
+    const tabBarHorizontalInset = isCompactViewport ? 14 : 18;
+    const tabBarBottomInset = isCompactViewport ? 8 : 10;
+    const tabBarHeight = isCompactViewport ? 52 : TAB_BAR_HEIGHT;
+    const desktopTabBarWidth = Math.min(600, Math.max(380, Math.floor(viewportWidth * 0.5)));
 
     return (
       <Tab.Navigator
@@ -268,7 +268,7 @@ function RootNavigator() {
           },
           tabBarIconStyle: {
             height: tabBarHeight,
-            width: 32,
+            width: 28,
             justifyContent: "center",
             alignItems: "center",
             marginTop: 0,
@@ -293,7 +293,7 @@ function RootNavigator() {
                   !isWeb && styles.tabIconWrapNative,
                 ]}
               >
-                <Ionicons name={iconName} size={22} color={color} />
+                <Ionicons name={iconName} size={20} color={color} />
               </View>
             );
           },

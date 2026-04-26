@@ -7,11 +7,21 @@ const sslConfig = env.dbSsl
     }
   : false;
 
+const sharedPoolConfig = {
+  ssl: sslConfig,
+  family: 4, // Force IPv4 to avoid Render→Supabase IPv6 issues
+  max: 5,
+  connectionTimeoutMillis: 10000,
+  idleTimeoutMillis: 30000,
+  query_timeout: 10000,
+  statement_timeout: 10000,
+  keepAlive: true,
+};
+
 const poolConfig = env.databaseUrl
   ? {
       connectionString: env.databaseUrl,
-      ssl: sslConfig,
-      family: 4, // Force IPv4 to avoid Render→Supabase IPv6 issues
+      ...sharedPoolConfig,
     }
   : {
       host: env.db.host,
@@ -19,8 +29,7 @@ const poolConfig = env.databaseUrl
       user: env.db.user,
       password: env.db.password,
       database: env.db.name,
-      ssl: sslConfig,
-      family: 4,
+      ...sharedPoolConfig,
     };
 
 const pool = new Pool(poolConfig);

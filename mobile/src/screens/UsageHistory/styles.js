@@ -303,6 +303,19 @@ const styles = StyleSheet.create({
     color: "#a61d1d",
     marginBottom: 8,
   },
+  viewMoreButton: {
+    marginTop: 10,
+    alignSelf: "center",
+    backgroundColor: "#eef4ff",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  viewMoreText: {
+    color: "#0f62fe",
+    fontWeight: "700",
+    fontSize: 12,
+  },
   exportButton: {
     backgroundColor: "#0f62fe",
     borderRadius: 12,

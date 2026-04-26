@@ -152,11 +152,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   chartLabel: {
-    width: 80,
-    color: "#27435e",
-    fontSize: 10,
-  },
-  chartLabelWide: {
     width: 120,
     color: "#27435e",
     fontSize: 10,
@@ -179,7 +174,7 @@ const styles = StyleSheet.create({
     borderRadius: 99,
   },
   chartValue: {
-    width: 70,
+    width: 76,
     textAlign: "right",
     color: "#27435e",
     fontWeight: "700",

@@ -5,7 +5,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f4f8ff",
     paddingTop: 56,
-    paddingHorizontal: 16,
+    paddingBottom: 98,
   },
   header: {
     flexDirection: "row",
@@ -224,8 +224,12 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 13,
   },
+  list: {
+    flex: 1,
+  },
   listContent: {
-    paddingBottom: 28,
+    paddingHorizontal: 16,
+    paddingBottom: 160,
   },
   card: {
     backgroundColor: "#fff",
