@@ -10,6 +10,22 @@ import { formatDateLabel, formatNumber, formatRelativeAge, toLocalDateISO } from
 import { FlowBarChart, FlowLineChart, HourlyUsageLineChart } from "../../components/deviceDashboard/charts";
 import { StaggerCard, StaggerRow } from "../../components/deviceDashboard/motion";
 
+function formatAlertSummary(alert) {
+  const periodKey = alert?.meta?.period_key || alert?.meta?.periodKey;
+  const consumedLiters = Number(alert?.meta?.consumed_l ?? alert?.meta?.consumedLiters ?? 0);
+
+  if (periodKey) {
+    if (alert?.alert_type === "USAGE_LIMIT_MONTHLY") {
+      const monthDate = new Date(`${periodKey}-01T00:00:00`);
+      return `${monthDate.toLocaleDateString([], { month: "long", year: "numeric" })} - ${formatNumber(consumedLiters, 3)} L`;
+    }
+
+    return `${new Date(`${periodKey}T00:00:00`).toLocaleDateString()} - ${formatNumber(consumedLiters, 3)} L`;
+  }
+
+  return alert?.message || "Usage alert";
+}
+
 export default function DeviceDashboardScreen({ route, navigation }) {
   const { device } = route.params;
   const { token } = useAuth();
@@ -25,6 +41,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
   const [limits, setLimits] = useState(null);
   const [flowChartType, setFlowChartType] = useState("bar");
   const [clockTick, setClockTick] = useState(0);
+  const [showAllTodayHistory, setShowAllTodayHistory] = useState(false);
   const entryOpacity = useRef(new Animated.Value(0)).current;
   const entryTranslateY = useRef(new Animated.Value(14)).current;
   const livePulse = useRef(new Animated.Value(1)).current;
@@ -128,6 +145,9 @@ export default function DeviceDashboardScreen({ route, navigation }) {
     if (dailyLimit <= 0) return 0;
     return dailyLimit / 24;
   }, [limits?.daily_usage_limit_l]);
+
+  const visibleTodayHistoryItems = useMemo(() => (showAllTodayHistory ? dailyItems.slice().reverse() : dailyItems.slice(-10).reverse()), [dailyItems, showAllTodayHistory]);
+  const hasMoreTodayHistory = dailyItems.length > 10;
 
   const loadAll = useCallback(async () => {
     setError("");
@@ -246,6 +266,12 @@ export default function DeviceDashboardScreen({ route, navigation }) {
               <Text style={styles.mainMetric}>{formatNumber(displayFlowRate, 2)} L/min</Text>
               <Text style={styles.meta}>Latest at: {latest?.measured_at ? new Date(latest.measured_at).toLocaleString() : "-"}</Text>
               <Text style={styles.metaStrong}>{lastSeenText}</Text>
+              <Pressable
+                style={({ pressed }) => [styles.overviewDetailButton, pressed && styles.overviewDetailButtonPressed]}
+                onPress={() => navigation.navigate("UsageHistory", { device })}
+              >
+                <Text style={styles.overviewDetailButtonText}>View More Detail IoT</Text>
+              </Pressable>
             </StaggerCard>
 
             <StaggerCard index={1} style={styles.row}>
@@ -292,14 +318,15 @@ export default function DeviceDashboardScreen({ route, navigation }) {
                 <FlatList
                   data={alerts}
                   keyExtractor={(item) => String(item.id)}
-                  scrollEnabled={false}
+                  scrollEnabled={true}
+                  nestedScrollEnabled
                   renderItem={({ item, index }) => (
                     <StaggerRow index={index}>
                       <View style={styles.alertItem}>
                         <View style={styles.alertRow}>
                           <View style={styles.alertContent}>
-                            <Text style={styles.alertTitle}>{item.title}</Text>
-                            <Text style={styles.alertMsg}>{item.message}</Text>
+                            <Text style={styles.alertTitle} numberOfLines={1}>{item.title}</Text>
+                            <Text style={styles.alertMetaText} numberOfLines={1}>{formatAlertSummary(item)}</Text>
                           </View>
                           <Pressable
                             style={({ pressed }) => [styles.dismissButton, pressed && styles.dismissButtonPressed]}
@@ -348,28 +375,31 @@ export default function DeviceDashboardScreen({ route, navigation }) {
           {dailyItems.length === 0 ? (
             <Text style={styles.meta}>No telemetry for today</Text>
           ) : (
-            <FlatList
-              data={dailyItems.slice(-20).reverse()}
-              keyExtractor={(item, idx) => `${item.measured_at}-${idx}`}
-              scrollEnabled={false}
-              renderItem={({ item, index }) => (
-                <StaggerRow index={index}>
-                  <View style={styles.historyRow}>
-                    <Text style={styles.historyTime}>{formatDateLabel(item.measured_at)}</Text>
-                    <Text style={styles.historyValue}>{formatNumber(item.flow_rate_lpm, 2)} L/min</Text>
-                    <Text style={styles.historyValue}>{formatNumber(item.volume_delta_l, 4)} L</Text>
-                  </View>
-                </StaggerRow>
-              )}
-            />
+            <View style={styles.todayHistoryBox}>
+              <FlatList
+                data={visibleTodayHistoryItems}
+                keyExtractor={(item, idx) => `${item.measured_at}-${idx}`}
+                scrollEnabled={true}
+                nestedScrollEnabled
+                renderItem={({ item, index }) => (
+                  <StaggerRow index={index}>
+                    <View style={styles.historyRow}>
+                      <Text style={styles.historyTime}>{formatDateLabel(item.measured_at)}</Text>
+                      <Text style={styles.historyValue}>{formatNumber(item.flow_rate_lpm, 2)} L/min</Text>
+                      <Text style={styles.historyValue}>{formatNumber(item.volume_delta_l, 4)} L</Text>
+                    </View>
+                  </StaggerRow>
+                )}
+              />
+              {hasMoreTodayHistory ? (
+                <Pressable style={styles.todayHistoryMoreButton} onPress={() => setShowAllTodayHistory((prev) => !prev)}>
+                  <Text style={styles.todayHistoryMoreText}>{showAllTodayHistory ? "View Less" : `View More (${dailyItems.length - 10} more)`}</Text>
+                </Pressable>
+              ) : null}
+            </View>
           )}
         </StaggerCard>
 
-        <StaggerCard index={8}>
-          <Pressable style={({ pressed }) => [styles.historyButton, pressed && styles.historyButtonPressed]} onPress={() => navigation.navigate("UsageHistory", { device })}>
-            <Text style={styles.historyButtonText}>View History</Text>
-          </Pressable>
-        </StaggerCard>
       </SectionAccordion>
     </Animated.ScrollView>
   );

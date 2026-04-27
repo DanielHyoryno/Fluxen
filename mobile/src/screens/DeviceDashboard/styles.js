@@ -136,6 +136,22 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     fontSize: 12,
   },
+  overviewDetailButton: {
+    marginTop: 12,
+    alignSelf: "flex-start",
+    backgroundColor: "#eef4ff",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  overviewDetailButtonPressed: {
+    opacity: 0.85,
+  },
+  overviewDetailButtonText: {
+    color: "#0f62fe",
+    fontWeight: "700",
+    fontSize: 12,
+  },
   alertItem: {
     borderTopWidth: 1,
     borderTopColor: "#edf2fa",
@@ -159,6 +175,12 @@ const styles = StyleSheet.create({
     color: "#8f3a3a",
     marginTop: 2,
   },
+  alertMetaText: {
+    color: "#8f3a3a",
+    marginTop: 2,
+    fontSize: 12,
+    lineHeight: 16,
+  },
   dismissButton: {
     backgroundColor: "#fef0f0",
     paddingHorizontal: 10,
@@ -174,6 +196,9 @@ const styles = StyleSheet.create({
     color: "#a61d1d",
     fontWeight: "600",
     fontSize: 12,
+  },
+  todayHistoryBox: {
+    maxHeight: 320,
   },
   historyRow: {
     flexDirection: "row",
@@ -194,6 +219,19 @@ const styles = StyleSheet.create({
   error: {
     color: "#a61d1d",
     marginBottom: 8,
+  },
+  todayHistoryMoreButton: {
+    marginTop: 10,
+    alignSelf: "center",
+    backgroundColor: "#eef4ff",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  todayHistoryMoreText: {
+    color: "#0f62fe",
+    fontWeight: "700",
+    fontSize: 12,
   },
   limitButton: {
     backgroundColor: "#edf2fa",

@@ -36,6 +36,38 @@ const styles = StyleSheet.create({
   cardInner: {
     paddingVertical: 2,
   },
+  summaryGrid: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 10,
+  },
+  summaryTile: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#dbe6f5",
+    backgroundColor: "#f9fbff",
+    borderRadius: 10,
+    padding: 12,
+  },
+  summaryLabel: {
+    color: "#55708a",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  summaryTileValue: {
+    color: "#1d3551",
+    fontWeight: "700",
+    fontSize: 18,
+    marginTop: 6,
+  },
+  peakDayCard: {
+    borderWidth: 1,
+    borderColor: "#dbe6f5",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 12,
+  },
   cardTitle: {
     color: "#1d3551",
     fontWeight: "700",
@@ -314,6 +346,38 @@ const styles = StyleSheet.create({
   viewMoreText: {
     color: "#0f62fe",
     fontWeight: "700",
+    fontSize: 12,
+  },
+  detailCard: {
+    borderWidth: 1,
+    borderColor: "#dbe6f5",
+    backgroundColor: "#f9fbff",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 8,
+  },
+  detailDate: {
+    color: "#1d3551",
+    fontWeight: "700",
+    marginBottom: 8,
+  },
+  detailMetricRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  detailMetricItem: {
+    flex: 1,
+  },
+  detailMetricLabel: {
+    color: "#55708a",
+    fontSize: 11,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  detailMetricValue: {
+    color: "#1d3551",
+    fontWeight: "700",
+    marginTop: 4,
     fontSize: 12,
   },
   exportButton: {

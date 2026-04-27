@@ -503,7 +503,6 @@ export default function UsageHistoryScreen({ route }) {
 
       <SectionAccordion title="Date Range" defaultExpanded>
         <View style={styles.cardInner}>
-        <Text style={styles.cardTitle}>Date Range</Text>
         <View style={styles.rangeRow}>
           <Pressable
             style={({ pressed }) => [
@@ -598,20 +597,28 @@ export default function UsageHistoryScreen({ route }) {
 
       <SectionAccordion title="Summary" defaultExpanded>
         <View style={styles.cardInner}>
-        <Text style={styles.cardTitle}>Summary</Text>
-        <Text style={styles.metric}>{formatNumber(totalLiters, 3)} L</Text>
-        <Text style={styles.meta}>Total usage in selected range</Text>
-        <Text style={styles.meta}>Average daily usage: {formatNumber(averageDailyUsage, 3)} L/day</Text>
-        <Text style={styles.meta}>
-          Peak day: {peakDay ? parseDateOnly(peakDay.date).toLocaleDateString() : "-"} (
-          {formatNumber(peakDay?.total_liters, 3)} L)
-        </Text>
+          <View style={styles.summaryGrid}>
+            <View style={styles.summaryTile}>
+              <Text style={styles.summaryLabel}>Total Usage</Text>
+              <Text style={styles.metric}>{formatNumber(totalLiters, 3)} L</Text>
+            </View>
+            <View style={styles.summaryTile}>
+              <Text style={styles.summaryLabel}>Daily Average</Text>
+              <Text style={styles.summaryTileValue}>{formatNumber(averageDailyUsage, 3)} L/day</Text>
+            </View>
+          </View>
+          <View style={styles.peakDayCard}>
+            <Text style={styles.summaryLabel}>Peak Day</Text>
+            <Text style={styles.summaryTileValue}>
+              {peakDay ? parseDateOnly(peakDay.date).toLocaleDateString() : "-"}
+            </Text>
+            <Text style={styles.meta}>{formatNumber(peakDay?.total_liters, 3)} L</Text>
+          </View>
         </View>
       </SectionAccordion>
 
       <SectionAccordion title="Daily Usage Chart" defaultExpanded>
         <View style={styles.cardInner}>
-        <Text style={styles.cardTitle}>Daily Usage Chart</Text>
         <View style={styles.chartTypeRow}>
           <Pressable
             style={[styles.chartTypeButton, usageChartType === "bar" && styles.chartTypeButtonActive]}
@@ -654,27 +661,31 @@ export default function UsageHistoryScreen({ route }) {
 
       <SectionAccordion title="Daily Details" defaultExpanded>
         <View style={styles.cardInner}>
-        <Text style={styles.cardTitle}>Daily Details</Text>
         {chartItems.length === 0 ? (
           <Text style={styles.meta}>No rows to show</Text>
         ) : (
           <>
-            <View style={styles.tableHeader}>
-              <Text style={[styles.headerText, styles.historyDate]}>Date</Text>
-              <Text style={[styles.headerText, styles.historyValue]}>Total</Text>
-              <Text style={[styles.headerText, styles.historyValue]}>Avg</Text>
-              <Text style={[styles.headerText, styles.historyValue]}>Peak</Text>
-            </View>
             <FlatList
               data={visibleDetailItems}
               keyExtractor={(item) => item.date}
               scrollEnabled={false}
               renderItem={({ item }) => (
-                <View style={styles.historyRow}>
-                  <Text style={[styles.historyText, styles.historyDate]}>{parseDateOnly(item.date).toLocaleDateString()}</Text>
-                  <Text style={[styles.historyText, styles.historyValue]}>{formatNumber(item.total_liters, 3)} L</Text>
-                  <Text style={[styles.historyText, styles.historyValue]}>{formatNumber(item.avg_flow_rate_lpm, 2)} L/min</Text>
-                  <Text style={[styles.historyText, styles.historyValue]}>{formatNumber(item.peak_flow_rate_lpm, 2)} L/min</Text>
+                <View style={styles.detailCard}>
+                  <Text style={styles.detailDate}>{parseDateOnly(item.date).toLocaleDateString()}</Text>
+                  <View style={styles.detailMetricRow}>
+                    <View style={styles.detailMetricItem}>
+                      <Text style={styles.detailMetricLabel}>Total</Text>
+                      <Text style={styles.detailMetricValue}>{formatNumber(item.total_liters, 3)} L</Text>
+                    </View>
+                    <View style={styles.detailMetricItem}>
+                      <Text style={styles.detailMetricLabel}>Avg</Text>
+                      <Text style={styles.detailMetricValue}>{formatNumber(item.avg_flow_rate_lpm, 2)} L/min</Text>
+                    </View>
+                    <View style={styles.detailMetricItem}>
+                      <Text style={styles.detailMetricLabel}>Peak</Text>
+                      <Text style={styles.detailMetricValue}>{formatNumber(item.peak_flow_rate_lpm, 2)} L/min</Text>
+                    </View>
+                  </View>
                 </View>
               )}
             />
