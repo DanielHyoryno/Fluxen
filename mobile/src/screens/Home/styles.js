@@ -211,7 +211,10 @@ const styles = StyleSheet.create({
   overallBarLabel: {
     marginTop: 6,
     color: "#55708a",
-    fontSize: 9,
+    fontSize: 8,
+    lineHeight: 10,
+    textAlign: "center",
+    minWidth: 12,
   },
   dayLineChartBox: {
     backgroundColor: "#f9fbff",

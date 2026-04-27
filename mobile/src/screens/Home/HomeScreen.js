@@ -118,12 +118,8 @@ function OverallUsageChart({ series, rangePreset }) {
           const value = Number(item.totalLiters || 0);
           const heightPct = Math.round((value / chartMax) * 100);
 
-          const labelText =
-            rangePreset === "month"
-              ? formatDayOnlyLabel(item.date)
-              : rangePreset === "custom"
-                ? formatDayOnlyLabel(item.date)
-                : formatDateLabel(item.date);
+          const isDenseRange = rangePreset === "month" || rangePreset === "custom";
+          const labelText = isDenseRange ? formatDayOnlyLabel(item.date) : formatDateLabel(item.date);
 
           return (
             <View key={item.date} style={styles.overallBarCol}>

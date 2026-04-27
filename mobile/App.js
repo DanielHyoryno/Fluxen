@@ -230,7 +230,7 @@ function RootNavigator() {
     const isDesktopViewport = viewportWidth >= 980;
 
     const tabBarHorizontalInset = isCompactViewport ? 14 : 18;
-    const tabBarBottomInset = isCompactViewport ? 8 : 10;
+    const tabBarBottomInset = isCompactViewport ? 22 : 24;
     const tabBarHeight = isCompactViewport ? 52 : TAB_BAR_HEIGHT;
     const desktopTabBarWidth = Math.min(600, Math.max(380, Math.floor(viewportWidth * 0.5)));
 
