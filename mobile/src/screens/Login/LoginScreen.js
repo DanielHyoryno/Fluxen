@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Easing, Pressable, Text, TextInput, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
+import messages from "../../constants/messages";
 import styles from "./styles";
 
 export default function LoginScreen({ navigation }) {
@@ -45,7 +46,7 @@ export default function LoginScreen({ navigation }) {
     try {
       await login(email.trim(), password);
     } catch (err) {
-      setError(err.message || "Login failed");
+      setError(err.message || messages.auth.loginFailed);
     } finally {
       setSubmitting(false);
     }
@@ -59,12 +60,12 @@ export default function LoginScreen({ navigation }) {
           transform: [{ translateY: entryTranslateY }],
         }}
       >
-        <Text style={styles.title}>Water Monitor</Text>
-        <Text style={styles.subtitle}>Login to view your device telemetry</Text>
+        <Text style={styles.title}>{messages.auth.loginTitle}</Text>
+        <Text style={styles.subtitle}>{messages.auth.loginSubtitle}</Text>
 
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder={messages.auth.emailPlaceholder}
           placeholderTextColor="#8aa0b8"
           autoCapitalize="none"
           keyboardType="email-address"
@@ -73,7 +74,7 @@ export default function LoginScreen({ navigation }) {
         />
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder={messages.auth.passwordPlaceholder}
           placeholderTextColor="#8aa0b8"
           secureTextEntry
           value={password}
@@ -90,12 +91,12 @@ export default function LoginScreen({ navigation }) {
             onPressIn={() => animateButton(0.98)}
             onPressOut={() => animateButton(1)}
           >
-            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>Login</Text>}
+            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{messages.auth.loginButton}</Text>}
           </Pressable>
         </Animated.View>
 
         <Pressable onPress={() => navigation.navigate("Register")}>
-          <Text style={styles.link}>No account yet? Register</Text>
+          <Text style={styles.link}>{messages.auth.noAccount}</Text>
         </Pressable>
       </Animated.View>
     </View>

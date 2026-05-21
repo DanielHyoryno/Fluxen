@@ -1,4 +1,5 @@
 import { API_BASE_URL } from "../config/api";
+import messages from "../constants/messages";
 
 const REQUEST_TIMEOUT_MS = 20000;
 
@@ -13,10 +14,10 @@ async function fetchWithTimeout(url, options = {}) {
     });
   } catch (err) {
     if (err.name === "AbortError") {
-      throw new Error("Request timed out. Please try again in a moment.");
+      throw new Error(messages.auth.requestTimedOut);
     }
 
-    throw new Error("Unable to reach server. Please check your connection and try again.");
+    throw new Error(messages.auth.unableToReachServer);
   } finally {
     clearTimeout(timeoutId);
   }
@@ -27,7 +28,7 @@ async function request(path, options = {}) {
   const payload = await response.json().catch(() => ({}));
 
   if (!response.ok || payload.success === false) {
-    throw new Error(payload.message || "Request failed");
+    throw new Error(payload.message || messages.auth.requestFailed);
   }
 
   return payload.data;
@@ -38,7 +39,7 @@ async function requestRaw(path, options = {}) {
 
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
-    throw new Error(payload.message || "Request failed");
+    throw new Error(payload.message || messages.auth.requestFailed);
   }
 
   return response.text();

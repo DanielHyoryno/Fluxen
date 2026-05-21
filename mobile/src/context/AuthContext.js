@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { clearAccessToken, getAccessToken, saveAccessToken } from "../services/storage";
 import { loginApi, meApi, registerApi } from "../services/api";
+import messages from "../constants/messages";
 
 const AuthContext = createContext(null);
 
@@ -67,7 +68,7 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) {
-    throw new Error("useAuth must be used inside AuthProvider");
+    throw new Error(messages.auth.authProviderError);
   }
   return ctx;
 }
