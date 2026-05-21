@@ -17,6 +17,7 @@ import { Calendar } from "react-native-calendars";
 import Svg, { Circle, Line, Polyline } from "react-native-svg";
 import { useAuth } from "../../context/AuthContext";
 import { dailyTelemetryApi, listDevicesApi, latestTelemetryApi, usageHistoryApi } from "../../services/api";
+import messages from "../../constants/messages";
 import styles from "./styles";
 
 const OFFLINE_THRESHOLD_SEC = 120;
@@ -106,7 +107,7 @@ function minDateISO(a, b) {
 }
 
 function OverallUsageChart({ series, rangePreset }) {
-  if (!series.length) return <Text style={styles.emptyText}>No total usage trend yet.</Text>;
+  if (!series.length) return <Text style={styles.emptyText}>{messages.home.emptyTotalTrend}</Text>;
 
   const maxValue = series.reduce((max, item) => Math.max(max, Number(item.totalLiters || 0)), 0);
   const chartMax = maxValue > 0 ? maxValue : 1;
@@ -136,7 +137,7 @@ function OverallUsageChart({ series, rangePreset }) {
 }
 
 function DayHourlyLineChart({ series, chartWidth }) {
-  if (!series.length) return <Text style={styles.emptyText}>No hourly usage data yet.</Text>;
+  if (!series.length) return <Text style={styles.emptyText}>{messages.home.emptyHourlyUsage}</Text>;
 
   const width = Math.max(220, chartWidth);
   const height = 150;
@@ -174,7 +175,7 @@ function DayHourlyLineChart({ series, chartWidth }) {
           </Text>
         ))}
       </View>
-      <Text style={styles.rangeMeta}>Hourly total usage (all devices)</Text>
+      <Text style={styles.rangeMeta}>{messages.home.hourlyTotalUsage}</Text>
     </View>
   );
 }
@@ -351,7 +352,7 @@ export default function HomeScreen({ navigation }) {
         try {
           await loadHome();
         } catch (err) {
-          if (mounted) setError(err.message || "Failed to load home data");
+          if (mounted) setError(err.message || messages.home.loadFailed);
         } finally {
           if (mounted) setLoading(false);
         }
@@ -368,7 +369,7 @@ export default function HomeScreen({ navigation }) {
     try {
       await loadHome();
     } catch (err) {
-      setError(err.message || "Refresh failed");
+      setError(err.message || messages.home.refreshFailed);
     } finally {
       setRefreshing(false);
     }
@@ -409,7 +410,7 @@ export default function HomeScreen({ navigation }) {
     });
 
     if (exceeded) {
-      Alert.alert("Custom range limited", "Custom range maximum is 1 month.");
+      Alert.alert(messages.home.customRangeLimitedTitle, messages.home.customRangeLimitedMessage);
       return;
     }
 
@@ -483,18 +484,18 @@ export default function HomeScreen({ navigation }) {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <Text style={styles.title}>Home</Text>
-      <Text style={styles.subtitle}>Daily overview of all IoT devices</Text>
+      <Text style={styles.title}>{messages.home.pageTitle}</Text>
+      <Text style={styles.subtitle}>{messages.home.subtitle}</Text>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <View style={styles.kpiRow}>
         <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>Total Usage Today</Text>
+          <Text style={styles.kpiLabel}>{messages.home.totalUsageToday}</Text>
           <Text style={styles.kpiValue}>{formatNumber(totalUsage, 3)} L</Text>
         </View>
         <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>Online / Offline</Text>
+          <Text style={styles.kpiLabel}>{messages.home.onlineOffline}</Text>
           <Text style={styles.kpiValue}>
             {onlineCount} / {offlineCount}
           </Text>
@@ -502,13 +503,13 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Overall Usage Trend</Text>
+        <Text style={styles.cardTitle}>{messages.home.overallUsageTrend}</Text>
         <View style={styles.presetRow}>
           {[
-            { key: "day", label: "Day" },
-            { key: "week", label: "Week" },
-            { key: "month", label: "Month" },
-            { key: "custom", label: "Custom" },
+            { key: "day", label: messages.home.day },
+            { key: "week", label: messages.home.week },
+            { key: "month", label: messages.home.month },
+            { key: "custom", label: messages.home.custom },
           ].map((item) => (
             <HoverablePressable
               key={item.key}
@@ -528,7 +529,7 @@ export default function HomeScreen({ navigation }) {
               onPress={() => openCustomPicker("from")}
               hoverStyle={styles.hoverButtonHighlight}
             >
-              <Text style={styles.customDateLabel}>From</Text>
+              <Text style={styles.customDateLabel}>{messages.home.from}</Text>
               <Text style={styles.customDateValue}>{range.from}</Text>
             </HoverablePressable>
             <HoverablePressable
@@ -536,7 +537,7 @@ export default function HomeScreen({ navigation }) {
               onPress={() => openCustomPicker("to")}
               hoverStyle={styles.hoverButtonHighlight}
             >
-              <Text style={styles.customDateLabel}>To</Text>
+              <Text style={styles.customDateLabel}>{messages.home.to}</Text>
               <Text style={styles.customDateValue}>{range.to}</Text>
             </HoverablePressable>
           </View>
@@ -548,11 +549,11 @@ export default function HomeScreen({ navigation }) {
 
         <View style={styles.overallKpiRow}>
           <View style={styles.overallKpiCard}>
-            <Text style={styles.kpiLabel}>Total</Text>
+          <Text style={styles.kpiLabel}>{messages.home.total}</Text>
             <Text style={styles.overallKpiValue}>{formatNumber(overallTotal, 3)} L</Text>
           </View>
           <View style={styles.overallKpiCard}>
-            <Text style={styles.kpiLabel}>{overallAverageLabel}</Text>
+          <Text style={styles.kpiLabel}>{rangePreset === "day" ? messages.home.averagePerHour : messages.home.averagePerDay}</Text>
             <Text style={styles.overallKpiValue}>{formatNumber(overallAverage, 3)} L</Text>
           </View>
         </View>
@@ -564,22 +565,22 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Usage by Device ({rangePreset === "day" ? "Selected Day" : "Selected Range"})</Text>
+        <Text style={styles.cardTitle}>{messages.home.usageByDevice} ({rangePreset === "day" ? messages.home.selectedDay : messages.home.selectedRange})</Text>
         <UsageByDeviceChart items={deviceRows} />
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Overall Usage by Category ({rangePreset === "day" ? "Selected Day" : "Selected Range"})</Text>
+        <Text style={styles.cardTitle}>{messages.home.usageByCategory} ({rangePreset === "day" ? messages.home.selectedDay : messages.home.selectedRange})</Text>
         <UsageByCategoryChart items={categoryRows} />
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Device Status</Text>
+        <Text style={styles.cardTitle}>{messages.home.deviceStatus}</Text>
         <View style={styles.filterRow}>
           {[
-            { key: "all", label: "All" },
-            { key: "online", label: "Online" },
-            { key: "offline", label: "Offline" },
+            { key: "all", label: messages.home.all },
+            { key: "online", label: messages.home.online },
+            { key: "offline", label: messages.home.offline },
           ].map((item) => (
             <Pressable
               key={item.key}
@@ -595,7 +596,7 @@ export default function HomeScreen({ navigation }) {
           data={filteredDevices}
           keyExtractor={(item) => String(item.id)}
           scrollEnabled={false}
-          ListEmptyComponent={<Text style={styles.emptyText}>No devices in this filter.</Text>}
+          ListEmptyComponent={<Text style={styles.emptyText}>{messages.home.noDevicesInFilter}</Text>}
           renderItem={({ item }) => (
             <HoverablePressable
               onPress={() => navigation.navigate("DeviceDashboard", { device: item })}
@@ -616,7 +617,7 @@ export default function HomeScreen({ navigation }) {
       <Modal transparent visible={pickerVisible} animationType="fade" onRequestClose={() => setPickerVisible(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Pick {pickerTarget === "from" ? "Start" : "End"} Date</Text>
+            <Text style={styles.modalTitle}>{pickerTarget === "from" ? messages.home.pickStartDate : messages.home.pickEndDate}</Text>
             <Calendar
               minDate={pickerEffectiveMinDate}
               maxDate={pickerEffectiveMaxDate}
@@ -637,10 +638,10 @@ export default function HomeScreen({ navigation }) {
               }}
               onDayPress={(day) => applyPickedDate(day.dateString)}
             />
-            {Platform.OS === "web" ? <Text style={styles.modalHint}>Click one date to set selected field.</Text> : null}
+            {Platform.OS === "web" ? <Text style={styles.modalHint}>{messages.home.webDateHint}</Text> : null}
             <View style={styles.modalActions}>
               <Pressable style={styles.modalCloseButton} onPress={() => setPickerVisible(false)}>
-                <Text style={styles.modalCloseText}>Close</Text>
+                <Text style={styles.modalCloseText}>{messages.home.close}</Text>
               </Pressable>
             </View>
           </View>

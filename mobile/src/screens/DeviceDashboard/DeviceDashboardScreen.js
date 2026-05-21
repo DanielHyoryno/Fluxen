@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import SectionAccordion from "../../components/SectionAccordion";
 import { dailyTelemetryApi, latestTelemetryApi, usageAlertsApi, usageLimitsApi, dismissAlertApi } from "../../services/api";
+import messages from "../../constants/messages";
 import styles from "./styles";
 import { AUTO_REFRESH_MS, OFFLINE_THRESHOLD_SEC } from "../../constants/deviceDashboard";
 import { formatDateLabel, formatNumber, formatRelativeAge, toLocalDateISO } from "../../common/deviceDashboard/formatters";
@@ -23,7 +24,7 @@ function formatAlertSummary(alert) {
     return `${new Date(`${periodKey}T00:00:00`).toLocaleDateString()} - ${formatNumber(consumedLiters, 3)} L`;
   }
 
-  return alert?.message || "Usage alert";
+  return alert?.message || messages.dashboard.usageAlertFallback;
 }
 
 export default function DeviceDashboardScreen({ route, navigation }) {
@@ -108,10 +109,10 @@ export default function DeviceDashboardScreen({ route, navigation }) {
   }, [isDeviceOnline, livePulse]);
 
   const lastSeenText = useMemo(() => {
-    if (!latest?.measured_at) return "No telemetry yet";
+    if (!latest?.measured_at) return messages.dashboard.noTelemetryYet;
     const diffSec = latestAgeSec ?? 0;
     const relative = formatRelativeAge(diffSec);
-    return `${isDeviceOnline ? "Updated" : "Last seen"} ${relative} ago`;
+    return `${isDeviceOnline ? messages.dashboard.updated : messages.dashboard.lastSeen} ${relative} ${messages.dashboard.ago}`;
   }, [latest?.measured_at, latestAgeSec, isDeviceOnline]);
 
   const totalTodayLiters = useMemo(() => dailyItems.reduce((sum, item) => sum + Number(item.volume_delta_l || 0), 0), [dailyItems]);
@@ -173,7 +174,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
         try {
           await loadAll();
         } catch (err) {
-          if (mounted) setError(err.message || "Failed to load dashboard");
+          if (mounted) setError(err.message || messages.dashboard.loadFailed);
         } finally {
           if (mounted) setLoading(false);
         }
@@ -202,7 +203,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
     try {
       await loadAll();
     } catch (err) {
-      setError(err.message || "Refresh failed");
+      setError(err.message || messages.dashboard.refreshFailed);
     } finally {
       setRefreshing(false);
     }
@@ -213,7 +214,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
       await dismissAlertApi(token, alertId);
       setAlerts((prev) => prev.filter((a) => a.id !== alertId));
     } catch (err) {
-      setError(err.message || "Failed to dismiss alert");
+      setError(err.message || messages.dashboard.dismissAlertFailed);
     }
   }
 
@@ -240,7 +241,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
       <View style={styles.deviceHeader}>
         <View style={styles.deviceHeaderLeft}>
           <Text style={styles.deviceName}>{device.device_name}</Text>
-          <Text style={styles.deviceMeta}>Code: {device.device_code}</Text>
+          <Text style={styles.deviceMeta}>{messages.dashboard.codeLabel}: {device.device_code}</Text>
         </View>
         <Pressable
           style={({ pressed }) => [styles.editDeviceButton, pressed && styles.editDeviceButtonPressed]}
@@ -257,63 +258,63 @@ export default function DeviceDashboardScreen({ route, navigation }) {
           <SectionAccordion title="Overview" defaultExpanded>
             <StaggerCard index={0} style={styles.card}>
               <View style={styles.liveHeader}>
-                <Text style={styles.cardTitle}>Current Status</Text>
+            <Text style={styles.cardTitle}>{messages.dashboard.currentStatus}</Text>
                 <View style={[styles.liveChip, !isDeviceOnline && styles.liveChipOffline]}>
                   <Animated.View style={[styles.liveDot, !isDeviceOnline && styles.liveDotOffline, { opacity: livePulse }]} />
-                  <Text style={[styles.liveText, !isDeviceOnline && styles.liveTextOffline]}>{isDeviceOnline ? "ONLINE" : "OFFLINE"}</Text>
+                  <Text style={[styles.liveText, !isDeviceOnline && styles.liveTextOffline]}>{isDeviceOnline ? messages.devices.online : messages.devices.offline}</Text>
                 </View>
               </View>
               <Text style={styles.mainMetric}>{formatNumber(displayFlowRate, 2)} L/min</Text>
-              <Text style={styles.meta}>Latest at: {latest?.measured_at ? new Date(latest.measured_at).toLocaleString() : "-"}</Text>
+              <Text style={styles.meta}>{messages.dashboard.latestAt}: {latest?.measured_at ? new Date(latest.measured_at).toLocaleString() : "-"}</Text>
               <Text style={styles.metaStrong}>{lastSeenText}</Text>
               <Pressable
                 style={({ pressed }) => [styles.overviewDetailButton, pressed && styles.overviewDetailButtonPressed]}
                 onPress={() => navigation.navigate("UsageHistory", { device })}
               >
-                <Text style={styles.overviewDetailButtonText}>View More Detail IoT</Text>
+                <Text style={styles.overviewDetailButtonText}>{messages.dashboard.viewMoreDetailIoT}</Text>
               </Pressable>
             </StaggerCard>
 
             <StaggerCard index={1} style={styles.row}>
               <View style={[styles.card, styles.cardHalf]}>
-                <Text style={styles.cardTitle}>Today Total</Text>
+                <Text style={styles.cardTitle}>{messages.dashboard.todayTotal}</Text>
                 <Text style={styles.metric}>{formatNumber(totalTodayLiters, 3)} L</Text>
               </View>
               <View style={[styles.card, styles.cardHalf]}>
-                <Text style={styles.cardTitle}>Average Flow</Text>
+                <Text style={styles.cardTitle}>{messages.dashboard.averageFlow}</Text>
                 <Text style={styles.metric}>{formatNumber(avgFlowToday, 2)} L/min</Text>
               </View>
             </StaggerCard>
 
             <StaggerCard index={2} style={styles.card}>
-              <Text style={styles.cardTitle}>Peak Flow Today</Text>
+              <Text style={styles.cardTitle}>{messages.dashboard.peakFlowToday}</Text>
               <Text style={styles.metric}>{formatNumber(highestFlow, 2)} L/min</Text>
             </StaggerCard>
           </SectionAccordion>
         </View>
 
         <View style={[styles.topSectionItem, isWideLayout && styles.topSectionItemWide]}>
-          <SectionAccordion title="Alerts & Limits" defaultExpanded>
+          <SectionAccordion title={messages.dashboard.alertsAndLimits} defaultExpanded>
             <StaggerCard index={3} style={styles.card}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <View>
-                  <Text style={styles.cardTitle}>Usage Limits</Text>
-                  <Text style={styles.meta}>Daily: {limits?.daily_usage_limit_l ? `${limits.daily_usage_limit_l} L` : "Not set"}</Text>
-                  <Text style={styles.meta}>Monthly: {limits?.monthly_usage_limit_l ? `${limits.monthly_usage_limit_l} L` : "Not set"}</Text>
+                  <Text style={styles.cardTitle}>{messages.dashboard.usageLimits}</Text>
+                  <Text style={styles.meta}>Daily: {limits?.daily_usage_limit_l ? `${limits.daily_usage_limit_l} L` : messages.dashboard.dailyNotSet}</Text>
+                  <Text style={styles.meta}>Monthly: {limits?.monthly_usage_limit_l ? `${limits.monthly_usage_limit_l} L` : messages.dashboard.monthlyNotSet}</Text>
                 </View>
                 <Pressable
                   style={({ pressed }) => [styles.limitButton, pressed && styles.limitButtonPressed]}
                   onPress={() => navigation.navigate("UsageLimits", { device })}
                 >
-                  <Text style={styles.limitButtonText}>Edit</Text>
+                    <Text style={styles.limitButtonText}>{messages.dashboard.edit}</Text>
                 </Pressable>
               </View>
             </StaggerCard>
 
             <StaggerCard index={4} style={styles.card}>
-              <Text style={styles.cardTitle}>Active Usage Alerts</Text>
+              <Text style={styles.cardTitle}>{messages.dashboard.activeUsageAlerts}</Text>
               {alerts.length === 0 ? (
-                <Text style={styles.meta}>No active alerts</Text>
+                <Text style={styles.meta}>{messages.dashboard.noActiveAlerts}</Text>
               ) : (
                 <FlatList
                   data={alerts}
@@ -332,7 +333,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
                             style={({ pressed }) => [styles.dismissButton, pressed && styles.dismissButtonPressed]}
                             onPress={() => handleDismissAlert(item.id)}
                           >
-                            <Text style={styles.dismissButtonText}>Dismiss</Text>
+                            <Text style={styles.dismissButtonText}>{messages.dashboard.dismiss}</Text>
                           </Pressable>
                         </View>
                       </View>
@@ -345,19 +346,19 @@ export default function DeviceDashboardScreen({ route, navigation }) {
         </View>
       </View>
 
-      <SectionAccordion title="Telemetry Details" defaultExpanded>
+      <SectionAccordion title={messages.dashboard.telemetryDetails} defaultExpanded>
         <StaggerCard index={5} style={styles.card}>
-          <Text style={styles.cardTitle}>Flow Rate Chart</Text>
+          <Text style={styles.cardTitle}>{messages.dashboard.flowRateChart}</Text>
           <View style={styles.chartTypeRow}>
             <Pressable style={[styles.chartTypeButton, flowChartType === "bar" && styles.chartTypeButtonActive]} onPress={() => setFlowChartType("bar")}>
-              <Text style={[styles.chartTypeText, flowChartType === "bar" && styles.chartTypeTextActive]}>Bars</Text>
+              <Text style={[styles.chartTypeText, flowChartType === "bar" && styles.chartTypeTextActive]}>{messages.dashboard.bars}</Text>
             </Pressable>
             <Pressable style={[styles.chartTypeButton, flowChartType === "line" && styles.chartTypeButtonActive]} onPress={() => setFlowChartType("line")}>
-              <Text style={[styles.chartTypeText, flowChartType === "line" && styles.chartTypeTextActive]}>Line</Text>
+              <Text style={[styles.chartTypeText, flowChartType === "line" && styles.chartTypeTextActive]}>{messages.dashboard.line}</Text>
             </Pressable>
           </View>
           {dailyItems.length === 0 ? (
-            <Text style={styles.meta}>No data to chart</Text>
+            <Text style={styles.meta}>{messages.dashboard.noChartData}</Text>
           ) : (
             <>
               {flowChartType === "bar" ? <FlowBarChart data={dailyItems} /> : <FlowLineChart data={dailyItems} chartWidth={chartWidth} />}
@@ -366,14 +367,14 @@ export default function DeviceDashboardScreen({ route, navigation }) {
         </StaggerCard>
 
         <StaggerCard index={6} style={styles.card}>
-          <Text style={styles.cardTitle}>Hourly Usage (Today)</Text>
+          <Text style={styles.cardTitle}>{messages.dashboard.hourlyUsageToday}</Text>
           <HourlyUsageLineChart hourlySeries={hourlyUsageSeries} chartWidth={chartWidth} hourlyGuide={hourlyGuide} />
         </StaggerCard>
 
         <StaggerCard index={7} style={styles.card}>
-          <Text style={styles.cardTitle}>Today History</Text>
+          <Text style={styles.cardTitle}>{messages.dashboard.todayHistory}</Text>
           {dailyItems.length === 0 ? (
-            <Text style={styles.meta}>No telemetry for today</Text>
+            <Text style={styles.meta}>{messages.dashboard.noTelemetryToday}</Text>
           ) : (
             <View style={styles.todayHistoryBox}>
               <FlatList
@@ -393,7 +394,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
               />
               {hasMoreTodayHistory ? (
                 <Pressable style={styles.todayHistoryMoreButton} onPress={() => setShowAllTodayHistory((prev) => !prev)}>
-                  <Text style={styles.todayHistoryMoreText}>{showAllTodayHistory ? "View Less" : `View More (${dailyItems.length - 10} more)`}</Text>
+                  <Text style={styles.todayHistoryMoreText}>{showAllTodayHistory ? messages.dashboard.viewLess : `${messages.dashboard.viewMore} (${dailyItems.length - 10} more)`}</Text>
                 </Pressable>
               ) : null}
             </View>
