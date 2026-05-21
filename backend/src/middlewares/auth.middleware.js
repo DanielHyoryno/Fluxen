@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
 const { getJwtSecret } = require("../services/auth.service");
 const { fail } = require("../utils/response");
+const messages = require("../constants/messages");
 
 async function requireAuth(req, res, next) {
   try {
@@ -9,7 +10,7 @@ async function requireAuth(req, res, next) {
     const [scheme, token] = authHeader.split(" ");
 
     if (scheme !== "Bearer" || !token) {
-      return fail(res, "Unauthorized", 401, "UNAUTHORIZED");
+      return fail(res, messages.auth.unauthorized, 401, "UNAUTHORIZED");
     }
 
     const payload = jwt.verify(token, getJwtSecret());
@@ -23,13 +24,13 @@ async function requireAuth(req, res, next) {
     );
 
     if (userQ.rowCount === 0) {
-      return fail(res, "Unauthorized", 401, "UNAUTHORIZED");
+      return fail(res, messages.auth.unauthorized, 401, "UNAUTHORIZED");
     }
 
     req.user = userQ.rows[0];
     return next();
   } catch (err) {
-    return fail(res, "Unauthorized", 401, "UNAUTHORIZED");
+    return fail(res, messages.auth.unauthorized, 401, "UNAUTHORIZED");
   }
 }
 
