@@ -4,6 +4,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import { createCategoryApi, deleteCategoryApi, listCategoriesApi, updateCategoryApi } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import messages from "../../constants/messages";
 import styles from "./styles";
 
 function CategoryRow({ item, onEdit, onDelete }) {
@@ -12,10 +13,10 @@ function CategoryRow({ item, onEdit, onDelete }) {
       <Text style={styles.rowName}>{item.name}</Text>
       <View style={styles.rowActions}>
         <Pressable style={styles.editButton} onPress={() => onEdit(item)}>
-          <Text style={styles.editText}>Edit</Text>
+          <Text style={styles.editText}>{messages.categories.editButton}</Text>
         </Pressable>
         <Pressable style={styles.deleteButton} onPress={() => onDelete(item)}>
-          <Text style={styles.deleteText}>Delete</Text>
+          <Text style={styles.deleteText}>{messages.categories.deleteButton}</Text>
         </Pressable>
       </View>
     </View>
@@ -47,7 +48,7 @@ export default function ManageCategoryScreen() {
         try {
           await load();
         } catch (err) {
-          if (mounted) setError(err.message || "Failed to load categories");
+          if (mounted) setError(err.message || messages.categories.loadFailed);
         } finally {
           if (mounted) setLoading(false);
         }
@@ -69,7 +70,7 @@ export default function ManageCategoryScreen() {
       setNewName("");
       await load();
     } catch (err) {
-      setError(err.message || "Failed to create category");
+      setError(err.message || messages.categories.createFailed);
     } finally {
       setSubmitting(false);
     }
@@ -96,7 +97,7 @@ export default function ManageCategoryScreen() {
       cancelEdit();
       await load();
     } catch (err) {
-      setError(err.message || "Failed to update category");
+      setError(err.message || messages.categories.updateFailed);
     } finally {
       setSubmitting(false);
     }
@@ -116,7 +117,7 @@ export default function ManageCategoryScreen() {
       }
       await load();
     } catch (err) {
-      setError(err.message || "Failed to delete category");
+      setError(err.message || messages.categories.deleteFailed);
     } finally {
       setSubmitting(false);
     }
@@ -139,45 +140,45 @@ export default function ManageCategoryScreen() {
 
   return (
     <View style={styles.page}>
-      <Text style={styles.title}>Manage Category</Text>
-      <Text style={styles.subtitle}>Create, edit, or delete IoT categories.</Text>
+      <Text style={styles.title}>{messages.categories.pageTitle}</Text>
+      <Text style={styles.subtitle}>{messages.categories.subtitle}</Text>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Add New Category</Text>
+        <Text style={styles.cardTitle}>{messages.categories.addNewTitle}</Text>
         <View style={styles.addRow}>
           <TextInput
             style={styles.input}
             value={newName}
             onChangeText={setNewName}
-            placeholder="Category name (e.g. Home 1)"
+            placeholder={messages.categories.categoryNameExamplePlaceholder}
             placeholderTextColor="#8aa0b8"
           />
           <Pressable style={styles.addButton} onPress={handleAdd} disabled={submitting}>
-            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.addButtonText}>Add</Text>}
+            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.addButtonText}>{messages.categories.addButton}</Text>}
           </Pressable>
         </View>
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Category List</Text>
+        <Text style={styles.cardTitle}>{messages.categories.categoryListTitle}</Text>
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
         {editingId ? (
           <View style={styles.editBox}>
-            <Text style={styles.editTitle}>Edit Category</Text>
+            <Text style={styles.editTitle}>{messages.categories.editTitle}</Text>
             <TextInput
               style={styles.input}
               value={editingName}
               onChangeText={setEditingName}
-              placeholder="Category name"
+              placeholder={messages.categories.categoryNamePlaceholder}
               placeholderTextColor="#8aa0b8"
             />
             <View style={styles.editActions}>
               <Pressable style={styles.saveButton} onPress={saveEdit} disabled={submitting}>
-                <Text style={styles.saveText}>Save</Text>
+                <Text style={styles.saveText}>{messages.categories.saveButton}</Text>
               </Pressable>
               <Pressable style={styles.cancelButton} onPress={cancelEdit}>
-                <Text style={styles.cancelText}>Cancel</Text>
+                <Text style={styles.cancelText}>{messages.categories.cancelButton}</Text>
               </Pressable>
             </View>
           </View>
@@ -187,7 +188,7 @@ export default function ManageCategoryScreen() {
           data={items}
           keyExtractor={(item) => String(item.id)}
           renderItem={({ item }) => <CategoryRow item={item} onEdit={startEdit} onDelete={confirmDelete} />}
-          ListEmptyComponent={<Text style={styles.empty}>No categories yet.</Text>}
+          ListEmptyComponent={<Text style={styles.empty}>{messages.categories.empty}</Text>}
           scrollEnabled={false}
           contentContainerStyle={styles.listContent}
         />
@@ -195,10 +196,10 @@ export default function ManageCategoryScreen() {
 
       <ConfirmDialog
         visible={Boolean(pendingDeleteCategory)}
-        title="Delete Category"
-        message={`Delete category "${pendingDeleteCategory?.name || ""}"? Devices in this category will become Uncategorized.`}
-        confirmText="Delete"
-        cancelText="Cancel"
+        title={messages.categories.deleteDialogTitle}
+        message={`${pendingDeleteCategory?.name || ""}: ${messages.categories.deleteDialogMessage}`}
+        confirmText={messages.categories.deleteButton}
+        cancelText={messages.categories.cancelButton}
         onCancel={() => setPendingDeleteCategory(null)}
         onConfirm={handleConfirmDeleteCategory}
       />

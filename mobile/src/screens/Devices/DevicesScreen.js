@@ -18,6 +18,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import { createDeviceApi, deleteDeviceApi, listCategoriesApi, listDevicesApi } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import messages from "../../constants/messages";
 import styles from "./styles";
 
 const AUTO_REFRESH_MS = 5000;
@@ -59,16 +60,16 @@ function DeviceCard({ item, onRequestDelete }) {
       <View style={styles.cardHeader}>
         <Text style={styles.deviceName}>{item.device_name}</Text>
         <View style={styles.statusWrap}>
-          {online ? <Animated.View style={[styles.liveDot, { opacity: pulse }]} /> : null}
-          <Text style={[styles.statusBadge, online ? styles.statusOnline : styles.statusOffline]}>
-            {online ? "ONLINE" : "OFFLINE"}
-          </Text>
+            {online ? <Animated.View style={[styles.liveDot, { opacity: pulse }]} /> : null}
+            <Text style={[styles.statusBadge, online ? styles.statusOnline : styles.statusOffline]}>
+              {online ? messages.devices.online : messages.devices.offline}
+            </Text>
+          </View>
         </View>
-      </View>
-      <Text style={styles.meta}>Code: {item.device_code}</Text>
-      <Text style={styles.meta}>Category: {item.category_name || "Uncategorized"}</Text>
-      <Text style={styles.meta}>Location: {item.install_location || "-"}</Text>
-      <Text style={styles.meta}>Firmware: {item.firmware_version || "-"}</Text>
+      <Text style={styles.meta}>{messages.devices.codeLabel}: {item.device_code}</Text>
+      <Text style={styles.meta}>{messages.devices.categoryLabel}: {item.category_name || messages.devices.uncategorized}</Text>
+      <Text style={styles.meta}>{messages.devices.locationLabel}: {item.install_location || "-"}</Text>
+      <Text style={styles.meta}>{messages.devices.firmwareLabel}: {item.firmware_version || "-"}</Text>
       <Pressable
         style={styles.deleteButton}
         onPress={(event) => {
@@ -76,7 +77,7 @@ function DeviceCard({ item, onRequestDelete }) {
           onRequestDelete(item);
         }}
       >
-        <Text style={styles.deleteButtonText}>Delete</Text>
+        <Text style={styles.deleteButtonText}>{messages.devices.deleteButton}</Text>
       </Pressable>
     </View>
   );
@@ -145,7 +146,7 @@ export default function DevicesScreen({ navigation }) {
         try {
           await Promise.all([loadDevices(), loadCategories()]);
         } catch (err) {
-          if (mounted) setError(err.message || "Failed to load devices");
+          if (mounted) setError(err.message || messages.devices.loadFailed);
         } finally {
           if (mounted) setLoading(false);
         }
@@ -174,7 +175,7 @@ export default function DevicesScreen({ navigation }) {
     try {
       await loadDevices();
     } catch (err) {
-      setError(err.message || "Failed to refresh devices");
+      setError(err.message || messages.devices.refreshFailed);
     } finally {
       setRefreshing(false);
     }
@@ -200,7 +201,7 @@ export default function DevicesScreen({ navigation }) {
       setTokenDialogOpen(Boolean(data.api_token));
       await loadDevices();
     } catch (err) {
-      setError(err.message || "Failed to create device");
+      setError(err.message || messages.devices.createFailed);
     } finally {
       setCreating(false);
     }
@@ -212,7 +213,7 @@ export default function DevicesScreen({ navigation }) {
       await deleteDeviceApi(token, deviceId);
       await loadDevices();
     } catch (err) {
-      setError(err.message || "Failed to delete device");
+      setError(err.message || messages.devices.deleteFailed);
     }
   }
 
@@ -230,7 +231,7 @@ export default function DevicesScreen({ navigation }) {
   async function handleCopyToken() {
     if (!newToken) return;
     await Clipboard.setStringAsync(newToken);
-    Alert.alert("Copied", "API token copied to clipboard");
+    Alert.alert(messages.devices.copiedTitle, messages.devices.copiedMessage);
   }
 
   return (
@@ -259,34 +260,34 @@ export default function DevicesScreen({ navigation }) {
           <>
             <View style={styles.header}>
               <View>
-                <Text style={styles.title}>My Devices</Text>
+                <Text style={styles.title}>{messages.devices.pageTitle}</Text>
                 <Text style={styles.subtitle}>{user?.full_name || "User"}</Text>
               </View>
               <View style={styles.headerActions}>
                 <Pressable style={styles.scanButton} onPress={() => navigation.navigate("BLEScan")}>
-                  <Text style={styles.scanText}>Scan BLE</Text>
+                  <Text style={styles.scanText}>{messages.devices.scanBle}</Text>
                 </Pressable>
                 <Pressable style={styles.logoutButton} onPress={logout}>
-                  <Text style={styles.logoutText}>Logout</Text>
+                  <Text style={styles.logoutText}>{messages.devices.logout}</Text>
                 </Pressable>
               </View>
             </View>
 
             <View style={styles.categoryBox}>
-              <Text style={styles.createTitle}>Category</Text>
-              <Text style={styles.categoryHelpText}>Manage IoT categories in a dedicated page.</Text>
+              <Text style={styles.createTitle}>{messages.devices.categoryTitle}</Text>
+              <Text style={styles.categoryHelpText}>{messages.devices.categoryHelp}</Text>
               <Pressable style={styles.manageCategoryButton} onPress={() => navigation.navigate("ManageCategory")}>
-                <Text style={styles.manageCategoryButtonText}>Manage Category</Text>
+                <Text style={styles.manageCategoryButtonText}>{messages.devices.manageCategory}</Text>
               </Pressable>
             </View>
 
             <View style={styles.createBox}>
-              <Text style={styles.createTitle}>Add Device</Text>
+              <Text style={styles.createTitle}>{messages.devices.addDeviceTitle}</Text>
               <TextInput
                 style={styles.input}
                 value={deviceCode}
                 onChangeText={setDeviceCode}
-                placeholder="Device code (e.g. BV-ESP32-01)"
+                placeholder={messages.devices.deviceCodePlaceholder}
                 placeholderTextColor="#8aa0b8"
                 autoCapitalize="characters"
               />
@@ -294,20 +295,20 @@ export default function DevicesScreen({ navigation }) {
                 style={styles.input}
                 value={deviceName}
                 onChangeText={setDeviceName}
-                placeholder="Device name"
+                placeholder={messages.devices.deviceNamePlaceholder}
                 placeholderTextColor="#8aa0b8"
               />
               <TextInput
                 style={styles.input}
                 value={location}
                 onChangeText={setLocation}
-                placeholder="Location (optional)"
+                placeholder={messages.devices.locationPlaceholder}
                 placeholderTextColor="#8aa0b8"
               />
 
-              <Text style={styles.categoryLabel}>Assign Category</Text>
+              <Text style={styles.categoryLabel}>{messages.devices.assignCategory}</Text>
               <FlatList
-                data={[{ id: null, name: "Uncategorized" }, ...categories]}
+                data={[{ id: null, name: messages.devices.uncategorized }, ...categories]}
                 keyExtractor={(item, index) => String(item.id ?? `uncat-${index}`)}
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -323,12 +324,12 @@ export default function DevicesScreen({ navigation }) {
               />
 
               <Pressable style={styles.primaryButton} onPress={handleCreateDevice} disabled={creating}>
-                {creating ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>Create Device</Text>}
+                {creating ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>{messages.devices.createDevice}</Text>}
               </Pressable>
-              {newToken ? <Text style={styles.meta}>New token created. Open dialog to copy.</Text> : null}
+              {newToken ? <Text style={styles.meta}>{messages.devices.newTokenHint}</Text> : null}
               {newToken ? (
                 <Pressable style={styles.showTokenButton} onPress={() => setTokenDialogOpen(true)}>
-                  <Text style={styles.showTokenButtonText}>Show API Token</Text>
+                  <Text style={styles.showTokenButtonText}>{messages.devices.showApiToken}</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -337,7 +338,7 @@ export default function DevicesScreen({ navigation }) {
             {loading ? <ActivityIndicator style={styles.loading} /> : null}
           </>
         )}
-        ListEmptyComponent={!loading ? <Text style={styles.empty}>No devices yet</Text> : null}
+        ListEmptyComponent={!loading ? <Text style={styles.empty}>{messages.devices.noDevicesYet}</Text> : null}
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
@@ -345,8 +346,8 @@ export default function DevicesScreen({ navigation }) {
       <Modal transparent visible={tokenDialogOpen} animationType="fade" onRequestClose={() => setTokenDialogOpen(false)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>New API Token</Text>
-            <Text style={styles.modalSubtitle}>Save this token and use it in BLE provisioning.</Text>
+            <Text style={styles.modalTitle}>{messages.devices.tokenTitle}</Text>
+            <Text style={styles.modalSubtitle}>{messages.devices.tokenSubtitle}</Text>
             <View style={styles.tokenBox}>
               <Text style={styles.tokenValue} selectable>
                 {newToken}
@@ -357,7 +358,7 @@ export default function DevicesScreen({ navigation }) {
                 <Text style={styles.copyTokenButtonText}>Copy Token</Text>
               </Pressable>
               <Pressable style={styles.closeDialogButton} onPress={() => setTokenDialogOpen(false)}>
-                <Text style={styles.closeDialogButtonText}>Close</Text>
+                <Text style={styles.closeDialogButtonText}>{messages.devices.tokenClose}</Text>
               </Pressable>
             </View>
           </View>
@@ -366,10 +367,10 @@ export default function DevicesScreen({ navigation }) {
 
       <ConfirmDialog
         visible={Boolean(pendingDeleteDevice)}
-        title="Delete Device"
-        message="Are you sure you want to delete this device? All telemetry data will be lost."
-        confirmText="Delete"
-        cancelText="Cancel"
+        title={messages.devices.deleteDialogTitle}
+        message={messages.devices.deleteDialogMessage}
+        confirmText={messages.categories.deleteButton}
+        cancelText={messages.categories.cancelButton}
         onCancel={() => setPendingDeleteDevice(null)}
         onConfirm={handleConfirmDeleteDevice}
       />
