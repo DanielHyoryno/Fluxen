@@ -18,6 +18,8 @@ import ManageCategoryScreen from "./src/screens/ManageCategory/ManageCategoryScr
 import BLEScanScreen from "./src/screens/BLEScan/BLEScanScreen";
 import HomeScreen from "./src/screens/Home/HomeScreen";
 import ProfileScreen from "./src/screens/Profile/ProfileScreen";
+import BillingEstimationScreen from "./src/screens/BillingEstimation/BillingEstimationScreen";
+import BillingSettingsScreen from "./src/screens/BillingSettings/BillingSettingsScreen";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -324,6 +326,16 @@ function RootNavigator() {
             component={UsageLimitsScreen}
             options={{ title: "Usage Limits" }}
           />
+          <Stack.Screen
+            name="BillingEstimation"
+            component={BillingEstimationScreen}
+            options={{ title: "Bill Estimation" }}
+          />
+          <Stack.Screen
+            name="BillingSettings"
+            component={BillingSettingsScreen}
+            options={{ title: "Manage Water Price" }}
+          />
           <Stack.Screen name="ManageCategory" component={ManageCategoryScreen} options={{ title: "Manage Category" }} />
         </Stack.Navigator>
       ) : (
@@ -338,7 +350,7 @@ function RootNavigator() {
 }
 
 export default function App() {
-  const [started, setStarted] = useState(false);
+  const [started, setStarted] = useState(Platform.OS === "web");
 
   if (!started) {
     return <StartGate onStart={() => setStarted(true)} />;

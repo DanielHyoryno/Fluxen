@@ -16,8 +16,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Calendar } from "react-native-calendars";
 import Svg, { Circle, Line, Polyline } from "react-native-svg";
 import { useAuth } from "../../context/AuthContext";
-import { dailyTelemetryApi, listDevicesApi, latestTelemetryApi, usageHistoryApi } from "../../services/api";
-import messages from "../../constants/messages";
+import { billingSettingsApi, dailyTelemetryApi, estimateBillApi, listDevicesApi, latestTelemetryApi, usageHistoryApi } from "../../services/api";
 import styles from "./styles";
 
 const OFFLINE_THRESHOLD_SEC = 120;
@@ -104,6 +103,14 @@ function maxDateISO(a, b) {
 
 function minDateISO(a, b) {
   return a < b ? a : b;
+}
+
+function formatRupiah(value) {
+  return new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
 }
 
 function OverallUsageChart({ series, rangePreset }) {
@@ -251,7 +258,7 @@ function HoverablePressable({ onPress, style, children, disabled, hoverStyle }) 
 }
 
 export default function HomeScreen({ navigation }) {
-  const { token } = useAuth();
+  const { token, messages } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -263,6 +270,7 @@ export default function HomeScreen({ navigation }) {
   const [pickerTarget, setPickerTarget] = useState("from");
   const [deviceRows, setDeviceRows] = useState([]);
   const [overallSeries, setOverallSeries] = useState([]);
+  const [billingPreview, setBillingPreview] = useState(null);
 
   const loadHome = useCallback(async () => {
     setError("");
@@ -331,6 +339,29 @@ export default function HomeScreen({ navigation }) {
     );
 
     setDeviceRows(rows);
+
+    const currentMonthRange = getRangeFromPreset("month");
+    const ownedDeviceIds = rows.map((item) => item.id);
+
+    if (ownedDeviceIds.length > 0) {
+      const settings = await billingSettingsApi(token).catch(() => null);
+
+      if (settings?.price_per_liter !== null && settings?.price_per_liter !== undefined) {
+        const preview = await estimateBillApi(token, {
+          from: currentMonthRange.from,
+          to: currentMonthRange.to,
+          category_id: null,
+          device_ids: ownedDeviceIds,
+        }).catch(() => null);
+
+        setBillingPreview(preview);
+      } else {
+        setBillingPreview(null);
+      }
+    } else {
+      setBillingPreview(null);
+    }
+
     if (isDayPreset) {
       setOverallSeries(
         aggregateByHour.map((totalLiters, hour) => ({
@@ -501,6 +532,18 @@ export default function HomeScreen({ navigation }) {
           </Text>
         </View>
       </View>
+
+      <HoverablePressable
+        onPress={() => navigation.navigate("BillingEstimation")}
+        style={styles.kpiWideCard}
+        hoverStyle={styles.hoverRowHighlight}
+      >
+        <View style={styles.billingPreviewHeader}>
+          <Text style={styles.billingPreviewLabel}>{messages.home.billingEstimateThisMonth}</Text>
+          <Text style={styles.billingPreviewArrow}>›</Text>
+        </View>
+        <Text style={styles.billingPreviewValue}>{billingPreview ? formatRupiah(billingPreview.summary?.estimated_cost) : "--"}</Text>
+      </HoverablePressable>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{messages.home.overallUsageTrend}</Text>

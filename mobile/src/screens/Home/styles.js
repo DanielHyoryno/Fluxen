@@ -99,6 +99,14 @@ const styles = StyleSheet.create({
     borderColor: "#dbe6f5",
     padding: 14,
   },
+  kpiWideCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#dbe6f5",
+    padding: 14,
+    marginBottom: 10,
+  },
   kpiLabel: {
     color: "#55708a",
     fontSize: 12,
@@ -142,6 +150,29 @@ const styles = StyleSheet.create({
     color: "#1d3551",
     fontWeight: "800",
     marginBottom: 10,
+  },
+  billingPreviewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  billingPreviewLabel: {
+    color: "#55708a",
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+  },
+  billingPreviewArrow: {
+    color: "#55708a",
+    fontSize: 24,
+    fontWeight: "800",
+    lineHeight: 24,
+  },
+  billingPreviewValue: {
+    marginTop: 8,
+    color: "#17324d",
+    fontSize: 22,
+    fontWeight: "900",
   },
   chartWrap: {
     gap: 8,
