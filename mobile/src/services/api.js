@@ -1,5 +1,11 @@
 import { API_BASE_URL } from "../config/api";
-import messages from "../constants/messages";
+import { getMessages } from "../constants/messages";
+import { getAppLocale } from "./storage";
+
+async function getActiveMessages() {
+  const locale = await getAppLocale();
+  return getMessages(locale || "en");
+}
 
 const REQUEST_TIMEOUT_MS = 20000;
 
@@ -13,6 +19,8 @@ async function fetchWithTimeout(url, options = {}) {
       signal: controller.signal,
     });
   } catch (err) {
+    const messages = await getActiveMessages();
+
     if (err.name === "AbortError") {
       throw new Error(messages.auth.requestTimedOut);
     }
@@ -24,6 +32,7 @@ async function fetchWithTimeout(url, options = {}) {
 }
 
 async function request(path, options = {}) {
+  const messages = await getActiveMessages();
   const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, options);
   const payload = await response.json().catch(() => ({}));
 
@@ -35,6 +44,7 @@ async function request(path, options = {}) {
 }
 
 async function requestRaw(path, options = {}) {
+  const messages = await getActiveMessages();
   const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, options);
 
   if (!response.ok) {
@@ -236,5 +246,36 @@ export async function exportCsvApi(token, deviceCode, from, to) {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+  });
+}
+
+export async function billingSettingsApi(token) {
+  return request("/billing/settings", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function upsertBillingSettingsApi(token, body) {
+  return request("/billing/settings", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function estimateBillApi(token, body) {
+  return request("/billing/estimate", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(body),
   });
 }

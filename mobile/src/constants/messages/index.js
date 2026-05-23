@@ -1,8 +1,12 @@
 import en from "./en";
 import id from "./id";
 
-const APP_LOCALE = "en";
+export const DEFAULT_LOCALE = "en";
 
-const messages = APP_LOCALE === "id" ? id : en;
+export function getMessages(locale = DEFAULT_LOCALE) {
+  return locale === "id" ? id : en;
+}
+
+const messages = getMessages(DEFAULT_LOCALE);
 
 export default messages;

@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { clearAccessToken, getAccessToken, saveAccessToken } from "../services/storage";
+import { clearAccessToken, getAccessToken, getAppLocale, saveAccessToken, saveAppLocale } from "../services/storage";
 import { loginApi, meApi, registerApi } from "../services/api";
-import messages from "../constants/messages";
+import messages, { DEFAULT_LOCALE, getMessages } from "../constants/messages";
 
 const AuthContext = createContext(null);
 
@@ -9,10 +9,16 @@ export function AuthProvider({ children }) {
   const [isBooting, setIsBooting] = useState(true);
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
+  const [locale, setLocale] = useState(DEFAULT_LOCALE);
 
   useEffect(() => {
     async function restore() {
       try {
+        const storedLocale = await getAppLocale();
+        if (storedLocale) {
+          setLocale(storedLocale);
+        }
+
         const storedToken = await getAccessToken();
         if (!storedToken) return;
 
@@ -49,17 +55,27 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
+  async function changeLocale(nextLocale) {
+    await saveAppLocale(nextLocale);
+    setLocale(nextLocale);
+  }
+
+  const activeMessages = useMemo(() => getMessages(locale), [locale]);
+
   const value = useMemo(
     () => ({
       isBooting,
       isAuthenticated: Boolean(token),
       token,
       user,
+      locale,
+      messages: activeMessages,
       login,
       register,
       logout,
+      setLocale: changeLocale,
     }),
-    [isBooting, token, user]
+    [activeMessages, isBooting, locale, token, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
