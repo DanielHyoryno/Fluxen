@@ -23,7 +23,7 @@ import styles from "./styles";
 
 const AUTO_REFRESH_MS = 5000;
 
-function DeviceCard({ item, onRequestDelete }) {
+function DeviceCard({ item, onRequestDelete, messages }) {
   const online = item.status === "online";
   const pulse = useRef(new Animated.Value(1)).current;
 
@@ -84,7 +84,7 @@ function DeviceCard({ item, onRequestDelete }) {
 }
 
 export default function DevicesScreen({ navigation }) {
-  const { token, user, logout } = useAuth();
+  const { token, user, logout, messages } = useAuth();
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -253,7 +253,7 @@ export default function DevicesScreen({ navigation }) {
             onPress={() => navigation.navigate("DeviceDashboard", { device: item })}
             style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.985 : 1 }] }]}
           >
-            <DeviceCard item={item} onRequestDelete={handleRequestDeleteDevice} />
+            <DeviceCard item={item} onRequestDelete={handleRequestDeleteDevice} messages={messages} />
           </Pressable>
         )}
         ListHeaderComponent={(

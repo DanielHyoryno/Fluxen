@@ -5,7 +5,7 @@ import messages from "../../constants/messages";
 import styles from "./styles";
 
 export default function LoginScreen({ navigation }) {
-  const { login } = useAuth();
+  const { login, messages } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);

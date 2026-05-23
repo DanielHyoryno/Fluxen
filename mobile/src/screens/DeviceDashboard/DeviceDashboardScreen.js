@@ -4,7 +4,6 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import SectionAccordion from "../../components/SectionAccordion";
 import { dailyTelemetryApi, latestTelemetryApi, usageAlertsApi, usageLimitsApi, dismissAlertApi } from "../../services/api";
-import messages from "../../constants/messages";
 import styles from "./styles";
 import { AUTO_REFRESH_MS, OFFLINE_THRESHOLD_SEC } from "../../constants/deviceDashboard";
 import { formatDateLabel, formatNumber, formatRelativeAge, toLocalDateISO } from "../../common/deviceDashboard/formatters";
@@ -29,7 +28,7 @@ function formatAlertSummary(alert) {
 
 export default function DeviceDashboardScreen({ route, navigation }) {
   const { device } = route.params;
-  const { token } = useAuth();
+  const { token, messages } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
 
   const [loading, setLoading] = useState(true);
@@ -247,7 +246,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
           style={({ pressed }) => [styles.editDeviceButton, pressed && styles.editDeviceButtonPressed]}
           onPress={() => navigation.navigate("DeviceEdit", { device })}
         >
-          <Text style={styles.editDeviceButtonText}>Edit</Text>
+          <Text style={styles.editDeviceButtonText}>{messages.dashboard.edit}</Text>
         </Pressable>
       </View>
 
@@ -255,7 +254,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
 
       <View style={[styles.topSectionWrap, isWideLayout && styles.topSectionWrapWide]}>
         <View style={[styles.topSectionItem, isWideLayout && styles.topSectionItemWide]}>
-          <SectionAccordion title="Overview" defaultExpanded>
+          <SectionAccordion title={messages.dashboard.overview} defaultExpanded>
             <StaggerCard index={0} style={styles.card}>
               <View style={styles.liveHeader}>
             <Text style={styles.cardTitle}>{messages.dashboard.currentStatus}</Text>
@@ -299,8 +298,8 @@ export default function DeviceDashboardScreen({ route, navigation }) {
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <View>
                   <Text style={styles.cardTitle}>{messages.dashboard.usageLimits}</Text>
-                  <Text style={styles.meta}>Daily: {limits?.daily_usage_limit_l ? `${limits.daily_usage_limit_l} L` : messages.dashboard.dailyNotSet}</Text>
-                  <Text style={styles.meta}>Monthly: {limits?.monthly_usage_limit_l ? `${limits.monthly_usage_limit_l} L` : messages.dashboard.monthlyNotSet}</Text>
+                  <Text style={styles.meta}>{messages.dashboard.dailyLabel}: {limits?.daily_usage_limit_l ? `${limits.daily_usage_limit_l} L` : messages.dashboard.dailyNotSet}</Text>
+                  <Text style={styles.meta}>{messages.dashboard.monthlyLabel}: {limits?.monthly_usage_limit_l ? `${limits.monthly_usage_limit_l} L` : messages.dashboard.monthlyNotSet}</Text>
                 </View>
                 <Pressable
                   style={({ pressed }) => [styles.limitButton, pressed && styles.limitButtonPressed]}
@@ -394,7 +393,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
               />
               {hasMoreTodayHistory ? (
                 <Pressable style={styles.todayHistoryMoreButton} onPress={() => setShowAllTodayHistory((prev) => !prev)}>
-                  <Text style={styles.todayHistoryMoreText}>{showAllTodayHistory ? messages.dashboard.viewLess : `${messages.dashboard.viewMore} (${dailyItems.length - 10} more)`}</Text>
+                  <Text style={styles.todayHistoryMoreText}>{showAllTodayHistory ? messages.dashboard.viewLess : `${messages.dashboard.viewMore} (${dailyItems.length - 10} ${messages.dashboard.moreSuffix})`}</Text>
                 </Pressable>
               ) : null}
             </View>

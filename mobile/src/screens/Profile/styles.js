@@ -24,6 +24,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#dbe6f5",
     padding: 14,
+    marginBottom: 12,
   },
   label: {
     color: "#55708a",
@@ -36,6 +37,41 @@ const styles = StyleSheet.create({
     color: "#1d3551",
     fontWeight: "700",
     marginTop: 4,
+  },
+  sectionTitle: {
+    color: "#1d3551",
+    fontWeight: "800",
+    marginBottom: 8,
+  },
+  sectionHelp: {
+    color: "#55708a",
+    fontSize: 12,
+    marginBottom: 10,
+  },
+  languageRow: {
+    flexDirection: "row",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  languageButton: {
+    borderWidth: 1,
+    borderColor: "#dbe6f5",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  languageButtonActive: {
+    backgroundColor: "#0f62fe",
+    borderColor: "#0f62fe",
+  },
+  languageButtonText: {
+    color: "#35506d",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  languageButtonTextActive: {
+    color: "#fff",
   },
   logoutButton: {
     marginTop: 14,

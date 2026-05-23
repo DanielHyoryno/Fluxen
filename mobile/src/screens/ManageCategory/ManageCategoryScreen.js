@@ -4,10 +4,9 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import { createCategoryApi, deleteCategoryApi, listCategoriesApi, updateCategoryApi } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
-import messages from "../../constants/messages";
 import styles from "./styles";
 
-function CategoryRow({ item, onEdit, onDelete }) {
+function CategoryRow({ item, onEdit, onDelete, messages }) {
   return (
     <View style={styles.row}>
       <Text style={styles.rowName}>{item.name}</Text>
@@ -24,7 +23,7 @@ function CategoryRow({ item, onEdit, onDelete }) {
 }
 
 export default function ManageCategoryScreen() {
-  const { token } = useAuth();
+  const { token, messages } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -187,7 +186,7 @@ export default function ManageCategoryScreen() {
         <FlatList
           data={items}
           keyExtractor={(item) => String(item.id)}
-          renderItem={({ item }) => <CategoryRow item={item} onEdit={startEdit} onDelete={confirmDelete} />}
+          renderItem={({ item }) => <CategoryRow item={item} onEdit={startEdit} onDelete={confirmDelete} messages={messages} />}
           ListEmptyComponent={<Text style={styles.empty}>{messages.categories.empty}</Text>}
           scrollEnabled={false}
           contentContainerStyle={styles.listContent}

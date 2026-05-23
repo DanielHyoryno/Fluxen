@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import messages from "../../constants/messages";
 import styles from "./styles";
 
 export default function RegisterScreen({ navigation }) {
-  const { register } = useAuth();
+  const { register, messages } = useAuth();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -46,7 +45,7 @@ export default function RegisterScreen({ navigation }) {
       />
       <TextInput
         style={styles.input}
-        placeholder={messages.auth.passwordPlaceholder + " (min 8 chars)"}
+        placeholder={messages.auth.passwordMinPlaceholder}
         placeholderTextColor="#8aa0b8"
         secureTextEntry
         value={password}
