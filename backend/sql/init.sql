@@ -129,3 +129,19 @@ ALTER TABLE device_thresholds
 
 ALTER TABLE device_thresholds
   ADD COLUMN IF NOT EXISTS monthly_usage_limit_l NUMERIC(12,3);
+
+-- BILLING SETTINGS
+CREATE TABLE IF NOT EXISTS billing_settings (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  price_per_liter NUMERIC(12,6) NOT NULL,
+  currency VARCHAR(10) NOT NULL DEFAULT 'IDR',
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_billing_settings_user_id
+  ON billing_settings(user_id);
+
+ALTER TABLE billing_settings
+  ADD COLUMN IF NOT EXISTS currency VARCHAR(10) NOT NULL DEFAULT 'IDR';

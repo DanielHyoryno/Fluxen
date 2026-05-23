@@ -7,6 +7,7 @@ const usageRoutes = require("./routes/usage.routes");
 const authRoutes = require("./routes/auth.routes");
 const deviceRoutes = require("./routes/device.routes");
 const categoryRoutes = require("./routes/category.routes");
+const billingRoutes = require("./routes/billing.routes");
 
 const app = express();
 
@@ -24,5 +25,6 @@ app.use("/api/v1/usage", usageRoutes);
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/devices", deviceRoutes);
 app.use("/api/v1/categories", categoryRoutes);
+app.use("/api/v1/billing", billingRoutes);
 
 module.exports = app;
