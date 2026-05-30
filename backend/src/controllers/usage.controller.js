@@ -13,7 +13,7 @@ async function getDeviceUsageLimits(req, res) {
     if (!parsed.success) {
       return fail(res, parsed.error.issues[0]?.message || "Invalid query", 422, "VALIDATION_ERROR");
     }
-
+    
     const data = await getUsageLimits(req.user.id, parsed.data.device_code);
     return ok(res, data, "Usage limits retrieved");
   } catch (err) {
