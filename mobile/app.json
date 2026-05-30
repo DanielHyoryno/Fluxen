@@ -1,19 +1,20 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "Fluxen",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./AppLogo/FluxenLogo.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./AppLogo/FluxenLogo.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.danielhyoryno.fluxen",
       "infoPlist": {
         "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth to discover and configure water meter IoT devices.",
         "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to communicate with water meter IoT devices."
@@ -21,7 +22,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./AppLogo/FluxenLogo.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
@@ -32,10 +33,10 @@
         "android.permission.BLUETOOTH_SCAN",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.anonymous.mobile"
+      "package": "com.danielhyoryno.fluxen"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./AppLogo/FluxenLogo.png"
     },
     "plugins": [
       "react-native-ble-plx",
