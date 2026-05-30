@@ -21,6 +21,7 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <BLEDevice.h>
@@ -36,7 +37,7 @@
 // Hardware Configuration
 // =========================
 static const int FLOW_SENSOR_PIN = 34;
-static const int PULSES_PER_LITER = 572;
+static const int PULSES_PER_LITER = 352;
 static const int BATTERY_ADC_PIN = 35;
 static const float BATTERY_VOLTAGE_DIVIDER_RATIO = 2.0f;
 // GPIO34 has no internal pull-up on ESP32, use external pull-up resistor on flow signal.
@@ -63,7 +64,7 @@ static const unsigned long FLOW_SAMPLE_INTERVAL_MS = 1000UL;
 static const unsigned long SEND_INTERVAL_MS = 30000UL;         // every 30s
 static const unsigned long WIFI_RETRY_INTERVAL_MS = 10000UL;   // retry every 10s
 static const unsigned long HEARTBEAT_INTERVAL_SEC = 60UL;      // at least one zero record every 60s
-static const unsigned long IDLE_SLEEP_TIMEOUT_MS = 20000UL;    // sleep after 20s without pulse
+static const unsigned long IDLE_SLEEP_TIMEOUT_MS = 30000UL;    // sleep after 30s without pulse
 static const int MAX_RECORDS = 400;
 static const int SEND_CHUNK_SIZE = 60;
 
@@ -169,6 +170,47 @@ String normalizeBaseUrl(const String &rawUrl) {
 
 String getBatchEndpointUrl() {
   return normalizeBaseUrl(serverUrl) + "/api/v1/telemetry/batch";
+}
+
+String getHealthEndpointUrl() {
+  return normalizeBaseUrl(serverUrl) + "/health";
+}
+
+String getHttpbinTestUrl() {
+  return "https://httpbin.org/get";
+}
+
+// =========================
+// Re-Provisioning via BOOT button
+// =========================
+static unsigned long bootButtonHoldStart = 0;
+static bool bootButtonArmed = false;
+
+void checkReProvisionButton() {
+  bool pressed = (digitalRead(2) == LOW); // GPIO0 = BOOT button, active LOW
+
+  if (pressed) {
+    if (!bootButtonArmed) {
+      bootButtonArmed = true;
+      bootButtonHoldStart = millis();
+    } else if (millis() - bootButtonHoldStart >= 3000) {
+      // Held 3 seconds — wipe config and restart into BLE provisioning
+      Serial.println("[REPROV] BOOT held 3s — clearing NVS and restarting...");
+      printLcdLine(0, "Re-provisioning...");
+      printLcdLine(1, "Clearing config");
+      printLcdLine(2, "Restarting...");
+      printLcdLine(3, "Release button");
+      delay(1000);
+
+      prefs.begin("wmeter", false);
+      prefs.clear();
+      prefs.end();
+
+      ESP.restart();
+    }
+  } else {
+    bootButtonArmed = false;
+  }
 }
 
 bool isTimeSynced() {
@@ -344,7 +386,16 @@ bool postRecordChunk(int chunkCount) {
 
   HTTPClient http;
   String endpoint = getBatchEndpointUrl();
-  http.begin(endpoint);
+  const bool isHttps = endpoint.startsWith("https://");
+  WiFiClient wifiClient;
+  WiFiClientSecure secureClient;
+
+  if (isHttps) {
+    secureClient.setInsecure();
+    http.begin(secureClient, endpoint);
+  } else {
+    http.begin(wifiClient, endpoint);
+  }
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Authorization", "Bearer " + apiToken);
 
@@ -370,14 +421,83 @@ bool postRecordChunk(int chunkCount) {
   String payload;
   serializeJson(telemetryDoc, payload);
 
+  Serial.println("[MEM] Free heap before POST: " + String(ESP.getFreeHeap()));
+  Serial.println("[POST] Sending telemetry batch...");
+  Serial.println("[POST] Endpoint: " + endpoint);
+  Serial.println("[POST] Device code: " + deviceCode);
+  Serial.println("[POST] Records: " + String(chunkCount));
+
   int httpCode = http.POST(payload);
+  Serial.println("[POST] HTTP code: " + String(httpCode));
   if (httpCode > 0) {
     // Read response body to finish transaction cleanly.
-    (void)http.getString();
+    String responseBody = http.getString();
+    Serial.println("[POST] Response: " + responseBody);
+  } else {
+    Serial.println("[POST] Error: " + http.errorToString(httpCode));
   }
   http.end();
 
   return httpCode >= 200 && httpCode < 300;
+}
+
+void probeServerHealth() {
+  if (!hasProvisioningConfig()) {
+    return;
+  }
+
+  String endpoint = getHealthEndpointUrl();
+  const bool isHttps = endpoint.startsWith("https://");
+  HTTPClient http;
+  WiFiClient wifiClient;
+  WiFiClientSecure secureClient;
+
+  if (isHttps) {
+    secureClient.setInsecure();
+    http.begin(secureClient, endpoint);
+  } else {
+    http.begin(wifiClient, endpoint);
+  }
+
+  http.setConnectTimeout(15000);
+  http.setTimeout(15000);
+
+  Serial.println("[MEM] Free heap before HEALTH: " + String(ESP.getFreeHeap()));
+  Serial.println("[HEALTH] Probing server...");
+  Serial.println("[HEALTH] Endpoint: " + endpoint);
+  int httpCode = http.GET();
+  Serial.println("[HEALTH] HTTP code: " + String(httpCode));
+  if (httpCode > 0) {
+    String responseBody = http.getString();
+    Serial.println("[HEALTH] Response: " + responseBody);
+  } else {
+    Serial.println("[HEALTH] Error: " + http.errorToString(httpCode));
+  }
+  http.end();
+}
+
+void probeHttpsWithHttpbin() {
+  HTTPClient http;
+  WiFiClientSecure secureClient;
+  String endpoint = getHttpbinTestUrl();
+
+  secureClient.setInsecure();
+  http.begin(secureClient, endpoint);
+  http.setConnectTimeout(15000);
+  http.setTimeout(15000);
+
+  Serial.println("[MEM] Free heap before HTTPBIN: " + String(ESP.getFreeHeap()));
+  Serial.println("[HTTPBIN] Probing generic HTTPS...");
+  Serial.println("[HTTPBIN] Endpoint: " + endpoint);
+  int httpCode = http.GET();
+  Serial.println("[HTTPBIN] HTTP code: " + String(httpCode));
+  if (httpCode > 0) {
+    String responseBody = http.getString();
+    Serial.println("[HTTPBIN] Response length: " + String(responseBody.length()));
+  } else {
+    Serial.println("[HTTPBIN] Error: " + http.errorToString(httpCode));
+  }
+  http.end();
 }
 
 void sendTelemetryBatches() {
@@ -394,6 +514,9 @@ void sendTelemetryBatches() {
     serverStatus = SERVER_FAIL;
     return;
   }
+
+  probeHttpsWithHttpbin();
+  probeServerHealth();
 
   if (!isTimeSynced()) {
     // Do not send data until NTP time is valid.
@@ -439,7 +562,7 @@ void enterDeepSleepFromIdle() {
   }
 
   printLcdLine(0, "WaterMeter v3 Sleep");
-  printLcdLine(1, "Idle >20s");
+  printLcdLine(1, "Idle >30s");
   printLcdLine(2, "Wake: flow pulse");
   printLcdLine(3, "Preparing...");
   delay(120);
@@ -482,6 +605,7 @@ class ProvisioningCallbacks : public BLECharacteristicCallbacks {
       ensureWiFiConnected(true);
       if (WiFi.status() == WL_CONNECTED) {
         startNtpSync();
+        stopBleProvisioning();
       }
     }
 
@@ -539,6 +663,27 @@ void setupBleProvisioning() {
   advertising->setMinPreferred(0x12);
   BLEDevice::startAdvertising();
   bleAdvertisingActive = true;
+}
+
+void stopBleProvisioning() {
+  if (!bleAdvertisingActive) {
+    return;
+  }
+
+  BLEAdvertising *advertising = BLEDevice::getAdvertising();
+  if (advertising != nullptr) {
+    advertising->stop();
+  }
+
+  BLEDevice::deinit(true);
+  bleAdvertisingActive = false;
+  bleServer = nullptr;
+  bleService = nullptr;
+  charWifiSsid = nullptr;
+  charWifiPass = nullptr;
+  charServerUrl = nullptr;
+  charApiToken = nullptr;
+  charDeviceCode = nullptr;
 }
 
 // =========================
@@ -606,6 +751,7 @@ void setup() {
 
   pinMode(FLOW_SENSOR_PIN, INPUT);
   pinMode(BATTERY_ADC_PIN, INPUT);
+  pinMode(2, INPUT_PULLUP); // BOOT button
   attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), pulseCounter, FALLING);
 
   loadConfigFromNvs();
@@ -616,6 +762,7 @@ void setup() {
     printLcdLine(2, "WiFi connect attempt");
     if (ensureWiFiConnected(true)) {
       startNtpSync();
+      stopBleProvisioning();
     }
   } else {
     printLcdLine(2, "BLE provisioning...");
@@ -630,12 +777,16 @@ void setup() {
 }
 
 void loop() {
+
+  checkReProvisionButton();
+
   // Keep WiFi alive when credentials are available.
   if (hasProvisioningConfig()) {
     bool wasConnected = (WiFi.status() == WL_CONNECTED);
     bool nowConnected = ensureWiFiConnected();
     if (!wasConnected && nowConnected) {
       startNtpSync();
+      stopBleProvisioning();
     }
   }
 
