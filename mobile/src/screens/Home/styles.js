@@ -220,10 +220,22 @@ const styles = StyleSheet.create({
     height: 140,
     gap: 6,
   },
+  overallBarsDense: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    height: 140,
+    gap: 6,
+  },
+  overallBarsScrollContent: {
+    paddingBottom: 2,
+  },
   overallBarCol: {
     flex: 1,
     alignItems: "center",
     justifyContent: "flex-end",
+  },
+  overallBarColDense: {
+    flex: 0,
   },
   overallBarTrack: {
     width: "100%",
@@ -242,10 +254,10 @@ const styles = StyleSheet.create({
   overallBarLabel: {
     marginTop: 6,
     color: "#55708a",
-    fontSize: 8,
-    lineHeight: 10,
+    fontSize: 10,
+    lineHeight: 12,
     textAlign: "center",
-    minWidth: 12,
+    width: "100%",
   },
   dayLineChartBox: {
     backgroundColor: "#f9fbff",

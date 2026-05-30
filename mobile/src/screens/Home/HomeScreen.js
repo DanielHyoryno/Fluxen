@@ -113,37 +113,50 @@ function formatRupiah(value) {
   }).format(Number(value || 0));
 }
 
-function OverallUsageChart({ series, rangePreset }) {
+function OverallUsageChart({ series, rangePreset, messages }) {
   if (!series.length) return <Text style={styles.emptyText}>{messages.home.emptyTotalTrend}</Text>;
 
   const maxValue = series.reduce((max, item) => Math.max(max, Number(item.totalLiters || 0)), 0);
   const chartMax = maxValue > 0 ? maxValue : 1;
+  const isDenseRange = rangePreset === "month" || rangePreset === "custom" || series.length > 10;
+  const slotWidth = isDenseRange ? 28 : null;
+
+  const bars = series.map((item) => {
+    const value = Number(item.totalLiters || 0);
+    const heightPct = Math.round((value / chartMax) * 100);
+    const labelText = isDenseRange ? formatDayOnlyLabel(item.date) : formatDateLabel(item.date);
+
+    return (
+      <View
+        key={item.date}
+        style={[
+          styles.overallBarCol,
+          isDenseRange && styles.overallBarColDense,
+          isDenseRange && { width: slotWidth },
+        ]}
+      >
+        <View style={styles.overallBarTrack}>
+          <View style={[styles.overallBarFill, { height: `${Math.max(heightPct, value > 0 ? 4 : 0)}%` }]} />
+        </View>
+        <Text style={styles.overallBarLabel}>{labelText}</Text>
+      </View>
+    );
+  });
 
   return (
     <View style={styles.overallChartWrap}>
-      <View style={styles.overallBars}>
-        {series.map((item) => {
-          const value = Number(item.totalLiters || 0);
-          const heightPct = Math.round((value / chartMax) * 100);
-
-          const isDenseRange = rangePreset === "month" || rangePreset === "custom";
-          const labelText = isDenseRange ? formatDayOnlyLabel(item.date) : formatDateLabel(item.date);
-
-          return (
-            <View key={item.date} style={styles.overallBarCol}>
-              <View style={styles.overallBarTrack}>
-                <View style={[styles.overallBarFill, { height: `${Math.max(heightPct, value > 0 ? 4 : 0)}%` }]} />
-              </View>
-              <Text style={styles.overallBarLabel}>{labelText}</Text>
-            </View>
-          );
-        })}
-      </View>
+      {isDenseRange ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.overallBarsScrollContent}>
+          <View style={styles.overallBarsDense}>{bars}</View>
+        </ScrollView>
+      ) : (
+        <View style={styles.overallBars}>{bars}</View>
+      )}
     </View>
   );
 }
 
-function DayHourlyLineChart({ series, chartWidth }) {
+function DayHourlyLineChart({ series, chartWidth, messages }) {
   if (!series.length) return <Text style={styles.emptyText}>{messages.home.emptyHourlyUsage}</Text>;
 
   const width = Math.max(220, chartWidth);
@@ -187,8 +200,8 @@ function DayHourlyLineChart({ series, chartWidth }) {
   );
 }
 
-function UsageByDeviceChart({ items }) {
-  if (!items.length) return <Text style={styles.emptyText}>No device usage data yet.</Text>;
+function UsageByDeviceChart({ items, messages }) {
+  if (!items.length) return <Text style={styles.emptyText}>{messages.home.noDevicesInFilter}</Text>;
 
   const maxValue = items.reduce((max, item) => Math.max(max, item.usageLiters), 0);
   const chartMax = maxValue > 0 ? maxValue : 1;
@@ -213,8 +226,8 @@ function UsageByDeviceChart({ items }) {
   );
 }
 
-function UsageByCategoryChart({ items }) {
-  if (!items.length) return <Text style={styles.emptyText}>No category usage data yet.</Text>;
+function UsageByCategoryChart({ items, messages }) {
+  if (!items.length) return <Text style={styles.emptyText}>{messages.home.noDevicesInFilter}</Text>;
 
   const maxValue = items.reduce((max, item) => Math.max(max, item.totalLiters), 0);
   const chartMax = maxValue > 0 ? maxValue : 1;
@@ -601,20 +614,20 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
         {rangePreset === "day" ? (
-          <DayHourlyLineChart series={overallSeries} chartWidth={dayChartWidth} />
+          <DayHourlyLineChart series={overallSeries} chartWidth={dayChartWidth} messages={messages} />
         ) : (
-          <OverallUsageChart series={overallSeries} rangePreset={rangePreset} />
+          <OverallUsageChart series={overallSeries} rangePreset={rangePreset} messages={messages} />
         )}
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{messages.home.usageByDevice} ({rangePreset === "day" ? messages.home.selectedDay : messages.home.selectedRange})</Text>
-        <UsageByDeviceChart items={deviceRows} />
+        <UsageByDeviceChart items={deviceRows} messages={messages} />
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>{messages.home.usageByCategory} ({rangePreset === "day" ? messages.home.selectedDay : messages.home.selectedRange})</Text>
-        <UsageByCategoryChart items={categoryRows} />
+        <UsageByCategoryChart items={categoryRows} messages={messages} />
       </View>
 
       <View style={styles.card}>
