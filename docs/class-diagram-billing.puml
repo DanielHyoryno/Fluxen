@@ -1,0 +1,363 @@
+@startuml
+title Water Monitor IoT - Class Diagram with Billing
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+' =========================
+' Boundary Classes
+' =========================
+
+class LoginPage <<boundary>> {
+  +inputCredential()
+  +submitLogin()
+  +showError()
+}
+
+class RegisterPage <<boundary>> {
+  +inputRegistrationData()
+  +submitRegister()
+  +showError()
+}
+
+class HomePage <<boundary>> {
+  +showOverview()
+  +showTotalUsageToday()
+  +showOnlineOfflineStatus()
+  +showBillingPreview()
+  +openBillingEstimation()
+  +selectUsageRange()
+  +showOverallUsageTrend()
+  +showUsageByDevice()
+  +showUsageByCategory()
+  +filterDeviceStatus()
+  +openDeviceDashboard()
+  +refreshData()
+}
+
+class DevicePage <<boundary>> {
+  +showDeviceList()
+  +createDevice()
+  +updateDevice()
+  +deleteDevice()
+  +manageCategory()
+}
+
+class DeviceDashboardPage <<boundary>> {
+  +showOverview()
+  +showTelemetry()
+  +showUsageSummary()
+  +showAlerts()
+  +openUsageHistory()
+  +openUsageLimits()
+}
+
+class UsageHistoryPage <<boundary>> {
+  +filterRange()
+  +showSummary()
+  +showChart()
+  +showDailyDetails()
+  +exportCsv()
+}
+
+class UsageLimitsPage <<boundary>> {
+  +showCurrentLimits()
+  +inputDailyLimit()
+  +inputMonthlyLimit()
+  +saveLimits()
+}
+
+class ManageCategoryPage <<boundary>> {
+  +showCategoryList()
+  +createCategory()
+  +updateCategory()
+  +deleteCategory()
+}
+
+class BLEProvisioningPage <<boundary>> {
+  +scanDevice()
+  +connectDevice()
+  +sendConfiguration()
+  +showProvisioningStatus()
+}
+
+class BillingEstimationPage <<boundary>> {
+  +selectRange()
+  +filterCategory()
+  +selectDevices()
+  +calculateEstimate()
+  +showUsageSummary()
+  +showEstimateByDevice()
+  +openBillingSettings()
+}
+
+class BillingSettingsPage <<boundary>> {
+  +loadBillingSettings()
+  +inputPricePerLiter()
+  +saveBillingSettings()
+  +showSuccess()
+  +showError()
+}
+
+' =========================
+' Control Classes
+' =========================
+
+class AuthManager <<control>> {
+  +registerUser()
+  +loginUser()
+  +getCurrentUser()
+  +validateToken()
+}
+
+class DeviceManager <<control>> {
+  +addDevice()
+  +updateDevice()
+  +deleteDevice()
+  +assignCategory()
+  +getDeviceList()
+  +getDeviceDetail()
+}
+
+class CategoryManager <<control>> {
+  +getCategoryList()
+  +createCategory()
+  +updateCategory()
+  +deleteCategory()
+}
+
+class ProvisioningManager <<control>> {
+  +scanBleDevice()
+  +sendConfiguration()
+  +saveProvisioning()
+  +connectWifi()
+}
+
+class TelemetryManager <<control>> {
+  +receiveTelemetry()
+  +receiveTelemetryBatch()
+  +storeTelemetry()
+  +getLatestTelemetry()
+  +getDailyTelemetry()
+  +getUsageHistory()
+  +exportCsv()
+}
+
+class UsageManager <<control>> {
+  +getUsageLimits()
+  +upsertUsageLimits()
+  +getUsageAlerts()
+  +dismissUsageAlert()
+}
+
+class UsageAlertManager <<control>> {
+  +evaluateThreshold()
+  +generateAlert()
+  +resolveAlert()
+  +dismissAlert()
+}
+
+class BillingManager <<control>> {
+  +getBillingSettings()
+  +upsertBillingSettings()
+  +estimateBill()
+  -listBillingDevices()
+  -getOwnedCategory()
+}
+
+' =========================
+' Entity Classes
+' =========================
+
+class User <<entity>> {
+  -id : Integer
+  -fullName : String
+  -email : String
+  -passwordHash : String
+  -role : String
+  -createdAt : DateTime
+  -updatedAt : DateTime
+  +register()
+  +login()
+  +manageDevice()
+  +viewDashboard()
+}
+
+class DeviceCategory <<entity>> {
+  -id : Integer
+  -userId : Integer
+  -name : String
+  -createdAt : DateTime
+  +createCategory()
+  +updateCategory()
+  +deleteCategory()
+}
+
+class Device <<entity>> {
+  -id : Integer
+  -userId : Integer
+  -categoryId : Integer
+  -deviceCode : String
+  -deviceName : String
+  -apiTokenHash : String
+  -status : String
+  -installLocation : String
+  -firmwareVersion : String
+  -lastSeenAt : DateTime
+  -createdAt : DateTime
+  -updatedAt : DateTime
+  +createDevice()
+  +updateDevice()
+  +deleteDevice()
+  +assignCategory()
+  +showDetail()
+}
+
+class Measurement <<entity>> {
+  -id : Integer
+  -deviceId : Integer
+  -measuredAt : DateTime
+  -flowRateLpm : Float
+  -volumeDeltaL : Float
+  -cumulativeVolumeL : Float
+  -pulseCount : Integer
+  -batteryVoltage : Float
+  -rssiDbm : Integer
+  -createdAt : DateTime
+  +recordMeasurement()
+  +calculateUsage()
+  +showHistory()
+}
+
+class UsageAlert <<entity>> {
+  -id : Integer
+  -deviceId : Integer
+  -alertType : String
+  -severity : String
+  -title : String
+  -message : String
+  -triggeredAt : DateTime
+  -resolvedAt : DateTime
+  -status : String
+  -meta : String
+  -createdAt : DateTime
+  +triggerAlert()
+  +showAlert()
+  +dismissAlert()
+}
+
+class DeviceThreshold <<entity>> {
+  -id : Integer
+  -deviceId : Integer
+  -leakFlowMinLpm : Float
+  -leakDurationSec : Integer
+  -quietStartTime : Time
+  -quietEndTime : Time
+  -dailyUsageLimitL : Float
+  -monthlyUsageLimitL : Float
+  -createdAt : DateTime
+  -updatedAt : DateTime
+  +setLeakThreshold()
+  +setDailyLimit()
+  +setMonthlyLimit()
+}
+
+class BillingSettings <<entity>> {
+  -id : Integer
+  -userId : Integer
+  -pricePerLiter : Decimal
+  -currency : String
+  -createdAt : DateTime
+  -updatedAt : DateTime
+  +setPricePerLiter()
+  +updateCurrency()
+}
+
+class BillEstimate <<entity>> {
+  -from : Date
+  -to : Date
+  -categoryId : Integer
+  -categoryName : String
+  -deviceIds : List<Integer>
+  -deviceCount : Integer
+  -totalLiters : Float
+  -estimatedCost : Decimal
+  -currency : String
+  +calculateTotalLiters()
+  +calculateEstimatedCost()
+  +showEstimateSummary()
+}
+
+' =========================
+' Boundary to Control
+' =========================
+
+LoginPage --> AuthManager
+RegisterPage --> AuthManager
+
+HomePage --> DeviceManager
+HomePage --> TelemetryManager
+HomePage --> BillingManager
+
+DevicePage --> DeviceManager
+DevicePage --> CategoryManager
+DeviceDashboardPage --> TelemetryManager
+DeviceDashboardPage --> UsageManager
+DeviceDashboardPage --> UsageAlertManager
+
+UsageHistoryPage --> TelemetryManager
+UsageLimitsPage --> UsageManager
+ManageCategoryPage --> CategoryManager
+
+BLEProvisioningPage --> ProvisioningManager
+
+BillingEstimationPage --> BillingManager
+BillingSettingsPage --> BillingManager
+
+' =========================
+' Control to Entity
+' =========================
+
+AuthManager --> User
+
+DeviceManager --> Device
+DeviceManager --> DeviceCategory
+CategoryManager --> DeviceCategory
+
+ProvisioningManager --> Device
+
+TelemetryManager --> Device
+TelemetryManager --> Measurement
+
+UsageManager --> DeviceThreshold
+UsageManager --> UsageAlert
+UsageAlertManager --> UsageAlert
+UsageAlertManager --> DeviceThreshold
+
+BillingManager --> BillingSettings
+BillingManager --> BillEstimate
+BillingManager --> Device
+BillingManager --> DeviceCategory
+BillingManager --> Measurement
+
+' =========================
+' Entity Relationships
+' =========================
+
+User "1" -- "0..*" DeviceCategory
+User "1" -- "0..*" Device
+User "1" -- "0..1" BillingSettings
+
+DeviceCategory "1" -- "0..*" Device
+Device "1" -- "0..*" Measurement
+Device "1" -- "0..*" UsageAlert
+Device "1" -- "0..1" DeviceThreshold
+
+BillingSettings "1" -- "0..*" BillEstimate
+BillEstimate --> Device
+BillEstimate --> DeviceCategory
+BillEstimate --> Measurement
+
+@enduml

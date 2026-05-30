@@ -1,0 +1,91 @@
+erDiagram
+    USERS {
+        bigint id PK
+        varchar full_name
+        varchar email UK
+        text password_hash
+        varchar role
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    DEVICE_CATEGORIES {
+        bigint id PK
+        bigint user_id FK
+        varchar name
+        timestamp created_at
+    }
+
+    DEVICES {
+        bigint id PK
+        bigint user_id FK
+        bigint category_id FK
+        varchar device_code UK
+        varchar device_name
+        text api_token_hash
+        varchar status
+        varchar install_location
+        varchar firmware_version
+        timestamp last_seen_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    MEASUREMENTS {
+        bigint id PK
+        bigint device_id FK
+        timestamp measured_at
+        numeric flow_rate_lpm
+        numeric volume_delta_l
+        numeric cumulative_volume_l
+        integer pulse_count
+        numeric battery_voltage
+        integer rssi_dbm
+        timestamp created_at
+    }
+
+    DEVICE_THRESHOLDS {
+        bigint id PK
+        bigint device_id FK_UK
+        numeric leak_flow_min_lpm
+        integer leak_duration_sec
+        time quiet_start_time
+        time quiet_end_time
+        numeric daily_usage_limit_l
+        numeric monthly_usage_limit_l
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ALERTS {
+        bigint id PK
+        bigint device_id FK
+        varchar alert_type
+        varchar severity
+        varchar title
+        text message
+        timestamp triggered_at
+        timestamp resolved_at
+        varchar status
+        jsonb meta
+        timestamp created_at
+    }
+
+    BILLING_SETTINGS {
+        bigint id PK
+        bigint user_id FK_UK
+        numeric price_per_liter
+        varchar currency
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    USERS ||--o{ DEVICE_CATEGORIES : owns
+    USERS ||--o{ DEVICES : owns
+    USERS ||--o| BILLING_SETTINGS : configures
+
+    DEVICE_CATEGORIES ||--o{ DEVICES : groups
+
+    DEVICES ||--o{ MEASUREMENTS : records
+    DEVICES ||--o{ ALERTS : triggers
+    DEVICES ||--o| DEVICE_THRESHOLDS : has
