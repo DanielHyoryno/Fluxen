@@ -1,4 +1,5 @@
 const { createTelemetrySchema, createTelemetryBatchSchema } = require("../validations/telemetry.validation");
+const ExcelJS = require("exceljs");
 const {
   createTelemetry,
   createTelemetryBatch,
@@ -138,6 +139,130 @@ async function exportCsv(req, res) {
   }
 }
 
+async function exportXlsx(req, res) {
+  try {
+    const { device_code, from, to } = req.query;
+    if (!device_code || !from || !to) {
+      return fail(res, "device_code, from, and to are required", 422, "VALIDATION_ERROR");
+    }
+
+    const rows = await getExportData(req.user.id, device_code, from, to);
+
+    const totalUsageLiters = rows.reduce((sum, row) => sum + Number(row.volume_delta_l || 0), 0);
+    const readingCount = rows.length;
+    const uniqueDayKeys = [...new Set(rows.map((row) => (row.measured_at ? new Date(row.measured_at).toISOString().slice(0, 10) : "")).filter(Boolean))];
+    const dayCount = uniqueDayKeys.length || 1;
+    const averagePerDay = totalUsageLiters / dayCount;
+
+    const dailyUsageMap = rows.reduce((acc, row) => {
+      if (!row.measured_at) return acc;
+      const dayKey = new Date(row.measured_at).toISOString().slice(0, 10);
+      acc[dayKey] = Number(acc[dayKey] || 0) + Number(row.volume_delta_l || 0);
+      return acc;
+    }, {});
+
+    const dailyUsageItems = Object.entries(dailyUsageMap)
+      .map(([date, totalLiters]) => ({ date, totalLiters: Number(totalLiters) }))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    const peakDay = dailyUsageItems.reduce(
+      (max, item) => (item.totalLiters > max.totalLiters ? item : max),
+      dailyUsageItems[0] || { date: "-", totalLiters: 0 }
+    );
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "Fluxen";
+    workbook.created = new Date();
+
+    const summarySheet = workbook.addWorksheet("Summary", {
+      views: [{ state: "frozen", ySplit: 1 }],
+    });
+
+    summarySheet.columns = [
+      { header: "Field", key: "field", width: 24 },
+      { header: "Value", key: "value", width: 28 },
+    ];
+    summarySheet.getRow(1).font = { bold: true };
+    summarySheet.addRows([
+      { field: "Device Code", value: device_code },
+      { field: "From", value: from },
+      { field: "To", value: to },
+      { field: "Total Usage (L)", value: totalUsageLiters },
+      { field: "Average / Day (L)", value: averagePerDay },
+      { field: "Peak Day", value: peakDay.date },
+      { field: "Peak Day Usage (L)", value: peakDay.totalLiters },
+      { field: "Record Count", value: readingCount },
+    ]);
+    [4, 5, 7].forEach((rowNumber) => {
+      summarySheet.getCell(`B${rowNumber}`).numFmt = "0.000";
+    });
+
+    const dailyUsageSheet = workbook.addWorksheet("Daily Usage", {
+      views: [{ state: "frozen", ySplit: 1 }],
+    });
+    dailyUsageSheet.columns = [
+      { header: "Date", key: "date", width: 16 },
+      { header: "Total Usage (L)", key: "total_usage_l", width: 18 },
+    ];
+    dailyUsageSheet.getRow(1).font = { bold: true };
+    dailyUsageItems.forEach((item) => {
+      dailyUsageSheet.addRow({
+        date: item.date,
+        total_usage_l: item.totalLiters,
+      });
+    });
+    dailyUsageSheet.getColumn("total_usage_l").numFmt = "0.000";
+
+    const worksheet = workbook.addWorksheet("Raw Measurements", {
+      views: [{ state: "frozen", ySplit: 1 }],
+    });
+
+    worksheet.columns = [
+      { header: "Measured At", key: "measured_at", width: 24 },
+      { header: "Flow Rate (L/min)", key: "flow_rate_lpm", width: 18 },
+      { header: "Volume Delta (L)", key: "volume_delta_l", width: 18 },
+      { header: "Cumulative Volume (L)", key: "cumulative_volume_l", width: 20 },
+      { header: "Pulse Count", key: "pulse_count", width: 14 },
+      { header: "Battery Voltage", key: "battery_voltage", width: 16 },
+      { header: "RSSI (dBm)", key: "rssi_dbm", width: 12 },
+    ];
+
+    worksheet.getRow(1).font = { bold: true };
+
+    rows.forEach((row) => {
+      worksheet.addRow({
+        measured_at: row.measured_at ? new Date(row.measured_at) : null,
+        flow_rate_lpm: row.flow_rate_lpm === null ? null : Number(row.flow_rate_lpm),
+        volume_delta_l: row.volume_delta_l === null ? null : Number(row.volume_delta_l),
+        cumulative_volume_l: row.cumulative_volume_l === null ? null : Number(row.cumulative_volume_l),
+        pulse_count: row.pulse_count ?? null,
+        battery_voltage: row.battery_voltage === null ? null : Number(row.battery_voltage),
+        rssi_dbm: row.rssi_dbm ?? null,
+      });
+    });
+
+    worksheet.getColumn("measured_at").numFmt = "yyyy-mm-dd hh:mm:ss";
+    ["flow_rate_lpm", "volume_delta_l", "cumulative_volume_l", "battery_voltage"].forEach((key) => {
+      worksheet.getColumn(key).numFmt = "0.000";
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader("Content-Disposition", `attachment; filename="${device_code}_${from}_${to}.xlsx"`);
+
+    await workbook.xlsx.write(res);
+    return res.end();
+  } catch (err) {
+    if (err.message === "DEVICE_NOT_FOUND") {
+      return fail(res, "Device not found", 404, "DEVICE_NOT_FOUND");
+    }
+    console.error("exportXlsx error:", err);
+    return fail(res, "Internal server error", 500, "INTERNAL_ERROR");
+  }
+}
+
 module.exports = {
   postTelemetry,
   postTelemetryBatch,
@@ -145,4 +270,5 @@ module.exports = {
   dailyTelemetry,
   usageHistory,
   exportCsv,
+  exportXlsx,
 };

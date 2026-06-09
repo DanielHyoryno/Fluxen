@@ -6,6 +6,7 @@ const {
   dailyTelemetry,
   usageHistory,
   exportCsv,
+  exportXlsx,
 } = require("../controllers/telemetry.controller");
 const { requireDeviceToken } = require("../middlewares/device-auth.middleware");
 const { requireAuth } = require("../middlewares/auth.middleware");
@@ -26,5 +27,6 @@ router.get("/latest", requireAuth, latestTelemetry);
 router.get("/daily", requireAuth, dailyTelemetry);
 router.get("/history", requireAuth, usageHistory);
 router.get("/export", requireAuth, exportCsv);
+router.get("/export-xlsx", requireAuth, exportXlsx);
 
 module.exports = router;
