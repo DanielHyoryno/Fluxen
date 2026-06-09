@@ -113,26 +113,29 @@ function formatRupiah(value) {
   }).format(Number(value || 0));
 }
 
-function OverallUsageChart({ series, rangePreset, messages }) {
+function OverallUsageChart({ series, rangePreset, messages, chartWidth }) {
   if (!series.length) return <Text style={styles.emptyText}>{messages.home.emptyTotalTrend}</Text>;
 
   const maxValue = series.reduce((max, item) => Math.max(max, Number(item.totalLiters || 0)), 0);
   const chartMax = maxValue > 0 ? maxValue : 1;
-  const isDenseRange = rangePreset === "month" || rangePreset === "custom" || series.length > 10;
-  const slotWidth = isDenseRange ? 28 : null;
+  const minSlotWidth = 28;
+  const interBarGap = 6;
+  const requiredWidth = series.length * minSlotWidth + Math.max(0, series.length - 1) * interBarGap;
+  const shouldScroll = requiredWidth > chartWidth;
+  const slotWidth = shouldScroll ? minSlotWidth : null;
 
   const bars = series.map((item) => {
     const value = Number(item.totalLiters || 0);
     const heightPct = Math.round((value / chartMax) * 100);
-    const labelText = isDenseRange ? formatDayOnlyLabel(item.date) : formatDateLabel(item.date);
+    const labelText = series.length > 10 ? formatDayOnlyLabel(item.date) : formatDateLabel(item.date);
 
     return (
       <View
         key={item.date}
         style={[
           styles.overallBarCol,
-          isDenseRange && styles.overallBarColDense,
-          isDenseRange && { width: slotWidth },
+          shouldScroll && styles.overallBarColDense,
+          shouldScroll && { width: slotWidth },
         ]}
       >
         <View style={styles.overallBarTrack}>
@@ -145,7 +148,7 @@ function OverallUsageChart({ series, rangePreset, messages }) {
 
   return (
     <View style={styles.overallChartWrap}>
-      {isDenseRange ? (
+      {shouldScroll ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.overallBarsScrollContent}>
           <View style={styles.overallBarsDense}>{bars}</View>
         </ScrollView>
@@ -616,7 +619,7 @@ export default function HomeScreen({ navigation }) {
         {rangePreset === "day" ? (
           <DayHourlyLineChart series={overallSeries} chartWidth={dayChartWidth} messages={messages} />
         ) : (
-          <OverallUsageChart series={overallSeries} rangePreset={rangePreset} messages={messages} />
+          <OverallUsageChart series={overallSeries} rangePreset={rangePreset} messages={messages} chartWidth={Math.max(220, Math.floor(screenWidth - 76))} />
         )}
       </View>
 
