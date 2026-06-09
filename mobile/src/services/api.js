@@ -55,6 +55,22 @@ async function requestRaw(path, options = {}) {
   return response.text();
 }
 
+async function requestBinaryRaw(path, options = {}) {
+  const messages = await getActiveMessages();
+  const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, options);
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}));
+    throw new Error(payload.message || messages.auth.requestFailed);
+  }
+
+  return {
+    arrayBuffer: await response.arrayBuffer(),
+    contentType: response.headers.get("content-type") || "application/octet-stream",
+    contentDisposition: response.headers.get("content-disposition") || "",
+  };
+}
+
 export async function registerApi(body) {
   return request("/auth/register", {
     method: "POST",
@@ -242,6 +258,16 @@ export async function updateDeviceApi(token, deviceId, body) {
 export async function exportCsvApi(token, deviceCode, from, to) {
   const params = new URLSearchParams({ device_code: deviceCode, from, to });
   return requestRaw(`/telemetry/export?${params.toString()}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
+export async function exportXlsxApi(token, deviceCode, from, to) {
+  const params = new URLSearchParams({ device_code: deviceCode, from, to });
+  return requestBinaryRaw(`/telemetry/export-xlsx?${params.toString()}`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,

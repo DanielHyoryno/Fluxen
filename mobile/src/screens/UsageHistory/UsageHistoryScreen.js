@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Buffer } from "buffer";
 import {
   ActivityIndicator,
   Alert,
@@ -20,7 +21,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import * as FileSystem from "expo-file-system";
 import * as Sharing from "expo-sharing";
 import { useAuth } from "../../context/AuthContext";
-import { usageHistoryApi, exportCsvApi } from "../../services/api";
+import { usageHistoryApi, exportXlsxApi } from "../../services/api";
 import SectionAccordion from "../../components/SectionAccordion";
 import styles from "./styles";
 
@@ -407,11 +408,14 @@ export default function UsageHistoryScreen({ route }) {
     setExporting(true);
     setError("");
     try {
-      const csvText = await exportCsvApi(token, device.device_code, range.from, range.to);
-      const filename = `${device.device_code}_${range.from}_${range.to}.csv`;
+      const { arrayBuffer, contentType, contentDisposition } = await exportXlsxApi(token, device.device_code, range.from, range.to);
+      const dispositionMatch = /filename="?([^";]+)"?/i.exec(contentDisposition || "");
+      const filename = dispositionMatch?.[1] || `${device.device_code}_${range.from}_${range.to}.xlsx`;
 
       if (Platform.OS === "web") {
-        const blob = new Blob([csvText], { type: "text/csv" });
+        const blob = new Blob([arrayBuffer], {
+          type: contentType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
@@ -422,17 +426,18 @@ export default function UsageHistoryScreen({ route }) {
       }
 
       const fileUri = `${FileSystem.cacheDirectory}${filename}`;
-      await FileSystem.writeAsStringAsync(fileUri, csvText, { encoding: FileSystem.EncodingType.UTF8 });
+      const base64 = Buffer.from(arrayBuffer).toString("base64");
+      await FileSystem.writeAsStringAsync(fileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
 
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
         await Sharing.shareAsync(fileUri, {
-          mimeType: "text/csv",
+          mimeType: contentType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           dialogTitle: "Export Water Usage Data",
-          UTI: "public.comma-separated-values-text",
+          UTI: "org.openxmlformats.spreadsheetml.sheet",
         });
       } else {
-        Alert.alert("Export Complete", `CSV saved to: ${fileUri}`);
+        Alert.alert("Export Complete", `XLSX saved to: ${fileUri}`);
       }
     } catch (err) {
       setError(err.message || "Export failed");
@@ -665,30 +670,34 @@ export default function UsageHistoryScreen({ route }) {
           <Text style={styles.meta}>No rows to show</Text>
         ) : (
           <>
-            <FlatList
-              data={visibleDetailItems}
-              keyExtractor={(item) => item.date}
-              scrollEnabled={false}
-              renderItem={({ item }) => (
-                <View style={styles.detailCard}>
-                  <Text style={styles.detailDate}>{parseDateOnly(item.date).toLocaleDateString()}</Text>
-                  <View style={styles.detailMetricRow}>
-                    <View style={styles.detailMetricItem}>
-                      <Text style={styles.detailMetricLabel}>Total</Text>
-                      <Text style={styles.detailMetricValue}>{formatNumber(item.total_liters, 3)} L</Text>
-                    </View>
-                    <View style={styles.detailMetricItem}>
-                      <Text style={styles.detailMetricLabel}>Avg</Text>
-                      <Text style={styles.detailMetricValue}>{formatNumber(item.avg_flow_rate_lpm, 2)} L/min</Text>
-                    </View>
-                    <View style={styles.detailMetricItem}>
-                      <Text style={styles.detailMetricLabel}>Peak</Text>
-                      <Text style={styles.detailMetricValue}>{formatNumber(item.peak_flow_rate_lpm, 2)} L/min</Text>
+            <View style={styles.detailListWrap}>
+              <FlatList
+                data={visibleDetailItems}
+                keyExtractor={(item) => item.date}
+                scrollEnabled
+                nestedScrollEnabled
+                showsVerticalScrollIndicator={false}
+                renderItem={({ item }) => (
+                  <View style={styles.detailCard}>
+                    <Text style={styles.detailDate}>{parseDateOnly(item.date).toLocaleDateString()}</Text>
+                    <View style={styles.detailMetricRow}>
+                      <View style={styles.detailMetricItem}>
+                        <Text style={styles.detailMetricLabel}>Total</Text>
+                        <Text style={styles.detailMetricValue}>{formatNumber(item.total_liters, 3)} L</Text>
+                      </View>
+                      <View style={styles.detailMetricItem}>
+                        <Text style={styles.detailMetricLabel}>Avg</Text>
+                        <Text style={styles.detailMetricValue}>{formatNumber(item.avg_flow_rate_lpm, 2)} L/min</Text>
+                      </View>
+                      <View style={styles.detailMetricItem}>
+                        <Text style={styles.detailMetricLabel}>Peak</Text>
+                        <Text style={styles.detailMetricValue}>{formatNumber(item.peak_flow_rate_lpm, 2)} L/min</Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-              )}
-            />
+                )}
+              />
+            </View>
             {hasMoreDetailItems ? (
               <Pressable style={styles.viewMoreButton} onPress={() => setShowAllDetails((prev) => !prev)}>
                 <Text style={styles.viewMoreText}>{showAllDetails ? "View Less" : `View More (${chartItems.length - 10} more)`}</Text>
@@ -711,7 +720,7 @@ export default function UsageHistoryScreen({ route }) {
         {exporting ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.exportButtonText}>Export CSV</Text>
+          <Text style={styles.exportButtonText}>Export XLSX</Text>
         )}
       </Pressable>
     </Animated.ScrollView>

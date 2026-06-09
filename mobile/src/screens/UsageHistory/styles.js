@@ -356,6 +356,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginTop: 8,
   },
+  detailListWrap: {
+    maxHeight: 360,
+  },
   detailDate: {
     color: "#1d3551",
     fontWeight: "700",
