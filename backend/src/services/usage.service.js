@@ -111,6 +111,38 @@ async function listUsageAlerts(userId, query) {
   };
 }
 
+async function listAllUsageAlerts(userId, query) {
+  const status = query.status || "active";
+  const limit = query.limit || 50;
+
+  const alertsQ = await pool.query(
+    `SELECT a.id,
+            a.alert_type,
+            a.severity,
+            a.title,
+            a.message,
+            a.triggered_at,
+            a.resolved_at,
+            a.status,
+            a.meta,
+            d.device_code,
+            d.device_name
+     FROM alerts a
+     JOIN devices d ON d.id = a.device_id
+     WHERE d.user_id = $1
+       AND a.alert_type IN ('USAGE_LIMIT_DAILY', 'USAGE_LIMIT_MONTHLY')
+       AND a.status = $2
+     ORDER BY a.triggered_at DESC
+     LIMIT $3`,
+    [userId, status, limit]
+  );
+
+  return {
+    status_filter: status,
+    items: alertsQ.rows,
+  };
+}
+
 async function dismissAlert(userId, alertId) {
   // Verify the alert belongs to a device owned by this user
   const alertQ = await pool.query(
@@ -145,5 +177,6 @@ module.exports = {
   getUsageLimits,
   upsertUsageLimits,
   listUsageAlerts,
+  listAllUsageAlerts,
   dismissAlert,
 };

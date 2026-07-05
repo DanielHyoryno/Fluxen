@@ -16,6 +16,11 @@ const listAlertsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(200).optional(),
 });
 
+const listAllAlertsSchema = z.object({
+  status: z.enum(["active", "resolved"]).optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional(),
+});
+
 const dismissAlertSchema = z.object({
   alert_id: z.coerce.number().int().positive(),
 });
@@ -24,5 +29,6 @@ module.exports = {
   getUsageLimitSchema,
   upsertUsageLimitSchema,
   listAlertsSchema,
+  listAllAlertsSchema,
   dismissAlertSchema,
 };
