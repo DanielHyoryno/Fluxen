@@ -28,18 +28,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: "#dbe6f5",
-    padding: 14,
+    padding: 16,
     marginBottom: 10,
   },
   cardTitle: {
     fontWeight: "800",
     color: "#1d3551",
-    marginBottom: 10,
+    marginBottom: 12,
   },
   addRow: {
     flexDirection: "row",
     gap: 8,
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   input: {
     flex: 1,
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     color: "#1a3047",
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 11,
   },
   addButton: {
     backgroundColor: "#1f7a3d",
@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   editTitle: {
     color: "#35506d",
     fontWeight: "700",
-    marginBottom: 8,
+    marginBottom: 10,
   },
   editActions: {
     marginTop: 8,
