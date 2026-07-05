@@ -235,6 +235,20 @@ export async function usageAlertsApi(token, deviceCode, status = "active", limit
   });
 }
 
+export async function usageAlertsAllApi(token, status = "active", limit = 20) {
+  const params = new URLSearchParams({
+    status,
+    limit: String(limit),
+  });
+
+  return request(`/usage/alerts-all?${params.toString()}`, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+
 export async function dismissAlertApi(token, alertId) {
   return request(`/usage/alerts/${alertId}/dismiss`, {
     method: "PATCH",
