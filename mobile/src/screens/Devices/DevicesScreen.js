@@ -19,6 +19,8 @@ import { useWindowDimensions } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import { createDeviceApi, deleteDeviceApi, listCategoriesApi, listDevicesApi } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import SkeletonBlock from "../../components/SkeletonBlock";
+import useScreenEntranceAnimation from "../../hooks/useScreenEntranceAnimation";
 import styles from "./styles";
 
 const AUTO_REFRESH_MS = 5000;
@@ -91,6 +93,7 @@ function DeviceCard({ item, onRequestDelete, messages, isEmbedded, isLast }) {
 export default function DevicesScreen({ navigation }) {
   const { token, user, messages } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
+  const { animatedStyle } = useScreenEntranceAnimation();
   const isCompactHeader = screenWidth < 430;
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -110,27 +113,8 @@ export default function DevicesScreen({ navigation }) {
   const [activeSection, setActiveSection] = useState("list");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState(null);
-  const entryOpacity = useRef(new Animated.Value(0)).current;
-  const entryTranslateY = useRef(new Animated.Value(14)).current;
   const sectionOpacity = useRef(new Animated.Value(1)).current;
   const sectionTranslateY = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(entryOpacity, {
-        toValue: 1,
-        duration: 360,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(entryTranslateY, {
-        toValue: 0,
-        duration: 420,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [entryOpacity, entryTranslateY]);
 
   function switchSection(nextSection) {
     if (nextSection === activeSection) return;
@@ -326,21 +310,13 @@ export default function DevicesScreen({ navigation }) {
   });
 
   return (
-    <Animated.View
-      style={[
-        styles.page,
-        {
-          opacity: entryOpacity,
-          transform: [{ translateY: entryTranslateY }],
-        },
-      ]}
-    >
+    <View style={styles.page}>
       <FlatList
         style={styles.list}
         data={[]}
         keyExtractor={(item) => String(item.id)}
         ListHeaderComponent={(
-          <>
+          <Animated.View style={animatedStyle}>
             <View style={[styles.header, isCompactHeader && styles.headerStacked]}>
               <View style={styles.headerTitleBlock}>
                 <Text style={styles.title} numberOfLines={2}>{messages.devices.pageTitle}</Text>
@@ -425,7 +401,13 @@ export default function DevicesScreen({ navigation }) {
                     />
                     <View style={styles.listSectionDivider} />
 
-                    {loading ? <ActivityIndicator style={styles.loading} /> : null}
+                    {loading ? (
+                      <View style={styles.listSkeletonWrap}>
+                        <SkeletonBlock width="100%" height={58} />
+                        <SkeletonBlock width="100%" height={58} />
+                        <SkeletonBlock width="100%" height={58} />
+                      </View>
+                    ) : null}
                     {!loading && filteredItems.length === 0 ? <Text style={styles.empty}>{messages.devices.noDevicesYet}</Text> : null}
 
                     {!loading
@@ -535,7 +517,7 @@ export default function DevicesScreen({ navigation }) {
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
             {activeSection !== "list" && loading ? <ActivityIndicator style={styles.loading} /> : null}
-          </>
+          </Animated.View>
         )}
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -573,6 +555,6 @@ export default function DevicesScreen({ navigation }) {
         onCancel={() => setPendingDeleteDevice(null)}
         onConfirm={handleConfirmDeleteDevice}
       />
-    </Animated.View>
+    </View>
   );
 }

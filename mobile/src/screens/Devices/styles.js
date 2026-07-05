@@ -4,7 +4,7 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: "#f4f8ff",
-    paddingTop: 56,
+    paddingTop: 42,
     paddingBottom: 98,
   },
   header: {
@@ -374,6 +374,10 @@ const styles = StyleSheet.create({
   },
   listHeaderManageOnly: {
     marginBottom: 0,
+  },
+  listSkeletonWrap: {
+    gap: 8,
+    marginTop: 4,
   },
   hiddenListSpacer: {
     height: 0,
