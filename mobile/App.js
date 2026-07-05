@@ -20,6 +20,7 @@ import HomeScreen from "./src/screens/Home/HomeScreen";
 import ProfileScreen from "./src/screens/Profile/ProfileScreen";
 import BillingEstimationScreen from "./src/screens/BillingEstimation/BillingEstimationScreen";
 import BillingSettingsScreen from "./src/screens/BillingSettings/BillingSettingsScreen";
+import AlertNotificationWatcher from "./src/components/AlertNotificationWatcher";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -352,13 +353,10 @@ function RootNavigator() {
 export default function App() {
   const [started, setStarted] = useState(Platform.OS === "web");
 
-  if (!started) {
-    return <StartGate onStart={() => setStarted(true)} />;
-  }
-
   return (
     <AuthProvider>
-      <RootNavigator />
+      <AlertNotificationWatcher />
+      {!started ? <StartGate onStart={() => setStarted(true)} /> : <RootNavigator />}
     </AuthProvider>
   );
 }
