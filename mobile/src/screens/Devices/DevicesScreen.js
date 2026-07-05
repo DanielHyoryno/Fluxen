@@ -15,15 +15,15 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { useFocusEffect } from "@react-navigation/native";
+import { useWindowDimensions } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import { createDeviceApi, deleteDeviceApi, listCategoriesApi, listDevicesApi } from "../../services/api";
 import ConfirmDialog from "../../components/ConfirmDialog";
-import messages from "../../constants/messages";
 import styles from "./styles";
 
 const AUTO_REFRESH_MS = 5000;
 
-function DeviceCard({ item, onRequestDelete, messages }) {
+function DeviceCard({ item, onRequestDelete, messages, isEmbedded, isLast }) {
   const online = item.status === "online";
   const pulse = useRef(new Animated.Value(1)).current;
 
@@ -56,35 +56,42 @@ function DeviceCard({ item, onRequestDelete, messages }) {
   }, [online, pulse]);
 
   return (
-    <View style={styles.card}>
-      <View style={styles.cardHeader}>
-        <Text style={styles.deviceName}>{item.device_name}</Text>
-        <View style={styles.statusWrap}>
-            {online ? <Animated.View style={[styles.liveDot, { opacity: pulse }]} /> : null}
-            <Text style={[styles.statusBadge, online ? styles.statusOnline : styles.statusOffline]}>
-              {online ? messages.devices.online : messages.devices.offline}
+    <View style={[styles.card, isEmbedded && styles.cardEmbedded, isEmbedded && !isLast && styles.cardEmbeddedWithDivider]}>
+      <View style={styles.deviceRowCompact}>
+        <View style={styles.deviceRowLeft}>
+          <View style={[styles.statusDot, online ? styles.statusOnline : styles.statusOffline]} />
+          <View style={styles.deviceTitleBlock}>
+            <Text style={styles.deviceName}>{item.device_name}</Text>
+            <Text style={styles.deviceMetaInline}>{messages.devices.codeLabel}: {item.device_code}</Text>
+            <Text style={styles.deviceMetaInline}>
+              {messages.devices.categoryLabel}: {item.category_name || messages.devices.uncategorized}
             </Text>
           </View>
         </View>
-      <Text style={styles.meta}>{messages.devices.codeLabel}: {item.device_code}</Text>
-      <Text style={styles.meta}>{messages.devices.categoryLabel}: {item.category_name || messages.devices.uncategorized}</Text>
-      <Text style={styles.meta}>{messages.devices.locationLabel}: {item.install_location || "-"}</Text>
-      <Text style={styles.meta}>{messages.devices.firmwareLabel}: {item.firmware_version || "-"}</Text>
-      <Pressable
-        style={styles.deleteButton}
-        onPress={(event) => {
-          event?.stopPropagation?.();
-          onRequestDelete(item);
-        }}
-      >
-        <Text style={styles.deleteButtonText}>{messages.devices.deleteButton}</Text>
-      </Pressable>
+
+        <View style={styles.deviceRowRight}>
+          <Text style={[styles.statusTextCompact, online ? styles.statusTextOnline : styles.statusTextOffline]}>
+            {online ? messages.devices.online : messages.devices.offline}
+          </Text>
+          <Pressable
+            style={styles.deleteButton}
+            onPress={(event) => {
+              event?.stopPropagation?.();
+              onRequestDelete(item);
+            }}
+          >
+            <Text style={styles.deleteButtonText}>{messages.devices.deleteButton}</Text>
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
 }
 
 export default function DevicesScreen({ navigation }) {
-  const { token, user, logout, messages } = useAuth();
+  const { token, user, messages } = useAuth();
+  const { width: screenWidth } = useWindowDimensions();
+  const isCompactHeader = screenWidth < 430;
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,8 +106,14 @@ export default function DevicesScreen({ navigation }) {
   const [newToken, setNewToken] = useState("");
   const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
   const [pendingDeleteDevice, setPendingDeleteDevice] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [activeSection, setActiveSection] = useState("list");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState(null);
   const entryOpacity = useRef(new Animated.Value(0)).current;
   const entryTranslateY = useRef(new Animated.Value(14)).current;
+  const sectionOpacity = useRef(new Animated.Value(1)).current;
+  const sectionTranslateY = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     Animated.parallel([
@@ -118,6 +131,42 @@ export default function DevicesScreen({ navigation }) {
       }),
     ]).start();
   }, [entryOpacity, entryTranslateY]);
+
+  function switchSection(nextSection) {
+    if (nextSection === activeSection) return;
+
+    Animated.parallel([
+      Animated.timing(sectionOpacity, {
+        toValue: 0,
+        duration: 120,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(sectionTranslateY, {
+        toValue: 8,
+        duration: 120,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setActiveSection(nextSection);
+      sectionTranslateY.setValue(-8);
+      Animated.parallel([
+        Animated.timing(sectionOpacity, {
+          toValue: 1,
+          duration: 180,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+        Animated.timing(sectionTranslateY, {
+          toValue: 0,
+          duration: 180,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    });
+  }
 
   const loadDevices = useCallback(async () => {
     setError("");
@@ -182,25 +231,51 @@ export default function DevicesScreen({ navigation }) {
   }
 
   async function handleCreateDevice() {
+    const nextFieldErrors = {};
+    const trimmedDeviceCode = deviceCode.trim();
+    const trimmedDeviceName = deviceName.trim();
+    const trimmedLocation = location.trim();
+
+    if (trimmedDeviceCode.length < 3) {
+      nextFieldErrors.deviceCode = messages.devices.minDeviceCodeError;
+    }
+
+    if (trimmedDeviceName.length < 2) {
+      nextFieldErrors.deviceName = messages.devices.minDeviceNameError;
+    }
+
+    if (trimmedLocation.length > 150) {
+      nextFieldErrors.location = messages.devices.maxLocationError;
+    }
+
+    setFieldErrors(nextFieldErrors);
+    if (Object.keys(nextFieldErrors).length > 0) {
+      return;
+    }
+
     setCreating(true);
     setError("");
     setNewToken("");
     try {
       const data = await createDeviceApi(token, {
-        device_code: deviceCode.trim(),
-        device_name: deviceName.trim(),
-        install_location: location.trim() || undefined,
+        device_code: trimmedDeviceCode,
+        device_name: trimmedDeviceName,
+        install_location: trimmedLocation || undefined,
         category_id: selectedCategoryId,
       });
 
       setDeviceCode("");
       setDeviceName("");
       setLocation("");
+      setFieldErrors({});
       setSelectedCategoryId(null);
       setNewToken(data.api_token || "");
       setTokenDialogOpen(Boolean(data.api_token));
       await loadDevices();
     } catch (err) {
+      if (String(err.message || "").toLowerCase().includes("device_code already used")) {
+        setFieldErrors({ deviceCode: messages.devices.duplicateDeviceCodeError });
+      }
       setError(err.message || messages.devices.createFailed);
     } finally {
       setCreating(false);
@@ -234,6 +309,22 @@ export default function DevicesScreen({ navigation }) {
     Alert.alert(messages.devices.copiedTitle, messages.devices.copiedMessage);
   }
 
+  const filteredItems = items.filter((item) => {
+    const statusMatch =
+      statusFilter === "all" ||
+      (statusFilter === "online" && item.status === "online") ||
+      (statusFilter === "offline" && item.status !== "online");
+
+    const categoryMatch =
+      categoryFilter === null
+        ? true
+        : categoryFilter === "uncategorized"
+          ? !item.category_id
+          : item.category_id === categoryFilter;
+
+    return statusMatch && categoryMatch;
+  });
+
   return (
     <Animated.View
       style={[
@@ -246,101 +337,209 @@ export default function DevicesScreen({ navigation }) {
     >
       <FlatList
         style={styles.list}
-        data={loading ? [] : items}
+        data={[]}
         keyExtractor={(item) => String(item.id)}
-        renderItem={({ item }) => (
-          <Pressable
-            onPress={() => navigation.navigate("DeviceDashboard", { device: item })}
-            style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.985 : 1 }] }]}
-          >
-            <DeviceCard item={item} onRequestDelete={handleRequestDeleteDevice} messages={messages} />
-          </Pressable>
-        )}
         ListHeaderComponent={(
           <>
-            <View style={styles.header}>
-              <View>
-                <Text style={styles.title}>{messages.devices.pageTitle}</Text>
-                <Text style={styles.subtitle}>{user?.full_name || "User"}</Text>
-              </View>
-              <View style={styles.headerActions}>
-                <Pressable style={styles.scanButton} onPress={() => navigation.navigate("BLEScan")}>
-                  <Text style={styles.scanText}>{messages.devices.scanBle}</Text>
-                </Pressable>
-                <Pressable style={styles.logoutButton} onPress={logout}>
-                  <Text style={styles.logoutText}>{messages.devices.logout}</Text>
-                </Pressable>
+            <View style={[styles.header, isCompactHeader && styles.headerStacked]}>
+              <View style={styles.headerTitleBlock}>
+                <Text style={styles.title} numberOfLines={2}>{messages.devices.pageTitle}</Text>
+                <Text style={styles.subtitle}>{messages.devices.pageSubtitle}</Text>
               </View>
             </View>
 
-            <View style={styles.categoryBox}>
-              <Text style={styles.createTitle}>{messages.devices.categoryTitle}</Text>
-              <Text style={styles.categoryHelpText}>{messages.devices.categoryHelp}</Text>
-              <Pressable style={styles.manageCategoryButton} onPress={() => navigation.navigate("ManageCategory")}>
-                <Text style={styles.manageCategoryButtonText}>{messages.devices.manageCategory}</Text>
+            <View style={styles.scanHeroCard}>
+              <View style={styles.scanHeroTextWrap}>
+                <Text style={styles.scanHeroTitle}>{messages.devices.prepareDeviceTitle}</Text>
+                <Text style={styles.scanHeroSubtitle}>{messages.devices.prepareDeviceSubtitle}</Text>
+              </View>
+              <Pressable style={styles.scanHeroButton} onPress={() => navigation.navigate("BLEScan")}>
+                <Text style={styles.scanHeroButtonText}>{messages.devices.scanBle}</Text>
               </Pressable>
             </View>
 
-            <View style={styles.createBox}>
-              <Text style={styles.createTitle}>{messages.devices.addDeviceTitle}</Text>
-              <TextInput
-                style={styles.input}
-                value={deviceCode}
-                onChangeText={setDeviceCode}
-                placeholder={messages.devices.deviceCodePlaceholder}
-                placeholderTextColor="#8aa0b8"
-                autoCapitalize="characters"
-              />
-              <TextInput
-                style={styles.input}
-                value={deviceName}
-                onChangeText={setDeviceName}
-                placeholder={messages.devices.deviceNamePlaceholder}
-                placeholderTextColor="#8aa0b8"
-              />
-              <TextInput
-                style={styles.input}
-                value={location}
-                onChangeText={setLocation}
-                placeholder={messages.devices.locationPlaceholder}
-                placeholderTextColor="#8aa0b8"
-              />
-
-              <Text style={styles.categoryLabel}>{messages.devices.assignCategory}</Text>
-              <FlatList
-                data={[{ id: null, name: messages.devices.uncategorized }, ...categories]}
-                keyExtractor={(item, index) => String(item.id ?? `uncat-${index}`)}
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryChipRow}
-                renderItem={({ item }) => {
-                  const active = selectedCategoryId === item.id;
-                  return (
-                    <Pressable style={[styles.categoryChip, active && styles.categoryChipActive]} onPress={() => setSelectedCategoryId(item.id)}>
-                      <Text style={[styles.categoryChipText, active && styles.categoryChipTextActive]}>{item.name}</Text>
-                    </Pressable>
-                  );
-                }}
-              />
-
-              <Pressable style={styles.primaryButton} onPress={handleCreateDevice} disabled={creating}>
-                {creating ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>{messages.devices.createDevice}</Text>}
+            <View style={styles.sectionSwitchWrap}>
+              <Pressable
+                style={[styles.sectionSwitchButton, activeSection === "list" && styles.sectionSwitchButtonActive]}
+                onPress={() => switchSection("list")}
+              >
+                <Text style={[styles.sectionSwitchText, activeSection === "list" && styles.sectionSwitchTextActive]}>{messages.devices.listTab}</Text>
               </Pressable>
-              {newToken ? <Text style={styles.meta}>{messages.devices.newTokenHint}</Text> : null}
-              {newToken ? (
-                <Pressable style={styles.showTokenButton} onPress={() => setTokenDialogOpen(true)}>
-                  <Text style={styles.showTokenButtonText}>{messages.devices.showApiToken}</Text>
-                </Pressable>
+              <Pressable
+                style={[styles.sectionSwitchButton, activeSection === "manage" && styles.sectionSwitchButtonActive]}
+                onPress={() => switchSection("manage")}
+              >
+                <Text style={[styles.sectionSwitchText, activeSection === "manage" && styles.sectionSwitchTextActive]}>{messages.devices.manageTab}</Text>
+              </Pressable>
+            </View>
+
+            <Animated.View
+              style={{
+                opacity: sectionOpacity,
+                transform: [{ translateY: sectionTranslateY }],
+              }}
+            >
+              {activeSection === "list" ? (
+                <View style={styles.listSectionCard}>
+                  <View style={styles.listStatusCard}>
+                  <Text style={styles.createTitle}>{messages.devices.listFilterTitle}</Text>
+                    <Text style={styles.filterGroupLabel}>{messages.devices.statusLabel}</Text>
+                    <View style={styles.filterChipRowCompact}>
+                      {[
+                        { key: "all", label: messages.home.all },
+                        { key: "online", label: messages.home.online },
+                        { key: "offline", label: messages.home.offline },
+                      ].map((item) => {
+                        const active = statusFilter === item.key;
+                        return (
+                          <Pressable
+                            key={item.key}
+                            style={[styles.filterChip, active && styles.filterChipActive]}
+                            onPress={() => setStatusFilter(item.key)}
+                          >
+                            <Text style={[styles.filterChipText, active && styles.filterChipTextActive]}>{item.label}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+
+                    <Text style={styles.filterGroupLabel}>{messages.devices.categoryFilterLabel}</Text>
+                  <FlatList
+                    data={[
+                        { id: null, name: messages.home.all },
+                        { id: "uncategorized", name: messages.devices.uncategorized },
+                        ...categories,
+                      ]}
+                      keyExtractor={(item, index) => String(item.id ?? `all-${index}`)}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.filterChipRowCompact}
+                      renderItem={({ item }) => {
+                        const active = categoryFilter === item.id;
+                        return (
+                          <Pressable style={[styles.categoryChip, active && styles.categoryChipActive]} onPress={() => setCategoryFilter(item.id)}>
+                            <Text style={[styles.categoryChipText, active && styles.categoryChipTextActive]}>{item.name}</Text>
+                          </Pressable>
+                        );
+                      }}
+                    />
+                    <View style={styles.listSectionDivider} />
+
+                    {loading ? <ActivityIndicator style={styles.loading} /> : null}
+                    {!loading && filteredItems.length === 0 ? <Text style={styles.empty}>{messages.devices.noDevicesYet}</Text> : null}
+
+                    {!loading
+                      ? filteredItems.map((item, index) => (
+                          <Pressable
+                            key={String(item.id)}
+                            onPress={() => navigation.navigate("DeviceDashboard", { device: item })}
+                            style={({ pressed }) => [{ transform: [{ scale: pressed ? 0.985 : 1 }] }]}
+                          >
+                            <DeviceCard
+                              item={item}
+                              onRequestDelete={handleRequestDeleteDevice}
+                              messages={messages}
+                              isEmbedded
+                              isLast={index === filteredItems.length - 1}
+                            />
+                          </Pressable>
+                        ))
+                      : null}
+                  </View>
+                </View>
               ) : null}
-            </View>
+
+              {activeSection === "manage" ? (
+                <>
+                  <View style={styles.categoryBox}>
+                    <Text style={styles.createTitle}>{messages.devices.categoryTitle}</Text>
+                <Text style={styles.categoryHelpText}>{messages.devices.categoryHelp}</Text>
+                    <Pressable style={styles.manageCategoryButton} onPress={() => navigation.navigate("ManageCategory") }>
+                      <Text style={styles.manageCategoryButtonText}>{messages.devices.manageCategory}</Text>
+                    </Pressable>
+                  </View>
+
+                  <View style={styles.createBox}>
+                    <Text style={styles.createTitle}>{messages.devices.addDeviceTitle}</Text>
+                    <TextInput
+                      style={[styles.input, fieldErrors.deviceCode && styles.inputError]}
+                      value={deviceCode}
+                      onChangeText={(value) => {
+                        setDeviceCode(value);
+                        if (fieldErrors.deviceCode) {
+                          setFieldErrors((prev) => ({ ...prev, deviceCode: undefined }));
+                        }
+                      }}
+                      placeholder={messages.devices.deviceCodePlaceholder}
+                      placeholderTextColor="#8aa0b8"
+                      autoCapitalize="characters"
+                    />
+                    {fieldErrors.deviceCode ? <Text style={styles.fieldError}>{fieldErrors.deviceCode}</Text> : null}
+                    <TextInput
+                      style={[styles.input, fieldErrors.deviceName && styles.inputError]}
+                      value={deviceName}
+                      onChangeText={(value) => {
+                        setDeviceName(value);
+                        if (fieldErrors.deviceName) {
+                          setFieldErrors((prev) => ({ ...prev, deviceName: undefined }));
+                        }
+                      }}
+                      placeholder={messages.devices.deviceNamePlaceholder}
+                      placeholderTextColor="#8aa0b8"
+                    />
+                    {fieldErrors.deviceName ? <Text style={styles.fieldError}>{fieldErrors.deviceName}</Text> : null}
+                    <TextInput
+                      style={[styles.input, fieldErrors.location && styles.inputError]}
+                      value={location}
+                      onChangeText={(value) => {
+                        setLocation(value);
+                        if (fieldErrors.location) {
+                          setFieldErrors((prev) => ({ ...prev, location: undefined }));
+                        }
+                      }}
+                      placeholder={messages.devices.locationPlaceholder}
+                      placeholderTextColor="#8aa0b8"
+                    />
+                    {fieldErrors.location ? <Text style={styles.fieldError}>{fieldErrors.location}</Text> : null}
+
+                    <Text style={styles.categoryLabel}>{messages.devices.assignCategory}</Text>
+                    <FlatList
+                      data={[{ id: null, name: messages.devices.uncategorized }, ...categories]}
+                      keyExtractor={(item, index) => String(item.id ?? `uncat-${index}`)}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.categoryChipRow}
+                      renderItem={({ item }) => {
+                        const active = selectedCategoryId === item.id;
+                        return (
+                          <Pressable style={[styles.categoryChip, active && styles.categoryChipActive]} onPress={() => setSelectedCategoryId(item.id)}>
+                            <Text style={[styles.categoryChipText, active && styles.categoryChipTextActive]}>{item.name}</Text>
+                          </Pressable>
+                        );
+                      }}
+                    />
+
+                    <Pressable style={styles.primaryButton} onPress={handleCreateDevice} disabled={creating}>
+                      {creating ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>{messages.devices.createDevice}</Text>}
+                    </Pressable>
+                    {newToken ? <Text style={styles.meta}>{messages.devices.newTokenHint}</Text> : null}
+                    {newToken ? (
+                      <Pressable style={styles.showTokenButton} onPress={() => setTokenDialogOpen(true)}>
+                        <Text style={styles.showTokenButtonText}>{messages.devices.showApiToken}</Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                </>
+              ) : null}
+            </Animated.View>
 
             {error ? <Text style={styles.error}>{error}</Text> : null}
-            {loading ? <ActivityIndicator style={styles.loading} /> : null}
+            {activeSection !== "list" && loading ? <ActivityIndicator style={styles.loading} /> : null}
           </>
         )}
-        ListEmptyComponent={!loading ? <Text style={styles.empty}>{messages.devices.noDevicesYet}</Text> : null}
         contentContainerStyle={styles.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        ListHeaderComponentStyle={activeSection === "list" ? undefined : styles.listHeaderManageOnly}
       />
 
       <Modal transparent visible={tokenDialogOpen} animationType="fade" onRequestClose={() => setTokenDialogOpen(false)}>
@@ -355,7 +554,7 @@ export default function DevicesScreen({ navigation }) {
             </View>
             <View style={styles.modalActions}>
               <Pressable style={styles.copyTokenButton} onPress={handleCopyToken}>
-                <Text style={styles.copyTokenButtonText}>Copy Token</Text>
+                <Text style={styles.copyTokenButtonText}>{messages.auth.copyToken || "Copy Token"}</Text>
               </Pressable>
               <Pressable style={styles.closeDialogButton} onPress={() => setTokenDialogOpen(false)}>
                 <Text style={styles.closeDialogButtonText}>{messages.devices.tokenClose}</Text>
@@ -369,8 +568,8 @@ export default function DevicesScreen({ navigation }) {
         visible={Boolean(pendingDeleteDevice)}
         title={messages.devices.deleteDialogTitle}
         message={messages.devices.deleteDialogMessage}
-        confirmText={messages.categories.deleteButton}
-        cancelText={messages.categories.cancelButton}
+        confirmText={messages.devices.confirmYes}
+        cancelText={messages.devices.confirmNo}
         onCancel={() => setPendingDeleteDevice(null)}
         onConfirm={handleConfirmDeleteDevice}
       />
