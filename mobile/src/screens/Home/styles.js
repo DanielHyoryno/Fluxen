@@ -10,21 +10,24 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: "#f4f8ff",
-    paddingTop: 32,
+    paddingTop: 42,
   },
   content: {
     paddingHorizontal: 16,
     paddingBottom: 120,
   },
   title: {
-    fontSize: 30,
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: "800",
     color: "#17324d",
+    maxWidth: "88%",
   },
   subtitle: {
-    marginTop: 2,
+    marginTop: 6,
     marginBottom: 14,
     color: "#4f6982",
+    lineHeight: 22,
   },
   error: {
     color: "#a61d1d",
@@ -65,6 +68,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     marginBottom: 10,
+    alignItems: "stretch",
   },
   customDateButton: {
     flex: 1,
@@ -72,12 +76,13 @@ const styles = StyleSheet.create({
     borderColor: "#dbe6f5",
     borderRadius: 8,
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingVertical: 9,
     backgroundColor: "#f9fbff",
+    justifyContent: "center",
   },
   customDateLabel: {
     color: "#4d6480",
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
     textTransform: "uppercase",
   },
@@ -85,6 +90,7 @@ const styles = StyleSheet.create({
     color: "#1d3551",
     marginTop: 4,
     fontWeight: "600",
+    fontSize: 13,
   },
   kpiRow: {
     flexDirection: "row",
@@ -150,6 +156,8 @@ const styles = StyleSheet.create({
     color: "#1d3551",
     fontWeight: "800",
     marginBottom: 10,
+    lineHeight: 28,
+    fontSize: 15,
   },
   billingPreviewHeader: {
     flexDirection: "row",
@@ -226,11 +234,17 @@ const styles = StyleSheet.create({
     height: 140,
     gap: 6,
   },
+  overallBarsScrollView: {
+    height: 158,
+  },
   overallBarsScrollContent: {
+    height: 158,
     paddingBottom: 2,
+    alignItems: "flex-end",
   },
   overallBarCol: {
     flex: 1,
+    height: "100%",
     alignItems: "center",
     justifyContent: "flex-end",
   },

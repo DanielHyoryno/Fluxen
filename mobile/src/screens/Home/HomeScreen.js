@@ -149,8 +149,13 @@ function OverallUsageChart({ series, rangePreset, messages, chartWidth }) {
   return (
     <View style={styles.overallChartWrap}>
       {shouldScroll ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.overallBarsScrollContent}>
-          <View style={styles.overallBarsDense}>{bars}</View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.overallBarsScrollView}
+          contentContainerStyle={styles.overallBarsScrollContent}
+        >
+          <View style={[styles.overallBarsDense, { width: requiredWidth }]}>{bars}</View>
         </ScrollView>
       ) : (
         <View style={styles.overallBars}>{bars}</View>
@@ -531,14 +536,14 @@ export default function HomeScreen({ navigation }) {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <Text style={styles.title}>{messages.home.pageTitle}</Text>
+      <Text style={styles.title} numberOfLines={2}>{messages.home.pageTitle}</Text>
       <Text style={styles.subtitle}>{messages.home.subtitle}</Text>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <View style={styles.kpiRow}>
         <View style={styles.kpiCard}>
-          <Text style={styles.kpiLabel}>{messages.home.totalUsageToday}</Text>
+          <Text style={styles.kpiLabel}>{rangePreset === "day" ? messages.home.totalUsageToday : messages.home.totalUsage}</Text>
           <Text style={styles.kpiValue}>{formatNumber(totalUsage, 3)} L</Text>
         </View>
         <View style={styles.kpiCard}>
@@ -624,12 +629,12 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>{messages.home.usageByDevice} ({rangePreset === "day" ? messages.home.selectedDay : messages.home.selectedRange})</Text>
+        <Text style={styles.cardTitle}>{messages.home.usageByDevice}</Text>
         <UsageByDeviceChart items={deviceRows} messages={messages} />
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>{messages.home.usageByCategory} ({rangePreset === "day" ? messages.home.selectedDay : messages.home.selectedRange})</Text>
+        <Text style={styles.cardTitle}>{messages.home.usageByCategory}</Text>
         <UsageByCategoryChart items={categoryRows} messages={messages} />
       </View>
 
