@@ -6,6 +6,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import LoginScreen from "./src/screens/Login/LoginScreen";
 import RegisterScreen from "./src/screens/Register/RegisterScreen";
@@ -228,6 +229,7 @@ function RootNavigator() {
 
   function MainTabs() {
     const { width: viewportWidth } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
     const isWeb = Platform.OS === "web";
     const isCompactViewport = viewportWidth <= 520;
     const isDesktopViewport = viewportWidth >= 980;
