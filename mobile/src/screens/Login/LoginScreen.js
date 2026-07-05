@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Animated, Easing, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Animated, Easing, Image, Pressable, Text, TextInput, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import messages from "../../constants/messages";
 import styles from "./styles";
+
+const fluxenLogo = require("../../../AppLogo/FluxenLogo.png");
 
 export default function LoginScreen({ navigation }) {
   const { login, messages } = useAuth();
@@ -54,50 +55,57 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.page}>
+      <Animated.View style={[styles.bgBlobA, { opacity: entryOpacity }]} />
+      <Animated.View style={[styles.bgBlobB, { opacity: entryOpacity }]} />
       <Animated.View
         style={{
           opacity: entryOpacity,
           transform: [{ translateY: entryTranslateY }],
         }}
       >
-        <Text style={styles.title}>{messages.auth.loginTitle}</Text>
-        <Text style={styles.subtitle}>{messages.auth.loginSubtitle}</Text>
+        <View style={styles.heroWrap}>
+          <Image source={fluxenLogo} style={styles.logo} resizeMode="contain" />
+          <Text style={styles.brandTitle}>Fluxen</Text>
+          <Text style={styles.subtitle}>{messages.auth.loginSubtitle}</Text>
+        </View>
 
-        <TextInput
-          style={styles.input}
-          placeholder={messages.auth.emailPlaceholder}
-          placeholderTextColor="#8aa0b8"
-          autoCapitalize="none"
-          keyboardType="email-address"
-          value={email}
-          onChangeText={setEmail}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder={messages.auth.passwordPlaceholder}
-          placeholderTextColor="#8aa0b8"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
+        <View style={styles.formCard}>
+          <TextInput
+            style={styles.input}
+            placeholder={messages.auth.emailPlaceholder}
+            placeholderTextColor="#8aa0b8"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={setEmail}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder={messages.auth.passwordPlaceholder}
+            placeholderTextColor="#8aa0b8"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
-          <Pressable
-            style={styles.primaryButton}
-            onPress={handleLogin}
-            disabled={submitting}
-            onPressIn={() => animateButton(0.98)}
-            onPressOut={() => animateButton(1)}
-          >
-            {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{messages.auth.loginButton}</Text>}
+          <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
+            <Pressable
+              style={styles.primaryButton}
+              onPress={handleLogin}
+              disabled={submitting}
+              onPressIn={() => animateButton(0.98)}
+              onPressOut={() => animateButton(1)}
+            >
+              {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{messages.auth.loginButton}</Text>}
+            </Pressable>
+          </Animated.View>
+
+          <Pressable onPress={() => navigation.navigate("Register")}>
+            <Text style={styles.link}>{messages.auth.noAccount}</Text>
           </Pressable>
-        </Animated.View>
-
-        <Pressable onPress={() => navigation.navigate("Register")}>
-          <Text style={styles.link}>{messages.auth.noAccount}</Text>
-        </Pressable>
+        </View>
       </Animated.View>
     </View>
   );

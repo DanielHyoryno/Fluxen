@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { ActivityIndicator, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Image, Pressable, Text, TextInput, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
 import styles from "./styles";
+
+const fluxenLogo = require("../../../AppLogo/FluxenLogo.png");
 
 export default function RegisterScreen({ navigation }) {
   const { register, messages } = useAuth();
@@ -25,46 +27,54 @@ export default function RegisterScreen({ navigation }) {
 
   return (
     <View style={styles.page}>
-      <Text style={styles.title}>{messages.auth.registerTitle}</Text>
+      <View style={styles.bgBlobA} />
+      <View style={styles.bgBlobB} />
+      <View style={styles.heroWrap}>
+        <Image source={fluxenLogo} style={styles.logo} resizeMode="contain" />
+        <Text style={styles.brandTitle}>Fluxen</Text>
+        <Text style={styles.subtitle}>{messages.auth.registerTitle}</Text>
+      </View>
 
-      <TextInput
-        style={styles.input}
-        placeholder={messages.auth.fullNamePlaceholder}
-        placeholderTextColor="#8aa0b8"
-        value={fullName}
-        onChangeText={setFullName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder={messages.auth.emailPlaceholder}
-        placeholderTextColor="#8aa0b8"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder={messages.auth.passwordMinPlaceholder}
-        placeholderTextColor="#8aa0b8"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+      <View style={styles.formCard}>
+        <TextInput
+          style={styles.input}
+          placeholder={messages.auth.fullNamePlaceholder}
+          placeholderTextColor="#8aa0b8"
+          value={fullName}
+          onChangeText={setFullName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder={messages.auth.emailPlaceholder}
+          placeholderTextColor="#8aa0b8"
+          autoCapitalize="none"
+          keyboardType="email-address"
+          value={email}
+          onChangeText={setEmail}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder={messages.auth.passwordMinPlaceholder}
+          placeholderTextColor="#8aa0b8"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
 
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
-      <Pressable style={styles.primaryButton} onPress={handleRegister} disabled={submitting}>
-        {submitting ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.primaryButtonText}>{messages.auth.registerButton}</Text>
-        )}
-      </Pressable>
+        <Pressable style={styles.primaryButton} onPress={handleRegister} disabled={submitting}>
+          {submitting ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.primaryButtonText}>{messages.auth.registerButton}</Text>
+          )}
+        </Pressable>
 
-      <Pressable onPress={() => navigation.goBack()}>
-        <Text style={styles.link}>{messages.auth.backToLogin}</Text>
-      </Pressable>
+        <Pressable onPress={() => navigation.goBack()}>
+          <Text style={styles.link}>{messages.auth.backToLogin}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
