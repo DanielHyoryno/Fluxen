@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   Alert,
   FlatList,
   Modal,
@@ -17,6 +18,8 @@ import { Calendar } from "react-native-calendars";
 import Svg, { Circle, Line, Polyline } from "react-native-svg";
 import { useAuth } from "../../context/AuthContext";
 import { billingSettingsApi, dailyTelemetryApi, estimateBillApi, listDevicesApi, latestTelemetryApi, usageHistoryApi } from "../../services/api";
+import SkeletonBlock from "../../components/SkeletonBlock";
+import useScreenEntranceAnimation from "../../hooks/useScreenEntranceAnimation";
 import styles from "./styles";
 
 const OFFLINE_THRESHOLD_SEC = 120;
@@ -281,7 +284,9 @@ function HoverablePressable({ onPress, style, children, disabled, hoverStyle }) 
 export default function HomeScreen({ navigation }) {
   const { token, messages } = useAuth();
   const { width: screenWidth } = useWindowDimensions();
+  const { animatedStyle } = useScreenEntranceAnimation();
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [filter, setFilter] = useState("all");
@@ -400,20 +405,25 @@ export default function HomeScreen({ navigation }) {
     useCallback(() => {
       let mounted = true;
       async function run() {
-        setLoading(true);
+        if (!hasLoadedOnce) {
+          setLoading(true);
+        }
         try {
           await loadHome();
         } catch (err) {
           if (mounted) setError(err.message || messages.home.loadFailed);
         } finally {
-          if (mounted) setLoading(false);
+          if (mounted) {
+            setLoading(false);
+            setHasLoadedOnce(true);
+          }
         }
       }
       run();
       return () => {
         mounted = false;
       };
-    }, [loadHome])
+    }, [hasLoadedOnce, loadHome, messages.home.loadFailed])
   );
 
   async function onRefresh() {
@@ -525,7 +535,16 @@ export default function HomeScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.loadingPage}>
-        <ActivityIndicator size="large" color="#0f62fe" />
+        <View style={styles.skeletonPage}>
+          <SkeletonBlock width="42%" height={28} />
+          <SkeletonBlock width="64%" height={18} style={{ marginTop: 10, marginBottom: 18 }} />
+          <View style={styles.skeletonKpiRow}>
+            <SkeletonBlock width="48%" height={126} />
+            <SkeletonBlock width="48%" height={126} />
+          </View>
+          <SkeletonBlock width="100%" height={96} style={{ marginBottom: 12 }} />
+          <SkeletonBlock width="100%" height={340} />
+        </View>
       </View>
     );
   }
@@ -536,8 +555,11 @@ export default function HomeScreen({ navigation }) {
       contentContainerStyle={styles.content}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
-      <Text style={styles.title} numberOfLines={2}>{messages.home.pageTitle}</Text>
-      <Text style={styles.subtitle}>{messages.home.subtitle}</Text>
+      <Animated.View style={animatedStyle}>
+      <View style={styles.header}>
+        <Text style={styles.title} numberOfLines={2}>{messages.home.pageTitle}</Text>
+        <Text style={styles.subtitle}>{messages.home.subtitle}</Text>
+      </View>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
 
@@ -677,6 +699,7 @@ export default function HomeScreen({ navigation }) {
           )}
         />
       </View>
+      </Animated.View>
 
       <Modal transparent visible={pickerVisible} animationType="fade" onRequestClose={() => setPickerVisible(false)}>
         <View style={styles.modalBackdrop}>

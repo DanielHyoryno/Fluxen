@@ -3,9 +3,11 @@ import { StyleSheet } from "react-native";
 const styles = StyleSheet.create({
   loadingPage: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
     backgroundColor: "#f4f8ff",
+    padding: 16,
+  },
+  skeletonPage: {
+    gap: 12,
   },
   page: {
     flex: 1,

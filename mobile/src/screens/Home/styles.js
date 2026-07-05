@@ -3,18 +3,28 @@ import { StyleSheet } from "react-native";
 const styles = StyleSheet.create({
   loadingPage: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
     backgroundColor: "#f4f8ff",
+    paddingHorizontal: 16,
+    paddingTop: 36,
+  },
+  skeletonPage: {
+    gap: 12,
+  },
+  skeletonKpiRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   page: {
     flex: 1,
     backgroundColor: "#f4f8ff",
-    paddingTop: 42,
   },
   content: {
     paddingHorizontal: 16,
+    paddingTop: 42,
     paddingBottom: 120,
+  },
+  header: {
+    marginBottom: 0,
   },
   title: {
     fontSize: 24,
@@ -25,7 +35,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginTop: 6,
-    marginBottom: 14,
+    marginBottom: 12,
     color: "#4f6982",
     lineHeight: 22,
   },

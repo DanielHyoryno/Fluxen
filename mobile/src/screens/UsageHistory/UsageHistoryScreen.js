@@ -23,6 +23,7 @@ import * as Sharing from "expo-sharing";
 import { useAuth } from "../../context/AuthContext";
 import { usageHistoryApi, exportXlsxApi } from "../../services/api";
 import SectionAccordion from "../../components/SectionAccordion";
+import SkeletonBlock from "../../components/SkeletonBlock";
 import styles from "./styles";
 
 const AUTO_REFRESH_MS = 5000;
@@ -189,6 +190,7 @@ export default function UsageHistoryScreen({ route }) {
   const [draftFrom, setDraftFrom] = useState(defaultRange.from);
   const [draftTo, setDraftTo] = useState(defaultRange.to);
   const [loading, setLoading] = useState(true);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
@@ -337,23 +339,6 @@ export default function UsageHistoryScreen({ route }) {
     return toLocalDateISO(maxByRange < today ? maxByRange : today);
   }, [draftFrom, draftTo, maxCalendarDate]);
 
-  useEffect(() => {
-    Animated.parallel([
-      Animated.timing(entryOpacity, {
-        toValue: 1,
-        duration: 340,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-      Animated.timing(entryTranslateY, {
-        toValue: 0,
-        duration: 400,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [entryOpacity, entryTranslateY]);
-
   const loadHistory = useCallback(async () => {
     setError("");
     const data = await usageHistoryApi(token, device.device_code, range.from, range.to);
@@ -364,14 +349,36 @@ export default function UsageHistoryScreen({ route }) {
     useCallback(() => {
       let mounted = true;
 
+       entryOpacity.setValue(0);
+       entryTranslateY.setValue(12);
+       Animated.parallel([
+         Animated.timing(entryOpacity, {
+           toValue: 1,
+           duration: 340,
+           easing: Easing.out(Easing.cubic),
+           useNativeDriver: true,
+         }),
+         Animated.timing(entryTranslateY, {
+           toValue: 0,
+           duration: 400,
+           easing: Easing.out(Easing.cubic),
+           useNativeDriver: true,
+         }),
+       ]).start();
+
       async function run() {
-        setLoading(true);
+        if (!hasLoadedOnce) {
+          setLoading(true);
+        }
         try {
           await loadHistory();
         } catch (err) {
           if (mounted) setError(err.message || "Failed to load usage history");
         } finally {
-          if (mounted) setLoading(false);
+          if (mounted) {
+            setLoading(false);
+            setHasLoadedOnce(true);
+          }
         }
       }
 
@@ -390,7 +397,7 @@ export default function UsageHistoryScreen({ route }) {
         mounted = false;
         clearInterval(interval);
       };
-    }, [loadHistory])
+    }, [hasLoadedOnce, loadHistory])
   );
 
   async function onRefresh() {
@@ -484,7 +491,13 @@ export default function UsageHistoryScreen({ route }) {
   if (loading) {
     return (
       <View style={styles.loadingPage}>
-        <ActivityIndicator size="large" color="#0f62fe" />
+        <View style={styles.skeletonPage}>
+          <SkeletonBlock width="45%" height={24} />
+          <SkeletonBlock width="36%" height={16} style={{ marginTop: 10, marginBottom: 18 }} />
+          <SkeletonBlock width="100%" height={162} style={{ marginBottom: 12 }} />
+          <SkeletonBlock width="100%" height={150} style={{ marginBottom: 12 }} />
+          <SkeletonBlock width="100%" height={220} />
+        </View>
       </View>
     );
   }

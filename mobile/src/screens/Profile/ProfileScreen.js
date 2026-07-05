@@ -1,14 +1,18 @@
-import { Pressable, Text, View } from "react-native";
+import { Animated, Pressable, Text, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
+import useScreenEntranceAnimation from "../../hooks/useScreenEntranceAnimation";
 import styles from "./styles";
 
 export default function ProfileScreen() {
   const { user, logout, locale, messages, setLocale } = useAuth();
+  const { animatedStyle } = useScreenEntranceAnimation();
 
   return (
-    <View style={styles.page}>
-      <Text style={styles.title}>{messages.profile.pageTitle}</Text>
-      <Text style={styles.subtitle}>{messages.profile.subtitle}</Text>
+    <Animated.View style={[styles.page, animatedStyle]}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{messages.profile.pageTitle}</Text>
+        <Text style={styles.subtitle}>{messages.profile.subtitle}</Text>
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.label}>{messages.profile.fullName}</Text>
@@ -40,6 +44,6 @@ export default function ProfileScreen() {
       <Pressable style={styles.logoutButton} onPress={logout}>
         <Text style={styles.logoutText}>{messages.profile.logout}</Text>
       </Pressable>
-    </View>
+    </Animated.View>
   );
 }

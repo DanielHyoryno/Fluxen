@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Animated,
   FlatList,
   Pressable,
   ScrollView,
@@ -23,6 +24,7 @@ import {
   stopScan,
   writeCharacteristic,
 } from "../../services/ble";
+import useScreenEntranceAnimation from "../../hooks/useScreenEntranceAnimation";
 import styles from "./styles";
 
 function getServerBaseUrl() {
@@ -44,6 +46,7 @@ function DeviceItem({ item, onPress, connecting }) {
 }
 
 export default function BLEScanScreen() {
+  const { animatedStyle } = useScreenEntranceAnimation();
   const [permissionGranted, setPermissionGranted] = useState(null);
   const [devices, setDevices] = useState([]);
   const [isScanning, setIsScanning] = useState(false);
@@ -207,7 +210,7 @@ export default function BLEScanScreen() {
   }
 
   return (
-    <ScrollView style={styles.page} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <Animated.ScrollView style={[styles.page, animatedStyle]} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <View style={styles.header}>
         <Text style={styles.title}>BLE Provisioning</Text>
         <Text style={styles.subtitle}>Scan and configure nearby WaterMeter ESP32 devices</Text>
@@ -319,6 +322,6 @@ export default function BLEScanScreen() {
           <Text style={statusType === "success" ? styles.successText : styles.error}>{statusMessage}</Text>
         </View>
       ) : null}
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
