@@ -79,3 +79,29 @@ Open on:
 ## Notes
 
 If you are cloning this project for local testing, read and update env values first, then run backend before mobile.
+
+## Backend Tests
+
+Unit tests use Node's built-in test runner:
+
+```bash
+cd backend
+npm test
+```
+
+Integration tests require a disposable PostgreSQL database whose name contains
+`test`. Copy `.env.test.example` to `.env.test`, set `TEST_DATABASE_URL`, then run:
+
+```bash
+npm run test:integration
+```
+
+The integration fixture recreates its tables, so it must never point to a
+development or production database.
+
+## Time Policy
+
+Telemetry remains an absolute UTC timestamp in PostgreSQL (`TIMESTAMPTZ`). Daily
+and monthly business periods use `Asia/Jakarta` (WIB). Existing installations
+that still use `TIMESTAMP` must back up the database and apply
+`backend/sql/migrations/001_measurement_time_to_timestamptz.sql` once.

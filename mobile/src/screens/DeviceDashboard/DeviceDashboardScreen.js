@@ -6,7 +6,7 @@ import SectionAccordion from "../../components/SectionAccordion";
 import { dailyTelemetryApi, latestTelemetryApi, usageAlertsApi, usageLimitsApi, dismissAlertApi } from "../../services/api";
 import styles from "./styles";
 import { AUTO_REFRESH_MS, OFFLINE_THRESHOLD_SEC } from "../../constants/deviceDashboard";
-import { formatDateLabel, formatNumber, formatRelativeAge, toLocalDateISO } from "../../common/deviceDashboard/formatters";
+import { formatDateLabel, formatNumber, formatRelativeAge, formatWibDateTime, toLocalDateISO } from "../../common/deviceDashboard/formatters";
 import { FlowBarChart, FlowLineChart, HourlyUsageLineChart } from "../../components/deviceDashboard/charts";
 import { StaggerCard, StaggerRow } from "../../components/deviceDashboard/motion";
 
@@ -264,7 +264,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
                 </View>
               </View>
               <Text style={styles.mainMetric}>{formatNumber(displayFlowRate, 2)} L/min</Text>
-              <Text style={styles.meta}>{messages.dashboard.latestAt}: {latest?.measured_at ? new Date(latest.measured_at).toLocaleString() : "-"}</Text>
+              <Text style={styles.meta}>{messages.dashboard.latestAt}: {latest?.measured_at ? formatWibDateTime(latest.measured_at) : "-"}</Text>
               <Text style={styles.metaStrong}>{lastSeenText}</Text>
               <Pressable
                 style={({ pressed }) => [styles.overviewDetailButton, pressed && styles.overviewDetailButtonPressed]}

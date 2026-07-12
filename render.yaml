@@ -21,3 +21,5 @@ services:
         sync: false
       - key: JWT_EXPIRES_IN
         value: 7d
+      - key: BUSINESS_TIMEZONE
+        value: Asia/Jakarta

@@ -1,4 +1,5 @@
 const pool = require("../config/db");
+const env = require("../config/env");
 
 let categorySupportCache = null;
 let categorySupportCacheAt = 0;
@@ -197,10 +198,10 @@ async function estimateBill(userId, payload) {
             COUNT(*) AS reading_count
      FROM measurements m
      WHERE m.device_id = ANY($1::bigint[])
-       AND m.measured_at >= $2::date
-       AND m.measured_at < ($3::date + INTERVAL '1 day')
+       AND m.measured_at >= ($2::date::timestamp AT TIME ZONE $4)
+       AND m.measured_at < (($3::date + 1)::timestamp AT TIME ZONE $4)
      GROUP BY m.device_id`,
-    [devices.map((device) => device.id), payload.from, payload.to]
+    [devices.map((device) => device.id), payload.from, payload.to, env.businessTimezone]
   );
 
   const measurementByDeviceId = new Map(

@@ -1,4 +1,6 @@
 const pool = require("../config/db");
+const env = require("../config/env");
+const { toBusinessDateKey, toBusinessMonthKey } = require("../utils/datetime");
 
 async function getOwnedDeviceId(client, userId, deviceCode) {
   const q = await client.query(
@@ -33,37 +35,36 @@ async function createUsageLimitAlertIfNeeded(client, params) {
          SELECT SUM(m.volume_delta_l)
          FROM measurements m
          WHERE m.device_id = $1
-           AND DATE(m.measured_at) = DATE($2::timestamp)
+           AND (m.measured_at AT TIME ZONE $3)::date = ($2::timestamptz AT TIME ZONE $3)::date
        ), 0) AS daily_total_l,
        COALESCE((
          SELECT SUM(m.volume_delta_l)
          FROM measurements m
          WHERE m.device_id = $1
-           AND date_trunc('month', m.measured_at) = date_trunc('month', $2::timestamp)
+           AND date_trunc('month', m.measured_at AT TIME ZONE $3) =
+               date_trunc('month', $2::timestamptz AT TIME ZONE $3)
        ), 0) AS monthly_total_l
      FROM device_thresholds dt
      WHERE dt.device_id = $1
      LIMIT 1`,
-    [deviceId, measuredAt]
+    [deviceId, measuredAt, env.businessTimezone]
   );
 
   if (usageQ.rowCount === 0) return [];
 
   const usage = usageQ.rows[0];
   const triggeredAlerts = [];
-  const measuredAtDate = new Date(measuredAt);
-
   const periodConfigs = [
     {
       alertType: "USAGE_LIMIT_DAILY",
-      periodKey: measuredAtDate.toISOString().slice(0, 10),
+      periodKey: toBusinessDateKey(measuredAt),
       periodLabel: "daily",
       limitValue: usage.daily_usage_limit_l,
       consumedValue: usage.daily_total_l,
     },
     {
       alertType: "USAGE_LIMIT_MONTHLY",
-      periodKey: measuredAtDate.toISOString().slice(0, 7),
+      periodKey: toBusinessMonthKey(measuredAt),
       periodLabel: "monthly",
       limitValue: usage.monthly_usage_limit_l,
       consumedValue: usage.monthly_total_l,
@@ -267,9 +268,9 @@ async function getDailyTelemetry(userId, deviceCode, date) {
     `SELECT m.measured_at, m.flow_rate_lpm, m.volume_delta_l, m.cumulative_volume_l
      FROM measurements m
      WHERE m.device_id = $1
-       AND DATE(m.measured_at) = $2::date
+       AND (m.measured_at AT TIME ZONE $3)::date = $2::date
      ORDER BY m.measured_at ASC`,
-    [deviceId, date]
+    [deviceId, date, env.businessTimezone]
   );
 
   return q.rows;
@@ -279,18 +280,18 @@ async function getUsageHistory(userId, deviceCode, from, to) {
   const deviceId = await getOwnedDeviceId(pool, userId, deviceCode);
 
   const q = await pool.query(
-    `SELECT DATE(m.measured_at) AS date,
+    `SELECT (m.measured_at AT TIME ZONE $4)::date AS date,
             SUM(m.volume_delta_l) AS total_liters,
             AVG(m.flow_rate_lpm) AS avg_flow_rate_lpm,
             MAX(m.flow_rate_lpm) AS peak_flow_rate_lpm,
             COUNT(*) AS reading_count
      FROM measurements m
      WHERE m.device_id = $1
-       AND m.measured_at >= $2::date
-       AND m.measured_at < ($3::date + INTERVAL '1 day')
-     GROUP BY DATE(m.measured_at)
+       AND m.measured_at >= ($2::date::timestamp AT TIME ZONE $4)
+       AND m.measured_at < (($3::date + 1)::timestamp AT TIME ZONE $4)
+     GROUP BY (m.measured_at AT TIME ZONE $4)::date
      ORDER BY date ASC`,
-    [deviceId, from, to]
+    [deviceId, from, to, env.businessTimezone]
   );
 
   return q.rows;
@@ -304,10 +305,10 @@ async function getExportData(userId, deviceCode, from, to) {
             m.cumulative_volume_l, m.pulse_count, m.battery_voltage, m.rssi_dbm
      FROM measurements m
      WHERE m.device_id = $1
-       AND m.measured_at >= $2::date
-       AND m.measured_at < ($3::date + INTERVAL '1 day')
+       AND m.measured_at >= ($2::date::timestamp AT TIME ZONE $4)
+       AND m.measured_at < (($3::date + 1)::timestamp AT TIME ZONE $4)
      ORDER BY m.measured_at ASC`,
-    [deviceId, from, to]
+    [deviceId, from, to, env.businessTimezone]
   );
 
   return q.rows;

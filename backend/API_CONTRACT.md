@@ -2,6 +2,12 @@
 
 Base URL: `http://<server-host>:8080/api/v1`
 
+Time policy:
+- Device timestamps are sent and stored as ISO 8601 UTC instants.
+- Calendar dates, daily/monthly aggregation, usage limits, and billing periods use
+  `Asia/Jakarta` (WIB, UTC+7).
+- CSV export contains both `measured_at_utc` and `measured_at_wib`.
+
 All responses use:
 - success: `{ success: true, message, data }`
 - error: `{ success: false, error_code, message }`
@@ -137,7 +143,7 @@ Header for both endpoints:
 ### Export CSV
 - `GET /telemetry/export?device_code=BV-ESP32-01&from=2026-02-01&to=2026-02-10`
 - Returns raw measurement data as CSV file download
-- Columns: `measured_at`, `flow_rate_lpm`, `volume_delta_l`, `cumulative_volume_l`, `pulse_count`, `battery_voltage`, `rssi_dbm`
+- Columns: `measured_at_utc`, `measured_at_wib`, `flow_rate_lpm`, `volume_delta_l`, `cumulative_volume_l`, `pulse_count`, `battery_voltage`, `rssi_dbm`
 - Content-Type: `text/csv`
 
 ## 5) Usage Limits & Alerts (user protected)

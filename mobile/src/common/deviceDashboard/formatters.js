@@ -1,6 +1,11 @@
 export function formatDateLabel(isoString) {
   const date = new Date(isoString);
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" });
+}
+
+export function formatWibDateTime(isoString) {
+  const date = new Date(isoString);
+  return `${date.toLocaleString("id-ID", { timeZone: "Asia/Jakarta" })} WIB`;
 }
 
 export function formatNumber(value, decimals = 2) {
@@ -31,7 +36,12 @@ export function formatRelativeAge(diffSec) {
 }
 
 export function toLocalDateISO(date = new Date()) {
-  const tzOffset = date.getTimezoneOffset() * 60000;
-  const local = new Date(date.getTime() - tzOffset);
-  return local.toISOString().slice(0, 10);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.filter((part) => part.type !== "literal").map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
 }

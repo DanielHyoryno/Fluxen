@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS devices (
   category_id BIGINT REFERENCES device_categories(id) ON DELETE SET NULL,
   install_location VARCHAR(150),
   firmware_version VARCHAR(30),
-  last_seen_at TIMESTAMP,
+  last_seen_at TIMESTAMPTZ,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS devices (
 CREATE TABLE IF NOT EXISTS measurements (
   id BIGSERIAL PRIMARY KEY,
   device_id BIGINT NOT NULL REFERENCES devices(id) ON DELETE CASCADE,
-  measured_at TIMESTAMP NOT NULL,
+  measured_at TIMESTAMPTZ NOT NULL,
   flow_rate_lpm NUMERIC(10,3) NOT NULL,
   volume_delta_l NUMERIC(10,4) NOT NULL,
   cumulative_volume_l NUMERIC(12,4),
@@ -91,8 +91,8 @@ CREATE TABLE IF NOT EXISTS alerts (
   severity VARCHAR(20) NOT NULL DEFAULT 'medium',
   title VARCHAR(120) NOT NULL,
   message TEXT NOT NULL,
-  triggered_at TIMESTAMP NOT NULL,
-  resolved_at TIMESTAMP,
+  triggered_at TIMESTAMPTZ NOT NULL,
+  resolved_at TIMESTAMPTZ,
   status VARCHAR(20) NOT NULL DEFAULT 'active',
   meta JSONB,
   created_at TIMESTAMP NOT NULL DEFAULT NOW()

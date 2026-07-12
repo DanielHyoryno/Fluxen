@@ -9,6 +9,7 @@ const {
   getExportData,
 } = require("../services/telemetry.service");
 const { ok, fail } = require("../utils/response");
+const { formatBusinessDateTime, toBusinessDateKey } = require("../utils/datetime");
 
 async function postTelemetry(req, res) {
   try {
@@ -112,10 +113,11 @@ async function exportCsv(req, res) {
 
     const rows = await getExportData(req.user.id, device_code, from, to);
 
-    const header = "measured_at,flow_rate_lpm,volume_delta_l,cumulative_volume_l,pulse_count,battery_voltage,rssi_dbm";
+    const header = "measured_at_utc,measured_at_wib,flow_rate_lpm,volume_delta_l,cumulative_volume_l,pulse_count,battery_voltage,rssi_dbm";
     const csvLines = rows.map((r) =>
       [
         r.measured_at ? new Date(r.measured_at).toISOString() : "",
+        r.measured_at ? formatBusinessDateTime(r.measured_at) : "",
         r.flow_rate_lpm ?? "",
         r.volume_delta_l ?? "",
         r.cumulative_volume_l ?? "",
@@ -150,13 +152,13 @@ async function exportXlsx(req, res) {
 
     const totalUsageLiters = rows.reduce((sum, row) => sum + Number(row.volume_delta_l || 0), 0);
     const readingCount = rows.length;
-    const uniqueDayKeys = [...new Set(rows.map((row) => (row.measured_at ? new Date(row.measured_at).toISOString().slice(0, 10) : "")).filter(Boolean))];
+    const uniqueDayKeys = [...new Set(rows.map((row) => (row.measured_at ? toBusinessDateKey(row.measured_at) : "")).filter(Boolean))];
     const dayCount = uniqueDayKeys.length || 1;
     const averagePerDay = totalUsageLiters / dayCount;
 
     const dailyUsageMap = rows.reduce((acc, row) => {
       if (!row.measured_at) return acc;
-      const dayKey = new Date(row.measured_at).toISOString().slice(0, 10);
+      const dayKey = toBusinessDateKey(row.measured_at);
       acc[dayKey] = Number(acc[dayKey] || 0) + Number(row.volume_delta_l || 0);
       return acc;
     }, {});
@@ -218,7 +220,7 @@ async function exportXlsx(req, res) {
     });
 
     worksheet.columns = [
-      { header: "Measured At", key: "measured_at", width: 24 },
+      { header: "Measured At (WIB)", key: "measured_at", width: 26 },
       { header: "Flow Rate (L/min)", key: "flow_rate_lpm", width: 18 },
       { header: "Volume Delta (L)", key: "volume_delta_l", width: 18 },
       { header: "Cumulative Volume (L)", key: "cumulative_volume_l", width: 20 },
@@ -231,7 +233,7 @@ async function exportXlsx(req, res) {
 
     rows.forEach((row) => {
       worksheet.addRow({
-        measured_at: row.measured_at ? new Date(row.measured_at) : null,
+        measured_at: row.measured_at ? formatBusinessDateTime(row.measured_at) : null,
         flow_rate_lpm: row.flow_rate_lpm === null ? null : Number(row.flow_rate_lpm),
         volume_delta_l: row.volume_delta_l === null ? null : Number(row.volume_delta_l),
         cumulative_volume_l: row.cumulative_volume_l === null ? null : Number(row.cumulative_volume_l),
@@ -241,7 +243,6 @@ async function exportXlsx(req, res) {
       });
     });
 
-    worksheet.getColumn("measured_at").numFmt = "yyyy-mm-dd hh:mm:ss";
     ["flow_rate_lpm", "volume_delta_l", "cumulative_volume_l", "battery_voltage"].forEach((key) => {
       worksheet.getColumn(key).numFmt = "0.000";
     });
