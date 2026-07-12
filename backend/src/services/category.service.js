@@ -1,17 +1,19 @@
 const pool = require("../config/db");
+const env = require("../config/env");
 
 async function getCategorySupport() {
   const q = await pool.query(
     `SELECT
-       to_regclass('public.device_categories') IS NOT NULL AS has_categories_table,
-       to_regclass('public.device_category_map') IS NOT NULL AS has_device_category_map_table,
+       to_regclass($1) IS NOT NULL AS has_categories_table,
+       to_regclass($2) IS NOT NULL AS has_device_category_map_table,
        EXISTS (
          SELECT 1
          FROM information_schema.columns
-         WHERE table_schema = 'public'
+         WHERE table_schema = $3
            AND table_name = 'devices'
            AND column_name = 'category_id'
-       ) AS has_device_category_column`
+       ) AS has_device_category_column`,
+    [`${env.dbSchema}.device_categories`, `${env.dbSchema}.device_category_map`, env.dbSchema]
   );
 
   return {

@@ -6,6 +6,7 @@ const path = require("node:path");
 require("dotenv").config({ path: path.join(__dirname, "../../.env.test") });
 
 const testDatabaseUrl = process.env.TEST_DATABASE_URL;
+const testDatabaseSchema = process.env.TEST_DATABASE_SCHEMA;
 let pool;
 let server;
 let baseUrl;
@@ -24,11 +25,19 @@ async function request(pathname, { method = "GET", token, body } = {}) {
 }
 
 if (testDatabaseUrl) before(async () => {
-  const databaseName = new URL(testDatabaseUrl).pathname.toLowerCase();
-  assert.match(databaseName, /test/, "TEST_DATABASE_URL must point to a disposable database whose name contains 'test'");
+  const parsedUrl = new URL(testDatabaseUrl);
+  assert.match(parsedUrl.hostname, /^(localhost|127\.0\.0\.1|::1)$/, "Integration tests only accept a local PostgreSQL host");
+  assert.match(testDatabaseSchema || "", /^[a-z][a-z0-9_]*_test$/, "TEST_DATABASE_SCHEMA must end with _test");
+
+  const { Pool } = require("pg");
+  const bootstrapPool = new Pool({ connectionString: testDatabaseUrl, ssl: false });
+  await bootstrapPool.query(`DROP SCHEMA IF EXISTS ${testDatabaseSchema} CASCADE`);
+  await bootstrapPool.query(`CREATE SCHEMA ${testDatabaseSchema}`);
+  await bootstrapPool.end();
 
   process.env.NODE_ENV = "test";
-  process.env.DATABASE_URL = testDatabaseUrl;
+  process.env.DATABASE_URL = parsedUrl.toString();
+  process.env.DB_SCHEMA = testDatabaseSchema;
   process.env.JWT_SECRET = process.env.JWT_SECRET || "test-only-secret";
   process.env.BUSINESS_TIMEZONE = "Asia/Jakarta";
   process.env.DB_SSL = process.env.DB_SSL || "false";
@@ -47,6 +56,11 @@ if (testDatabaseUrl) before(async () => {
 if (testDatabaseUrl) after(async () => {
   if (server) await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
   if (pool) await pool.end();
+
+  const { Pool } = require("pg");
+  const cleanupPool = new Pool({ connectionString: testDatabaseUrl, ssl: false });
+  await cleanupPool.query(`DROP SCHEMA IF EXISTS ${testDatabaseSchema} CASCADE`);
+  await cleanupPool.end();
 });
 
 test("critical API flow uses WIB boundaries and enforces ownership", { skip: !testDatabaseUrl }, async () => {
@@ -107,7 +121,7 @@ test("critical API flow uses WIB boundaries and enforces ownership", { skip: !te
   });
   assert.equal(history.status, 200);
   assert.deepEqual(
-    history.payload.data.map((row) => [String(row.date).slice(0, 10), Number(row.total_liters)]),
+    history.payload.data.items.map((row) => [String(row.date).slice(0, 10), Number(row.total_liters)]),
     [["2026-07-11", 2], ["2026-07-12", 3]]
   );
 

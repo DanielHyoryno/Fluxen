@@ -1,5 +1,3 @@
-DROP TABLE IF EXISTS alerts, measurements, device_thresholds, billing_settings, devices, device_categories, users CASCADE;
-
 CREATE TABLE users (
   id BIGSERIAL PRIMARY KEY,
   full_name VARCHAR(120) NOT NULL,

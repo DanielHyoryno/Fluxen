@@ -14,6 +14,14 @@ function toBoolean(value, fallback = false) {
   return normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "on";
 }
 
+function toSchemaName(value, fallback = "public") {
+  const schema = String(value || fallback).trim();
+  if (!/^[a-z][a-z0-9_]*$/.test(schema)) {
+    throw new Error("DB_SCHEMA must be a lowercase PostgreSQL identifier");
+  }
+  return schema;
+}
+
 const NODE_ENV = process.env.NODE_ENV || "development";
 const IS_PROD = NODE_ENV === "production";
 
@@ -23,6 +31,7 @@ const config = {
   port: toNumber(process.env.PORT, 8080),
   databaseUrl: process.env.DATABASE_URL || "",
   dbSsl: toBoolean(process.env.DB_SSL, IS_PROD),
+  dbSchema: toSchemaName(process.env.DB_SCHEMA),
   db: {
     host: process.env.DB_HOST || "localhost",
     port: toNumber(process.env.DB_PORT, 5432),

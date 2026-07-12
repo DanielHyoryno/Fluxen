@@ -280,7 +280,7 @@ async function getUsageHistory(userId, deviceCode, from, to) {
   const deviceId = await getOwnedDeviceId(pool, userId, deviceCode);
 
   const q = await pool.query(
-    `SELECT (m.measured_at AT TIME ZONE $4)::date AS date,
+    `SELECT to_char(m.measured_at AT TIME ZONE $4, 'YYYY-MM-DD') AS date,
             SUM(m.volume_delta_l) AS total_liters,
             AVG(m.flow_rate_lpm) AS avg_flow_rate_lpm,
             MAX(m.flow_rate_lpm) AS peak_flow_rate_lpm,
@@ -289,7 +289,7 @@ async function getUsageHistory(userId, deviceCode, from, to) {
      WHERE m.device_id = $1
        AND m.measured_at >= ($2::date::timestamp AT TIME ZONE $4)
        AND m.measured_at < (($3::date + 1)::timestamp AT TIME ZONE $4)
-     GROUP BY (m.measured_at AT TIME ZONE $4)::date
+     GROUP BY to_char(m.measured_at AT TIME ZONE $4, 'YYYY-MM-DD')
      ORDER BY date ASC`,
     [deviceId, from, to, env.businessTimezone]
   );

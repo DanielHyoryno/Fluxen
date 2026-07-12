@@ -89,15 +89,16 @@ cd backend
 npm test
 ```
 
-Integration tests require a disposable PostgreSQL database whose name contains
-`test`. Copy `.env.test.example` to `.env.test`, set `TEST_DATABASE_URL`, then run:
+Integration tests require local PostgreSQL and use a disposable schema whose
+name ends in `_test`. Copy `.env.test.example` to `.env.test`, set the local
+`TEST_DATABASE_URL`, then run:
 
 ```bash
 npm run test:integration
 ```
 
-The integration fixture recreates its tables, so it must never point to a
-development or production database.
+The suite refuses remote database hosts and recreates only its isolated test
+schema. It must never point to a production database.
 
 ## Time Policy
 

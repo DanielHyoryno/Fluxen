@@ -16,6 +16,7 @@ const sharedPoolConfig = {
   query_timeout: 10000,
   statement_timeout: 10000,
   keepAlive: true,
+  options: `-c search_path=${env.dbSchema}`,
 };
 
 const poolConfig = env.databaseUrl
