@@ -163,4 +163,24 @@ test("critical API flow uses WIB boundaries and enforces ownership", { skip: !te
     },
   });
   assert.equal(wrongDeviceToken.status, 401);
+
+  const unknownRoute = await request("/does-not-exist", { token: ownerToken });
+  assert.equal(unknownRoute.status, 404);
+  assert.deepEqual(unknownRoute.payload, {
+    success: false,
+    error_code: "ROUTE_NOT_FOUND",
+    message: "Route not found",
+  });
+
+  const invalidJsonResponse = await fetch(`${baseUrl}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: "{invalid-json",
+  });
+  assert.equal(invalidJsonResponse.status, 400);
+  assert.deepEqual(await invalidJsonResponse.json(), {
+    success: false,
+    error_code: "INVALID_JSON",
+    message: "Request body contains invalid JSON",
+  });
 });
