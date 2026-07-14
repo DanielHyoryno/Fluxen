@@ -1,10 +1,10 @@
 const express = require("express");
 const {
-  createOwnedDevice,
-  listOwnedDevices,
-  getOwnedDevice,
-  updateOwnedDevice,
-  deleteOwnedDevice,
+    createOwnedDevice,
+    listOwnedDevices,
+    getOwnedDevice,
+    updateOwnedDevice,
+    deleteOwnedDevice,
 } = require("../controllers/device.controller");
 const { requireAuth } = require("../middlewares/auth.middleware");
 

@@ -1,9 +1,9 @@
 const express = require("express");
 const { requireAuth } = require("../middlewares/auth.middleware");
 const {
-  getOwnedBillingSettings,
-  upsertOwnedBillingSettings,
-  estimateOwnedBill,
+    getOwnedBillingSettings,
+    upsertOwnedBillingSettings,
+    estimateOwnedBill,
 } = require("../controllers/billing.controller");
 
 const router = express.Router();

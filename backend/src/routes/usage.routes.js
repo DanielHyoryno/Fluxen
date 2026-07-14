@@ -1,10 +1,10 @@
 const express = require("express");
 const {
-  getDeviceUsageLimits,
-  upsertDeviceUsageLimits,
-  getUsageAlerts,
-  getAllUsageAlerts,
-  dismissUsageAlert,
+    getDeviceUsageLimits,
+    upsertDeviceUsageLimits,
+    getUsageAlerts,
+    getAllUsageAlerts,
+    dismissUsageAlert,
 } = require("../controllers/usage.controller");
 const { requireAuth } = require("../middlewares/auth.middleware");
 

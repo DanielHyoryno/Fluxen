@@ -18,7 +18,7 @@ app.use(morgan("dev"));
 app.use(express.json({ limit: "1mb" }));
 
 app.get("/health", (req, res) => {
-  res.status(200).json({ success: true, message: "API is running" });
+    res.status(200).json({ success: true, message: "API is running" });
 });
 
 app.use("/api/v1/telemetry", telemetryRoutes);

@@ -1,12 +1,12 @@
 const express = require("express");
 const {
-  postTelemetry,
-  postTelemetryBatch,
-  latestTelemetry,
-  dailyTelemetry,
-  usageHistory,
-  exportCsv,
-  exportXlsx,
+    postTelemetry,
+    postTelemetryBatch,
+    latestTelemetry,
+    dailyTelemetry,
+    usageHistory,
+    exportCsv,
+    exportXlsx,
 } = require("../controllers/telemetry.controller");
 const { requireDeviceToken } = require("../middlewares/device-auth.middleware");
 const { requireAuth } = require("../middlewares/auth.middleware");
@@ -16,9 +16,9 @@ const router = express.Router();
 
 // Device ingest — 30 requests per minute per device
 const ingestLimiter = rateLimit({
-  windowMs: 60000,
-  max: 30,
-  keyFn: (req) => req.device?.device_code || req.ip,
+    windowMs: 60000,
+    max: 30,
+    keyFn: (req) => req.device?.device_code || req.ip,
 });
 
 router.post("/", requireDeviceToken, ingestLimiter, postTelemetry);
