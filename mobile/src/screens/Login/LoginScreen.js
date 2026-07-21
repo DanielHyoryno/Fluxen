@@ -5,7 +5,7 @@ import styles from "./styles";
 
 const fluxenLogo = require("../../../AppLogo/FluxenLogo.png");
 
-export default function LoginScreen({ navigation }) {
+export default function LoginScreen({ navigation, route }) {
     const { login, messages } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -89,6 +89,9 @@ export default function LoginScreen({ navigation }) {
                     />
 
                     {error ? <Text style={styles.error}>{error}</Text> : null}
+                    {route?.params?.registrationSuccess ? (
+                        <Text style={styles.success}>{route.params.registrationSuccess}</Text>
+                    ) : null}
 
                     <Animated.View style={{ transform: [{ scale: buttonScale }] }}>
                         <Pressable

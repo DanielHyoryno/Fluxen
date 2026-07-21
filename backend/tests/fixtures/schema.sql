@@ -12,9 +12,11 @@ CREATE TABLE device_categories (
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name VARCHAR(80) NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  UNIQUE (user_id, name)
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX uq_device_categories_user_name_ci
+  ON device_categories (user_id, LOWER(BTRIM(name)));
 
 CREATE TABLE devices (
   id BIGSERIAL PRIMARY KEY,

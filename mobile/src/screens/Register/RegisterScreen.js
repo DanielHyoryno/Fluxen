@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import styles from "./styles";
 
 const fluxenLogo = require("../../../AppLogo/FluxenLogo.png");
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RegisterScreen({ navigation }) {
     const { register, messages } = useAuth();
@@ -12,14 +13,66 @@ export default function RegisterScreen({ navigation }) {
     const [password, setPassword] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
+    const [fieldErrors, setFieldErrors] = useState({});
+
+    function validateFields() {
+        const nextErrors = {};
+        const trimmedName = fullName.trim();
+        const trimmedEmail = email.trim();
+
+        if (!trimmedName) {
+            nextErrors.fullName = messages.auth.fullNameRequired;
+        } else if (trimmedName.length < 2) {
+            nextErrors.fullName = messages.auth.fullNameMinLength;
+        } else if (trimmedName.length > 120) {
+            nextErrors.fullName = messages.auth.fullNameMaxLength;
+        }
+
+        if (!trimmedEmail) {
+            nextErrors.email = messages.auth.emailRequired;
+        } else if (trimmedEmail.length > 150) {
+            nextErrors.email = messages.auth.emailMaxLength;
+        } else if (!EMAIL_PATTERN.test(trimmedEmail)) {
+            nextErrors.email = messages.auth.emailInvalid;
+        }
+
+        if (!password) {
+            nextErrors.password = messages.auth.passwordRequired;
+        } else if (password.length < 8) {
+            nextErrors.password = messages.auth.passwordMinLength;
+        } else if (password.length > 100) {
+            nextErrors.password = messages.auth.passwordMaxLength;
+        }
+
+        setFieldErrors(nextErrors);
+        return Object.keys(nextErrors).length === 0;
+    }
+
+    function updateField(field, setter, value) {
+        setter(value);
+        if (fieldErrors[field]) {
+            setFieldErrors((current) => ({ ...current, [field]: undefined }));
+        }
+    }
 
     async function handleRegister() {
         setError("");
+        if (!validateFields()) return;
+
         setSubmitting(true);
         try {
             await register(fullName.trim(), email.trim(), password);
+            navigation.reset({
+                index: 0,
+                routes: [{ name: "Login", params: { registrationSuccess: messages.auth.registerSuccess } }],
+            });
         } catch (err) {
-            setError(err.message || messages.auth.registerFailed);
+            const message = String(err.message || "");
+            if (message.toLowerCase().includes("email already used")) {
+                setFieldErrors((current) => ({ ...current, email: messages.auth.emailAlreadyUsed }));
+            } else {
+                setError(message || messages.auth.registerFailed);
+            }
         } finally {
             setSubmitting(false);
         }
@@ -37,29 +90,32 @@ export default function RegisterScreen({ navigation }) {
 
             <View style={styles.formCard}>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, fieldErrors.fullName && styles.inputError]}
                     placeholder={messages.auth.fullNamePlaceholder}
                     placeholderTextColor="#8aa0b8"
                     value={fullName}
-                    onChangeText={setFullName}
+                    onChangeText={(value) => updateField("fullName", setFullName, value)}
                 />
+                {fieldErrors.fullName ? <Text style={styles.fieldError}>{fieldErrors.fullName}</Text> : null}
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, fieldErrors.email && styles.inputError]}
                     placeholder={messages.auth.emailPlaceholder}
                     placeholderTextColor="#8aa0b8"
                     autoCapitalize="none"
                     keyboardType="email-address"
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={(value) => updateField("email", setEmail, value)}
                 />
+                {fieldErrors.email ? <Text style={styles.fieldError}>{fieldErrors.email}</Text> : null}
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, fieldErrors.password && styles.inputError]}
                     placeholder={messages.auth.passwordMinPlaceholder}
                     placeholderTextColor="#8aa0b8"
                     secureTextEntry
                     value={password}
-                    onChangeText={setPassword}
+                    onChangeText={(value) => updateField("password", setPassword, value)}
                 />
+                {fieldErrors.password ? <Text style={styles.fieldError}>{fieldErrors.password}</Text> : null}
 
                 {error ? <Text style={styles.error}>{error}</Text> : null}
 

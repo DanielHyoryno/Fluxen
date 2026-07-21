@@ -61,7 +61,14 @@ export default function ManageCategoryScreen() {
 
     async function handleAdd() {
         const name = newName.trim();
-        if (!name) return;
+        if (!name) {
+            setError(messages.categories.nameRequired);
+            return;
+        }
+        if (name.length < 2) {
+            setError(messages.categories.nameTooShort);
+            return;
+        }
         setSubmitting(true);
         setError("");
         try {
@@ -69,7 +76,12 @@ export default function ManageCategoryScreen() {
             setNewName("");
             await load();
         } catch (err) {
-            setError(err.message || messages.categories.createFailed);
+            const message = String(err.message || "");
+            setError(
+                message.toLowerCase().includes("already exists")
+                    ? messages.categories.duplicateName
+                    : message || messages.categories.createFailed
+            );
         } finally {
             setSubmitting(false);
         }
@@ -88,7 +100,14 @@ export default function ManageCategoryScreen() {
     async function saveEdit() {
         if (!editingId) return;
         const name = editingName.trim();
-        if (!name) return;
+        if (!name) {
+            setError(messages.categories.nameRequired);
+            return;
+        }
+        if (name.length < 2) {
+            setError(messages.categories.nameTooShort);
+            return;
+        }
         setSubmitting(true);
         setError("");
         try {
@@ -96,7 +115,12 @@ export default function ManageCategoryScreen() {
             cancelEdit();
             await load();
         } catch (err) {
-            setError(err.message || messages.categories.updateFailed);
+            const message = String(err.message || "");
+            setError(
+                message.toLowerCase().includes("already exists")
+                    ? messages.categories.duplicateName
+                    : message || messages.categories.updateFailed
+            );
         } finally {
             setSubmitting(false);
         }

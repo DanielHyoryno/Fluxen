@@ -74,6 +74,15 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         marginBottom: 12,
     },
+    inputError: {
+        borderColor: "#bd1e1e",
+    },
+    fieldError: {
+        color: "#bd1e1e",
+        fontSize: 12,
+        marginTop: -7,
+        marginBottom: 10,
+    },
     primaryButton: {
         backgroundColor: "#0f62fe",
         borderRadius: 10,

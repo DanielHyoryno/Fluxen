@@ -35,7 +35,33 @@ async function listCategories(userId) {
     return q.rows;
 }
 
+async function ensureCategoryNameAvailable(userId, name, excludedCategoryId = null) {
+    const values = [userId, name.trim()];
+    let excludedCondition = "";
+
+    if (excludedCategoryId !== null) {
+        values.push(excludedCategoryId);
+        excludedCondition = `AND id <> $${values.length}`;
+    }
+
+    const existing = await pool.query(
+        `SELECT id
+     FROM device_categories
+     WHERE user_id = $1
+       AND LOWER(BTRIM(name)) = LOWER($2)
+       ${excludedCondition}
+     LIMIT 1`,
+        values
+    );
+
+    if (existing.rowCount > 0) {
+        throw new Error("CATEGORY_ALREADY_EXISTS");
+    }
+}
+
 async function createCategory(userId, payload) {
+    await ensureCategoryNameAvailable(userId, payload.name);
+
     const q = await pool.query(
         `INSERT INTO device_categories (user_id, name)
      VALUES ($1, $2)
@@ -47,6 +73,8 @@ async function createCategory(userId, payload) {
 }
 
 async function updateCategory(userId, categoryId, payload) {
+    await ensureCategoryNameAvailable(userId, payload.name, categoryId);
+
     const q = await pool.query(
         `UPDATE device_categories
      SET name = $1

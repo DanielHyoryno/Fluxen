@@ -34,6 +34,9 @@ async function createOwnedCategory(req, res) {
         const data = await createCategory(req.user.id, parsed.data);
         return ok(res, data, "Category created", 201);
     } catch (err) {
+        if (err.message === "CATEGORY_ALREADY_EXISTS") {
+            return fail(res, "Category name already exists", 409, "CATEGORY_ALREADY_EXISTS");
+        }
         if (err.code === "42P01") {
             return fail(
                 res,
@@ -65,6 +68,9 @@ async function updateOwnedCategory(req, res) {
         const data = await updateCategory(req.user.id, parsedParams.data.id, parsedBody.data);
         return ok(res, data, "Category updated");
     } catch (err) {
+        if (err.message === "CATEGORY_ALREADY_EXISTS") {
+            return fail(res, "Category name already exists", 409, "CATEGORY_ALREADY_EXISTS");
+        }
         if (err.code === "42P01") {
             return fail(
                 res,

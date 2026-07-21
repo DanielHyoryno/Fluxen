@@ -96,6 +96,10 @@ const styles = StyleSheet.create({
         color: "#bd1e1e",
         marginBottom: 8,
     },
+    success: {
+        color: "#1d803e",
+        marginBottom: 8,
+    },
 });
 
 export default styles;

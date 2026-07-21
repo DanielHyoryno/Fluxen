@@ -61,6 +61,30 @@ const styles = StyleSheet.create({
         color: "#183654",
         backgroundColor: "#fcfdff",
     },
+    categoryOptions: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+    },
+    categoryChip: {
+        borderWidth: 1,
+        borderColor: "#c8d8eb",
+        borderRadius: 999,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        backgroundColor: "#f8fbff",
+    },
+    categoryChipActive: {
+        borderColor: "#0f62fe",
+        backgroundColor: "#e8f0ff",
+    },
+    categoryChipText: {
+        color: "#49637d",
+        fontWeight: "600",
+    },
+    categoryChipTextActive: {
+        color: "#0f62fe",
+    },
     button: {
         backgroundColor: "#0f62fe",
         padding: 14,

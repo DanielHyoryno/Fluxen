@@ -91,6 +91,17 @@ async function updateOwnedDevice(req, res) {
         const item = await updateDeviceById(req.user.id, parsedParams.data.id, parsedBody.data);
         return ok(res, item, "Device updated");
     } catch (err) {
+        if (err.message === "CATEGORY_SCHEMA_NOT_READY") {
+            return fail(
+                res,
+                "Category schema is not ready. Run latest DB migration.",
+                503,
+                "CATEGORY_SCHEMA_NOT_READY"
+            );
+        }
+        if (err.message === "CATEGORY_NOT_FOUND") {
+            return fail(res, "Category not found", 404, "CATEGORY_NOT_FOUND");
+        }
         if (err.message === "DEVICE_NOT_FOUND") {
             return fail(res, "Device not found", 404, "DEVICE_NOT_FOUND");
         }

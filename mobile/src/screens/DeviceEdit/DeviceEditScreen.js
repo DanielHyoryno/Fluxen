@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import { updateDeviceApi } from "../../services/api";
+import { listCategoriesApi, updateDeviceApi } from "../../services/api";
 import styles from "./styles";
 
 export default function DeviceEditScreen({ route, navigation }) {
@@ -11,9 +11,32 @@ export default function DeviceEditScreen({ route, navigation }) {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
     const [successMsg, setSuccessMsg] = useState("");
+    const [categories, setCategories] = useState([]);
+    const [categoriesLoading, setCategoriesLoading] = useState(true);
 
     const [deviceName, setDeviceName] = useState(device.device_name || "");
     const [installLocation, setInstallLocation] = useState(device.install_location || "");
+    const [selectedCategoryId, setSelectedCategoryId] = useState(device.category_id ?? null);
+
+    useEffect(() => {
+        let mounted = true;
+
+        async function loadCategories() {
+            try {
+                const data = await listCategoriesApi(token);
+                if (mounted) setCategories(Array.isArray(data) ? data : data?.items || []);
+            } catch (err) {
+                if (mounted) setError(err.message || "Failed to load categories");
+            } finally {
+                if (mounted) setCategoriesLoading(false);
+            }
+        }
+
+        loadCategories();
+        return () => {
+            mounted = false;
+        };
+    }, [token]);
 
     async function handleSave() {
         setError("");
@@ -31,6 +54,7 @@ export default function DeviceEditScreen({ route, navigation }) {
             const body = {
                 device_name: trimmedName,
                 install_location: installLocation.trim() || null,
+                category_id: selectedCategoryId,
             };
 
             await updateDeviceApi(token, device.id, body);
@@ -77,6 +101,51 @@ export default function DeviceEditScreen({ route, navigation }) {
                         placeholder="e.g. Building A, 2nd Floor"
                         placeholderTextColor="#9db0c4"
                     />
+                </View>
+
+                <View style={styles.inputGroup}>
+                    <Text style={styles.label}>Category</Text>
+                    {categoriesLoading ? (
+                        <ActivityIndicator color="#0f62fe" size="small" />
+                    ) : (
+                        <View style={styles.categoryOptions}>
+                            <Pressable
+                                style={[
+                                    styles.categoryChip,
+                                    selectedCategoryId === null && styles.categoryChipActive,
+                                ]}
+                                onPress={() => setSelectedCategoryId(null)}
+                            >
+                                <Text
+                                    style={[
+                                        styles.categoryChipText,
+                                        selectedCategoryId === null && styles.categoryChipTextActive,
+                                    ]}
+                                >
+                                    Uncategorized
+                                </Text>
+                            </Pressable>
+                            {categories.map((category) => {
+                                const selected = String(selectedCategoryId) === String(category.id);
+                                return (
+                                    <Pressable
+                                        key={String(category.id)}
+                                        style={[styles.categoryChip, selected && styles.categoryChipActive]}
+                                        onPress={() => setSelectedCategoryId(category.id)}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.categoryChipText,
+                                                selected && styles.categoryChipTextActive,
+                                            ]}
+                                        >
+                                            {category.name}
+                                        </Text>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                    )}
                 </View>
 
                 <Pressable

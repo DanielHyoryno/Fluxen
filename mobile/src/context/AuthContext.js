@@ -43,10 +43,7 @@ export function AuthProvider({ children }) {
     }
 
     async function register(fullName, email, password) {
-        const result = await registerApi({ full_name: fullName, email, password });
-        await saveAccessToken(result.access_token);
-        setToken(result.access_token);
-        setUser(result.user);
+        return registerApi({ full_name: fullName, email, password });
     }
 
     async function logout() {

@@ -78,14 +78,49 @@ test("critical API flow uses WIB boundaries and enforces ownership", { skip: !te
     assert.equal(register.status, 201);
     const ownerToken = register.payload.data.access_token;
 
+    const homeCategory = await request("/categories", {
+        method: "POST",
+        token: ownerToken,
+        body: { name: "Home" },
+    });
+    assert.equal(homeCategory.status, 201);
+
+    const duplicateCategory = await request("/categories", {
+        method: "POST",
+        token: ownerToken,
+        body: { name: " home " },
+    });
+    assert.equal(duplicateCategory.status, 409);
+    assert.equal(duplicateCategory.payload.error_code, "CATEGORY_ALREADY_EXISTS");
+
+    const gardenCategory = await request("/categories", {
+        method: "POST",
+        token: ownerToken,
+        body: { name: "Garden" },
+    });
+    assert.equal(gardenCategory.status, 201);
+
     const createDevice = await request("/devices", {
         method: "POST",
         token: ownerToken,
-        body: { device_code: "TEST-ESP32-01", device_name: "Test Meter" },
+        body: {
+            device_code: "TEST-ESP32-01",
+            device_name: "Test Meter",
+            category_id: homeCategory.payload.data.id,
+        },
     });
     assert.equal(createDevice.status, 201);
     const deviceToken = createDevice.payload.data.api_token;
     const deviceId = createDevice.payload.data.id;
+
+    const updateDeviceCategory = await request(`/devices/${deviceId}`, {
+        method: "PATCH",
+        token: ownerToken,
+        body: { category_id: gardenCategory.payload.data.id },
+    });
+    assert.equal(updateDeviceCategory.status, 200);
+    assert.equal(String(updateDeviceCategory.payload.data.category_id), String(gardenCategory.payload.data.id));
+    assert.equal(updateDeviceCategory.payload.data.category_name, "Garden");
 
     const limits = await request("/usage/limits", {
         method: "PUT",
