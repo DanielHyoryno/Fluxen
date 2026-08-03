@@ -312,6 +312,33 @@ async function getExportData(userId, deviceCode, from, to) {
     return q.rows;
 }
 
+async function getXlsxExportData(userId, deviceCode, from, to) {
+    const deviceId = await getOwnedDeviceId(pool, userId, deviceCode);
+
+    const q = await pool.query(
+        `SELECT to_char(m.measured_at AT TIME ZONE $4, 'YYYY-MM-DD') AS date,
+            SUM(m.volume_delta_l) AS total_liters,
+            AVG(m.flow_rate_lpm) AS avg_flow_rate_lpm,
+            MAX(m.flow_rate_lpm) AS peak_flow_rate_lpm,
+            COUNT(*) AS reading_count,
+            d.device_code,
+            d.device_name,
+            COALESCE(dc.name, 'Uncategorized') AS category_name
+     FROM measurements m
+     JOIN devices d ON d.id = m.device_id
+     LEFT JOIN device_categories dc ON dc.id = d.category_id
+     WHERE m.device_id = $1
+       AND m.measured_at >= ($2::date::timestamp AT TIME ZONE $4)
+       AND m.measured_at < (($3::date + 1)::timestamp AT TIME ZONE $4)
+     GROUP BY to_char(m.measured_at AT TIME ZONE $4, 'YYYY-MM-DD'),
+        d.device_code, d.device_name, dc.name
+     ORDER BY date ASC`,
+        [deviceId, from, to, env.businessTimezone]
+    );
+
+    return q.rows;
+}
+
 module.exports = {
     createTelemetry,
     createTelemetryBatch,
@@ -319,4 +346,5 @@ module.exports = {
     getDailyTelemetry,
     getUsageHistory,
     getExportData,
+    getXlsxExportData,
 };

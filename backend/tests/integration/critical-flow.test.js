@@ -2,6 +2,7 @@ const { after, before, test } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
+const ExcelJS = require("exceljs");
 
 require("dotenv").config({ path: path.join(__dirname, "../../.env.test") });
 
@@ -169,6 +170,22 @@ test("critical API flow uses WIB boundaries and enforces ownership", { skip: !te
             ["2026-07-12", 3],
         ]
     );
+
+    const exportResponse = await fetch(
+        `${baseUrl}/telemetry/export-xlsx?device_code=TEST-ESP32-01&from=2026-07-11&to=2026-07-12`,
+        { headers: { Authorization: `Bearer ${ownerToken}` } }
+    );
+    assert.equal(exportResponse.status, 200);
+    assert.match(exportResponse.headers.get("content-type"), /spreadsheetml/);
+    const exportedWorkbook = new ExcelJS.Workbook();
+    await exportedWorkbook.xlsx.load(Buffer.from(await exportResponse.arrayBuffer()));
+    assert.deepEqual(
+        exportedWorkbook.worksheets.map((sheet) => sheet.name),
+        ["Dashboard", "Daily Records"]
+    );
+    assert.equal(exportedWorkbook.getWorksheet("Daily Records").getCell("B2").value, "Garden");
+    assert.equal(exportedWorkbook.getWorksheet("Daily Records").getCell("E2").value, 2);
+    assert.equal(exportedWorkbook.getWorksheet("Daily Records").getCell("E3").value, 3);
 
     const billingSettings = await request("/billing/settings", {
         method: "PUT",

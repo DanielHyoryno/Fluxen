@@ -298,6 +298,37 @@ const styles = StyleSheet.create({
         color: "#fff",
         fontWeight: "700",
     },
+    monthOptionGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+    },
+    monthOption: {
+        width: "31%",
+        minWidth: 92,
+        borderWidth: 1,
+        borderColor: "#dbe6f5",
+        borderRadius: 8,
+        paddingVertical: 9,
+        paddingHorizontal: 6,
+        alignItems: "center",
+        backgroundColor: "#f9fbff",
+    },
+    monthOptionSelected: {
+        backgroundColor: "#0f62fe",
+        borderColor: "#0f62fe",
+    },
+    monthOptionPressed: {
+        opacity: 0.82,
+    },
+    monthOptionText: {
+        color: "#1d3551",
+        fontWeight: "600",
+        fontSize: 12,
+    },
+    monthOptionTextSelected: {
+        color: "#fff",
+    },
     tableHeader: {
         flexDirection: "row",
         alignItems: "center",
@@ -384,6 +415,53 @@ const styles = StyleSheet.create({
         fontWeight: "700",
         marginTop: 4,
         fontSize: 12,
+    },
+    exportPeriodRow: {
+        flexDirection: "row",
+        gap: 10,
+    },
+    exportPeriodField: {
+        flex: 1,
+        borderWidth: 1,
+        borderColor: "#dbe6f5",
+        borderRadius: 10,
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        backgroundColor: "#fff",
+    },
+    exportPeriodFieldDisabled: {
+        backgroundColor: "#edf1f6",
+        borderColor: "#d9e0e8",
+    },
+    exportPeriodPressed: {
+        opacity: 0.82,
+    },
+    exportPeriodLabel: {
+        color: "#55708a",
+        fontSize: 11,
+        fontWeight: "700",
+        textTransform: "uppercase",
+    },
+    exportPeriodLabelDisabled: {
+        color: "#8a98a8",
+        fontSize: 11,
+        fontWeight: "700",
+        textTransform: "uppercase",
+    },
+    exportPeriodValue: {
+        color: "#1d3551",
+        fontWeight: "700",
+        marginTop: 5,
+    },
+    exportPeriodValueDisabled: {
+        color: "#8a98a8",
+        fontWeight: "700",
+        marginTop: 5,
+    },
+    exportPeriodHint: {
+        color: "#4d6480",
+        fontSize: 12,
+        marginTop: 8,
     },
     exportButton: {
         backgroundColor: "#0f62fe",

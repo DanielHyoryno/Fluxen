@@ -27,6 +27,40 @@ import SkeletonBlock from "../../components/SkeletonBlock";
 import styles from "./styles";
 
 const AUTO_REFRESH_MS = 5000;
+const EXPORT_MONTH_OPTIONS = [
+    { value: "all", label: "All" },
+    { value: 1, label: "January" },
+    { value: 2, label: "February" },
+    { value: 3, label: "March" },
+    { value: 4, label: "April" },
+    { value: 5, label: "May" },
+    { value: 6, label: "June" },
+    { value: 7, label: "July" },
+    { value: 8, label: "August" },
+    { value: 9, label: "September" },
+    { value: 10, label: "October" },
+    { value: 11, label: "November" },
+    { value: 12, label: "December" },
+];
+
+function formatDateKey(year, month, day) {
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function getExportDateRange(year, month) {
+    if (month === "all") {
+        return {
+            from: formatDateKey(year, 1, 1),
+            to: formatDateKey(year, 12, 31),
+        };
+    }
+
+    const lastDay = new Date(year, month, 0).getDate();
+    return {
+        from: formatDateKey(year, month, 1),
+        to: formatDateKey(year, month, lastDay),
+    };
+}
 
 function formatNumber(value, decimals = 2) {
     const num = Number(value || 0);
@@ -187,6 +221,8 @@ export default function UsageHistoryScreen({ route }) {
     const [customFrom, setCustomFrom] = useState(defaultRange.from);
     const [customTo, setCustomTo] = useState(defaultRange.to);
     const [calendarDialogVisible, setCalendarDialogVisible] = useState(false);
+    const [exportMonthDialogVisible, setExportMonthDialogVisible] = useState(false);
+    const [exportMonth, setExportMonth] = useState(() => new Date().getMonth() + 1);
     const [draftFrom, setDraftFrom] = useState(defaultRange.from);
     const [draftTo, setDraftTo] = useState(defaultRange.to);
     const [loading, setLoading] = useState(true);
@@ -206,6 +242,13 @@ export default function UsageHistoryScreen({ route }) {
         }
         return getDateRange(rangeMode === "30d" ? 30 : 7);
     }, [rangeMode, customFrom, customTo]);
+
+    const exportYear = new Date().getFullYear();
+    const exportRange = useMemo(() => getExportDateRange(exportYear, exportMonth), [exportMonth, exportYear]);
+    const exportMonthLabel = useMemo(
+        () => EXPORT_MONTH_OPTIONS.find((option) => option.value === exportMonth)?.label || "All",
+        [exportMonth]
+    );
 
     const chartWidth = useMemo(() => Math.max(220, Math.floor(screenWidth - 80)), [screenWidth]);
 
@@ -411,18 +454,19 @@ export default function UsageHistoryScreen({ route }) {
         }
     }
 
-    async function handleExportCsv() {
+    async function handleExportXlsx() {
         setExporting(true);
         setError("");
         try {
             const { arrayBuffer, contentType, contentDisposition } = await exportXlsxApi(
                 token,
                 device.device_code,
-                range.from,
-                range.to
+                exportRange.from,
+                exportRange.to
             );
             const dispositionMatch = /filename="?([^";]+)"?/i.exec(contentDisposition || "");
-            const filename = dispositionMatch?.[1] || `${device.device_code}_${range.from}_${range.to}.xlsx`;
+            const filename =
+                dispositionMatch?.[1] || `${device.device_code}_${exportRange.from}_${exportRange.to}.xlsx`;
 
             if (Platform.OS === "web") {
                 const blob = new Blob([arrayBuffer], {
@@ -633,6 +677,55 @@ export default function UsageHistoryScreen({ route }) {
                 </View>
             </Modal>
 
+            <Modal
+                transparent
+                visible={exportMonthDialogVisible}
+                animationType="fade"
+                onRequestClose={() => setExportMonthDialogVisible(false)}
+            >
+                <View style={styles.modalBackdrop}>
+                    <View style={styles.calendarDialogCard}>
+                        <Text style={styles.modalTitle}>Select Export Month</Text>
+                        <View style={styles.monthOptionGrid}>
+                            {EXPORT_MONTH_OPTIONS.map((option) => {
+                                const selected = option.value === exportMonth;
+                                return (
+                                    <Pressable
+                                        key={option.value}
+                                        style={({ pressed }) => [
+                                            styles.monthOption,
+                                            selected && styles.monthOptionSelected,
+                                            pressed && styles.monthOptionPressed,
+                                        ]}
+                                        onPress={() => {
+                                            setExportMonth(option.value);
+                                            setExportMonthDialogVisible(false);
+                                        }}
+                                    >
+                                        <Text
+                                            style={[
+                                                styles.monthOptionText,
+                                                selected && styles.monthOptionTextSelected,
+                                            ]}
+                                        >
+                                            {option.label}
+                                        </Text>
+                                    </Pressable>
+                                );
+                            })}
+                        </View>
+                        <View style={styles.modalActions}>
+                            <Pressable
+                                style={styles.modalSecondaryButton}
+                                onPress={() => setExportMonthDialogVisible(false)}
+                            >
+                                <Text style={styles.modalSecondaryText}>Cancel</Text>
+                            </Pressable>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
             <SectionAccordion title="Summary" defaultExpanded>
                 <View style={styles.cardInner}>
                     <View style={styles.summaryGrid}>
@@ -766,21 +859,41 @@ export default function UsageHistoryScreen({ route }) {
                 </View>
             </SectionAccordion>
 
-            <Pressable
-                style={({ pressed }) => [
-                    styles.exportButton,
-                    pressed && styles.exportButtonPressed,
-                    exporting && styles.exportButtonDisabled,
-                ]}
-                onPress={handleExportCsv}
-                disabled={exporting}
-            >
-                {exporting ? (
-                    <ActivityIndicator color="#fff" />
-                ) : (
-                    <Text style={styles.exportButtonText}>Export XLSX</Text>
-                )}
-            </Pressable>
+            <SectionAccordion title="Export XLSX" defaultExpanded>
+                <View style={styles.cardInner}>
+                    <View style={styles.exportPeriodRow}>
+                        <Pressable
+                            style={({ pressed }) => [styles.exportPeriodField, pressed && styles.exportPeriodPressed]}
+                            onPress={() => setExportMonthDialogVisible(true)}
+                        >
+                            <Text style={styles.exportPeriodLabel}>Month</Text>
+                            <Text style={styles.exportPeriodValue}>{exportMonthLabel}</Text>
+                        </Pressable>
+                        <View style={[styles.exportPeriodField, styles.exportPeriodFieldDisabled]}>
+                            <Text style={styles.exportPeriodLabelDisabled}>Year</Text>
+                            <Text style={styles.exportPeriodValueDisabled}>{exportYear}</Text>
+                        </View>
+                    </View>
+                    <Text style={styles.exportPeriodHint}>
+                        Export range: {exportRange.from} to {exportRange.to}
+                    </Text>
+                    <Pressable
+                        style={({ pressed }) => [
+                            styles.exportButton,
+                            pressed && styles.exportButtonPressed,
+                            exporting && styles.exportButtonDisabled,
+                        ]}
+                        onPress={handleExportXlsx}
+                        disabled={exporting}
+                    >
+                        {exporting ? (
+                            <ActivityIndicator color="#fff" />
+                        ) : (
+                            <Text style={styles.exportButtonText}>Export XLSX</Text>
+                        )}
+                    </Pressable>
+                </View>
+            </SectionAccordion>
         </Animated.ScrollView>
     );
 }
