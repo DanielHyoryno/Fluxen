@@ -26,4 +26,9 @@ const createTelemetryBatchSchema = z.object({
     records: z.array(telemetryRecordSchema).min(1).max(600),
 });
 
-module.exports = { createTelemetrySchema, createTelemetryBatchSchema };
+const acknowledgeDeviceCommandSchema = z.object({
+    device_code: z.string().min(3).max(50),
+    command: z.literal("REPROVISION"),
+});
+
+module.exports = { createTelemetrySchema, createTelemetryBatchSchema, acknowledgeDeviceCommandSchema };

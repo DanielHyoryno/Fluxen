@@ -79,7 +79,11 @@ export default {
         tokenSubtitle: "Copy and store this token. It is only shown once after device creation.",
         tokenClose: "Close",
         deleteDialogTitle: "Delete Device",
-        deleteDialogMessage: "Are you sure you want to delete this device?",
+        deleteDialogMessage:
+            "Remove this device and reset it to BLE provisioning when it next contacts the server? Its telemetry will be deleted after the reset is acknowledged.",
+        deleteQueuedTitle: "Device Removal Queued",
+        deleteQueuedMessage:
+            "The device will reset to BLE provisioning when it next contacts the server. If it stays offline, hold its BOOT button for 3 seconds.",
     },
     categories: {
         loadFailed: "Failed to load categories",

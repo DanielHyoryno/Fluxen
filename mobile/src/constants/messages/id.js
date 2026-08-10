@@ -79,7 +79,11 @@ export default {
         tokenSubtitle: "Salin dan simpan token ini. Token hanya ditampilkan sekali setelah perangkat dibuat.",
         tokenClose: "Tutup",
         deleteDialogTitle: "Hapus Perangkat",
-        deleteDialogMessage: "Apakah Anda yakin ingin menghapus perangkat ini?",
+        deleteDialogMessage:
+            "Hapus perangkat ini dan reset ke mode provisioning BLE saat perangkat kembali terhubung ke server? Riwayat telemetri akan dihapus setelah reset dikonfirmasi perangkat.",
+        deleteQueuedTitle: "Penghapusan Perangkat Diantrekan",
+        deleteQueuedMessage:
+            "Perangkat akan kembali ke mode provisioning BLE saat terhubung ke server. Jika tetap offline, tahan tombol BOOT selama 3 detik.",
     },
     categories: {
         loadFailed: "Gagal memuat kategori",

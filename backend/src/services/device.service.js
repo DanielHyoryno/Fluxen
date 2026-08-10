@@ -144,6 +144,7 @@ async function listDevices(userId) {
          FROM devices d
          LEFT JOIN device_categories c ON c.id = d.category_id
          WHERE d.user_id = $1
+           AND d.pending_command IS NULL
          ORDER BY d.created_at DESC`,
                   [userId]
               )
@@ -162,6 +163,7 @@ async function listDevices(userId) {
          LEFT JOIN device_category_map m ON m.device_id = d.id
          LEFT JOIN device_categories c ON c.id = m.category_id
          WHERE d.user_id = $1
+           AND d.pending_command IS NULL
          ORDER BY d.created_at DESC`,
                     [userId]
                 )
@@ -178,6 +180,7 @@ async function listDevices(userId) {
                 d.install_location, d.firmware_version, d.last_seen_at, d.created_at, d.updated_at
          FROM devices d
          WHERE d.user_id = $1
+           AND d.pending_command IS NULL
          ORDER BY d.created_at DESC`,
                     [userId]
                 );
@@ -312,9 +315,12 @@ async function updateDeviceById(userId, deviceId, payload) {
 
 async function deleteDeviceById(userId, deviceId) {
     const q = await pool.query(
-        `DELETE FROM devices
+        `UPDATE devices
+     SET pending_command = 'REPROVISION',
+         pending_command_at = NOW(),
+         updated_at = NOW()
      WHERE id = $1 AND user_id = $2
-     RETURNING id`,
+     RETURNING id, pending_command, pending_command_at`,
         [deviceId, userId]
     );
 
@@ -322,7 +328,12 @@ async function deleteDeviceById(userId, deviceId) {
         throw new Error("DEVICE_NOT_FOUND");
     }
 
-    return { id: q.rows[0].id };
+    return {
+        id: q.rows[0].id,
+        pending_reset: true,
+        command: q.rows[0].pending_command,
+        requested_at: q.rows[0].pending_command_at,
+    };
 }
 
 module.exports = {

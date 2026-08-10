@@ -289,6 +289,7 @@ export default function DevicesScreen({ navigation }) {
         try {
             await deleteDeviceApi(token, deviceId);
             await loadDevices();
+            Alert.alert(messages.devices.deleteQueuedTitle, messages.devices.deleteQueuedMessage);
         } catch (err) {
             setError(err.message || messages.devices.deleteFailed);
         }

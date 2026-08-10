@@ -118,7 +118,7 @@ async function deleteOwnedDevice(req, res) {
         }
 
         const result = await deleteDeviceById(req.user.id, parsed.data.id);
-        return ok(res, result, "Device deleted");
+        return ok(res, result, "Device reset queued");
     } catch (err) {
         if (err.message === "DEVICE_NOT_FOUND") {
             return fail(res, "Device not found", 404, "DEVICE_NOT_FOUND");

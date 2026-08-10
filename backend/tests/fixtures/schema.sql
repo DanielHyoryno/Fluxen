@@ -29,6 +29,8 @@ CREATE TABLE devices (
   install_location VARCHAR(150),
   firmware_version VARCHAR(30),
   last_seen_at TIMESTAMPTZ,
+  pending_command VARCHAR(30) CHECK (pending_command IN ('REPROVISION')),
+  pending_command_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

@@ -81,6 +81,19 @@ All responses use:
 ### Delete Device
 - `DELETE /devices/:id`
 - header: `Authorization: Bearer <user_access_token>`
+- Queues a `REPROVISION` command and immediately hides the device from the
+  user's device list. The row and its telemetry are deleted only after the
+  ESP32 acknowledges the command. An offline or sleeping device receives it
+  on its next telemetry request.
+- response data:
+```json
+{
+  "id": 10,
+  "pending_reset": true,
+  "command": "REPROVISION",
+  "requested_at": "2026-08-08T10:00:00.000Z"
+}
+```
 
 ## 3) Telemetry Ingest (device protected)
 
@@ -123,6 +136,29 @@ IoT must send device token in header:
   ]
 }
 ```
+
+Both single and batch ingest responses contain `data.command`. It is `null`
+normally, or the following object when the device must clear its provisioning
+configuration and return to BLE mode:
+```json
+{
+  "type": "REPROVISION",
+  "requested_at": "2026-08-08T10:00:00.000Z"
+}
+```
+
+### Acknowledge Device Command
+- `POST /telemetry/command-ack`
+- header: `Authorization: Bearer <device_api_token>`
+- body:
+```json
+{
+  "device_code": "BV-ESP32-01",
+  "command": "REPROVISION"
+}
+```
+- The ESP32 must acknowledge before clearing NVS and restarting. A successful
+  acknowledgment permanently deletes the device and its related telemetry.
 
 ## 4) Telemetry Read (user protected)
 

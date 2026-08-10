@@ -226,6 +226,54 @@ test("critical API flow uses WIB boundaries and enforces ownership", { skip: !te
     });
     assert.equal(wrongDeviceToken.status, 401);
 
+    const queuedRemoval = await request(`/devices/${deviceId}`, {
+        method: "DELETE",
+        token: ownerToken,
+    });
+    assert.equal(queuedRemoval.status, 200);
+    assert.equal(queuedRemoval.payload.data.pending_reset, true);
+    assert.equal(queuedRemoval.payload.data.command, "REPROVISION");
+
+    const devicesAfterRemoval = await request("/devices", { token: ownerToken });
+    assert.equal(devicesAfterRemoval.status, 200);
+    assert.equal(devicesAfterRemoval.payload.data.items.some((item) => String(item.id) === String(deviceId)), false);
+
+    const commandDelivery = await request("/telemetry/batch", {
+        method: "POST",
+        token: deviceToken,
+        body: {
+            device_code: "TEST-ESP32-01",
+            records: [{ measured_at: "2026-07-12T00:01:00.000Z", flow_rate_lpm: 0, volume_delta_l: 0 }],
+        },
+    });
+    assert.equal(commandDelivery.status, 201);
+    assert.equal(commandDelivery.payload.data.command.type, "REPROVISION");
+
+    const commandAck = await request("/telemetry/command-ack", {
+        method: "POST",
+        token: deviceToken,
+        body: { device_code: "TEST-ESP32-01", command: "REPROVISION" },
+    });
+    assert.equal(commandAck.status, 200);
+    assert.equal(commandAck.payload.data.reset_acknowledged, true);
+
+    const deletedDeviceQ = await pool.query(`SELECT id FROM devices WHERE id = $1`, [deviceId]);
+    const deletedMeasurementsQ = await pool.query(`SELECT id FROM measurements WHERE device_id = $1`, [deviceId]);
+    assert.equal(deletedDeviceQ.rowCount, 0);
+    assert.equal(deletedMeasurementsQ.rowCount, 0);
+
+    const oldTokenAfterAck = await request("/telemetry", {
+        method: "POST",
+        token: deviceToken,
+        body: {
+            device_code: "TEST-ESP32-01",
+            measured_at: "2026-07-12T00:02:00.000Z",
+            flow_rate_lpm: 0,
+            volume_delta_l: 0,
+        },
+    });
+    assert.equal(oldTokenAfterAck.status, 401);
+
     const unknownRoute = await request("/does-not-exist", { token: ownerToken });
     assert.equal(unknownRoute.status, 404);
     assert.deepEqual(unknownRoute.payload, {

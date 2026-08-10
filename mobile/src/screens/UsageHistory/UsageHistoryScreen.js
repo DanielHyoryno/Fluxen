@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Buffer } from "buffer";
 import {
     ActivityIndicator,
     Alert,
@@ -18,10 +17,9 @@ import {
 import { Calendar } from "react-native-calendars";
 import Svg, { Circle, Line, Polyline } from "react-native-svg";
 import { useFocusEffect } from "@react-navigation/native";
-import * as FileSystem from "expo-file-system";
-import * as Sharing from "expo-sharing";
 import { useAuth } from "../../context/AuthContext";
 import { usageHistoryApi, exportXlsxApi } from "../../services/api";
+import { saveAndShareXlsx, sanitizeXlsxFilename } from "../../services/xlsx-export";
 import SectionAccordion from "../../components/SectionAccordion";
 import SkeletonBlock from "../../components/SkeletonBlock";
 import styles from "./styles";
@@ -465,8 +463,9 @@ export default function UsageHistoryScreen({ route }) {
                 exportRange.to
             );
             const dispositionMatch = /filename="?([^";]+)"?/i.exec(contentDisposition || "");
-            const filename =
-                dispositionMatch?.[1] || `${device.device_code}_${exportRange.from}_${exportRange.to}.xlsx`;
+            const filename = sanitizeXlsxFilename(
+                dispositionMatch?.[1] || `${device.device_code}_${exportRange.from}_${exportRange.to}.xlsx`
+            );
 
             if (Platform.OS === "web") {
                 const blob = new Blob([arrayBuffer], {
@@ -481,22 +480,16 @@ export default function UsageHistoryScreen({ route }) {
                 return;
             }
 
-            const fileUri = `${FileSystem.cacheDirectory}${filename}`;
-            const base64 = Buffer.from(arrayBuffer).toString("base64");
-            await FileSystem.writeAsStringAsync(fileUri, base64, { encoding: FileSystem.EncodingType.Base64 });
-
-            const canShare = await Sharing.isAvailableAsync();
-            if (canShare) {
-                await Sharing.shareAsync(fileUri, {
-                    mimeType: contentType || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    dialogTitle: "Export Water Usage Data",
-                    UTI: "org.openxmlformats.spreadsheetml.sheet",
-                });
+            const result = await saveAndShareXlsx({ arrayBuffer, filename, contentType });
+            if (result.shared) {
+                Alert.alert("Export Complete", "The XLSX file is ready to save or share.");
             } else {
-                Alert.alert("Export Complete", `XLSX saved to: ${fileUri}`);
+                Alert.alert("Export Complete", `XLSX saved to: ${result.fileUri}`);
             }
         } catch (err) {
-            setError(err.message || "Export failed");
+            const message = err.message || "Export failed";
+            setError(message);
+            Alert.alert("Export Failed", message);
         } finally {
             setExporting(false);
         }
@@ -883,6 +876,8 @@ export default function UsageHistoryScreen({ route }) {
                             pressed && styles.exportButtonPressed,
                             exporting && styles.exportButtonDisabled,
                         ]}
+                        accessibilityRole="button"
+                        accessibilityLabel="Export XLSX file"
                         onPress={handleExportXlsx}
                         disabled={exporting}
                     >

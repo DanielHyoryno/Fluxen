@@ -2,6 +2,7 @@ const express = require("express");
 const {
     postTelemetry,
     postTelemetryBatch,
+    acknowledgeCommand,
     latestTelemetry,
     dailyTelemetry,
     usageHistory,
@@ -23,6 +24,7 @@ const ingestLimiter = rateLimit({
 
 router.post("/", requireDeviceToken, ingestLimiter, postTelemetry);
 router.post("/batch", requireDeviceToken, ingestLimiter, postTelemetryBatch);
+router.post("/command-ack", requireDeviceToken, ingestLimiter, acknowledgeCommand);
 router.get("/latest", requireAuth, latestTelemetry);
 router.get("/daily", requireAuth, dailyTelemetry);
 router.get("/history", requireAuth, usageHistory);

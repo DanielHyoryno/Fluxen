@@ -1,7 +1,12 @@
-const { createTelemetrySchema, createTelemetryBatchSchema } = require("../validations/telemetry.validation");
+const {
+    createTelemetrySchema,
+    createTelemetryBatchSchema,
+    acknowledgeDeviceCommandSchema,
+} = require("../validations/telemetry.validation");
 const {
     createTelemetry,
     createTelemetryBatch,
+    acknowledgeDeviceCommand,
     getLatestTelemetry,
     getDailyTelemetry,
     getUsageHistory,
@@ -47,6 +52,27 @@ async function postTelemetryBatch(req, res) {
             return fail(res, "Device not found", 404, "DEVICE_NOT_FOUND");
         }
         console.error("postTelemetryBatch error:", err);
+        return fail(res, "Internal server error", 500, "INTERNAL_ERROR");
+    }
+}
+
+async function acknowledgeCommand(req, res) {
+    try {
+        const parsed = acknowledgeDeviceCommandSchema.safeParse(req.body);
+        if (!parsed.success) {
+            return fail(res, parsed.error.issues[0]?.message || "Invalid payload", 422, "VALIDATION_ERROR");
+        }
+
+        const result = await acknowledgeDeviceCommand(req.device.id, parsed.data.command);
+        return ok(res, result, "Device command acknowledged");
+    } catch (err) {
+        if (err.message === "DEVICE_NOT_FOUND") {
+            return fail(res, "Device not found", 404, "DEVICE_NOT_FOUND");
+        }
+        if (err.message === "DEVICE_COMMAND_NOT_PENDING") {
+            return fail(res, "Device command is not pending", 409, "DEVICE_COMMAND_NOT_PENDING");
+        }
+        console.error("acknowledgeCommand error:", err);
         return fail(res, "Internal server error", 500, "INTERNAL_ERROR");
     }
 }
@@ -171,6 +197,7 @@ async function exportXlsx(req, res) {
 module.exports = {
     postTelemetry,
     postTelemetryBatch,
+    acknowledgeCommand,
     latestTelemetry,
     dailyTelemetry,
     usageHistory,

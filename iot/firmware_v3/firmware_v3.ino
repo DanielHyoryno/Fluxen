@@ -63,6 +63,7 @@ static const char *CHAR_UUID_DEVICE_CODE = "12345678-1234-5678-1234-56789abcdef5
 static const unsigned long FLOW_SAMPLE_INTERVAL_MS = 1000UL;
 static const unsigned long SEND_INTERVAL_MS = 30000UL;         // every 30s
 static const unsigned long WIFI_RETRY_INTERVAL_MS = 10000UL;   // retry every 10s
+static const unsigned long WIFI_RETRY_MAX_INTERVAL_MS = 300000UL;
 static const unsigned long HEARTBEAT_INTERVAL_SEC = 60UL;      // at least one zero record every 60s
 static const unsigned long IDLE_SLEEP_TIMEOUT_MS = 30000UL;    // sleep after 30s without pulse
 static const int MAX_RECORDS = 400;
@@ -97,6 +98,7 @@ BLECharacteristic *charServerUrl = nullptr;
 BLECharacteristic *charApiToken = nullptr;
 BLECharacteristic *charDeviceCode = nullptr;
 bool bleAdvertisingActive = false;
+volatile bool provisioningConnectRequested = false;
 
 // =========================
 // Flow and Telemetry State
@@ -104,10 +106,12 @@ bool bleAdvertisingActive = false;
 volatile uint32_t pulseCount = 0;
 volatile bool pulseActivitySinceLastCheck = false;
 float currentFlowRateLpm = 0.0f;
-float cumulativeVolumeL = 0.0f;
+// RTC memory survives deep sleep without adding frequent NVS flash writes.
+RTC_DATA_ATTR float cumulativeVolumeL = 0.0f;
 unsigned long lastFlowSampleMs = 0;
 unsigned long lastSendAttemptMs = 0;
 unsigned long lastWifiAttemptMs = 0;
+unsigned long currentWifiRetryIntervalMs = WIFI_RETRY_INTERVAL_MS;
 unsigned long lastPulseActivityMs = 0;
 time_t lastHeartbeatEpoch = 0;
 
@@ -118,6 +122,7 @@ enum ServerSendStatus {
 };
 
 ServerSendStatus serverStatus = SERVER_UNKNOWN;
+bool reprovisionCommandPending = false;
 
 struct TelemetryRecord {
   char measured_at[25];            // YYYY-MM-DDTHH:MM:SS.000Z
@@ -131,6 +136,7 @@ struct TelemetryRecord {
 
 TelemetryRecord records[MAX_RECORDS];
 int recordCount = 0;
+uint32_t droppedRecordCount = 0;
 
 // Keep telemetry JSON in global memory to avoid loop-task stack pressure.
 // Local StaticJsonDocument<16384> in postRecordChunk can trigger resets.
@@ -172,12 +178,8 @@ String getBatchEndpointUrl() {
   return normalizeBaseUrl(serverUrl) + "/api/v1/telemetry/batch";
 }
 
-String getHealthEndpointUrl() {
-  return normalizeBaseUrl(serverUrl) + "/health";
-}
-
-String getHttpbinTestUrl() {
-  return "https://httpbin.org/get";
+String getCommandAckEndpointUrl() {
+  return normalizeBaseUrl(serverUrl) + "/api/v1/telemetry/command-ack";
 }
 
 // =========================
@@ -185,6 +187,20 @@ String getHttpbinTestUrl() {
 // =========================
 static unsigned long bootButtonHoldStart = 0;
 static bool bootButtonArmed = false;
+
+void clearProvisioningAndRestart(const String &reason) {
+  Serial.println("[REPROV] " + reason);
+  printLcdLine(0, "Re-provisioning...");
+  printLcdLine(1, "Clearing config");
+  printLcdLine(2, "Return to BLE");
+  printLcdLine(3, "Restarting...");
+  delay(750);
+
+  prefs.clear();
+  prefs.end();
+
+  ESP.restart();
+}
 
 void checkReProvisionButton() {
   bool pressed = (digitalRead(2) == LOW); // GPIO0 = BOOT button, active LOW
@@ -202,11 +218,7 @@ void checkReProvisionButton() {
       printLcdLine(3, "Release button");
       delay(1000);
 
-      prefs.begin("wmeter", false);
-      prefs.clear();
-      prefs.end();
-
-      ESP.restart();
+      clearProvisioningAndRestart("BOOT held 3s");
     }
   } else {
     bootButtonArmed = false;
@@ -263,6 +275,7 @@ void loadConfigFromNvs() {
   serverUrl = prefs.getString("server_url", "");
   apiToken = prefs.getString("api_token", "");
   deviceCode = prefs.getString("device_code", "");
+  reprovisionCommandPending = prefs.getBool("reset_pending", false);
 
   if (deviceCode.length() == 0) {
     deviceCode = DEFAULT_DEVICE_CODE;
@@ -290,6 +303,7 @@ void updateBleCharacteristicValues() {
 
 bool ensureWiFiConnected(bool forceAttempt = false) {
   if (WiFi.status() == WL_CONNECTED) {
+    currentWifiRetryIntervalMs = WIFI_RETRY_INTERVAL_MS;
     return true;
   }
 
@@ -297,7 +311,7 @@ bool ensureWiFiConnected(bool forceAttempt = false) {
     return false;
   }
 
-  if (!forceAttempt && (millis() - lastWifiAttemptMs < WIFI_RETRY_INTERVAL_MS)) {
+  if (!forceAttempt && (millis() - lastWifiAttemptMs < currentWifiRetryIntervalMs)) {
     return false;
   }
 
@@ -310,7 +324,17 @@ bool ensureWiFiConnected(bool forceAttempt = false) {
     delay(200);
   }
 
-  return WiFi.status() == WL_CONNECTED;
+  if (WiFi.status() == WL_CONNECTED) {
+    currentWifiRetryIntervalMs = WIFI_RETRY_INTERVAL_MS;
+    return true;
+  }
+
+  currentWifiRetryIntervalMs = min(
+      currentWifiRetryIntervalMs * 2UL,
+      WIFI_RETRY_MAX_INTERVAL_MS);
+  Serial.println("[WIFI] Connect failed; next retry in " +
+                 String(currentWifiRetryIntervalMs / 1000UL) + "s");
+  return false;
 }
 
 void startNtpSync() {
@@ -354,6 +378,10 @@ void addRecord(const char *measuredAt,
       records[i - 1] = records[i];
     }
     recordCount = MAX_RECORDS - 1;
+    droppedRecordCount++;
+    if (droppedRecordCount == 1 || droppedRecordCount % 50 == 0) {
+      Serial.println("[BUFFER] RAM buffer full; dropped oldest records: " + String(droppedRecordCount));
+    }
   }
 
   strncpy(records[recordCount].measured_at, measuredAt, sizeof(records[recordCount].measured_at) - 1);
@@ -396,6 +424,8 @@ bool postRecordChunk(int chunkCount) {
   } else {
     http.begin(wifiClient, endpoint);
   }
+  http.setConnectTimeout(15000);
+  http.setTimeout(15000);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Authorization", "Bearer " + apiToken);
 
@@ -433,6 +463,21 @@ bool postRecordChunk(int chunkCount) {
     // Read response body to finish transaction cleanly.
     String responseBody = http.getString();
     Serial.println("[POST] Response: " + responseBody);
+
+    if (httpCode >= 200 && httpCode < 300) {
+      telemetryDoc.clear();
+      DeserializationError jsonError = deserializeJson(telemetryDoc, responseBody);
+      if (!jsonError) {
+        const char *commandType = telemetryDoc["data"]["command"]["type"] | "";
+        if (strcmp(commandType, "REPROVISION") == 0) {
+          reprovisionCommandPending = true;
+          prefs.putBool("reset_pending", true);
+          Serial.println("[COMMAND] REPROVISION received");
+        }
+      } else {
+        Serial.println("[POST] Response JSON parse failed: " + String(jsonError.c_str()));
+      }
+    }
   } else {
     Serial.println("[POST] Error: " + http.errorToString(httpCode));
   }
@@ -441,14 +486,10 @@ bool postRecordChunk(int chunkCount) {
   return httpCode >= 200 && httpCode < 300;
 }
 
-void probeServerHealth() {
-  if (!hasProvisioningConfig()) {
-    return;
-  }
-
-  String endpoint = getHealthEndpointUrl();
-  const bool isHttps = endpoint.startsWith("https://");
+int acknowledgeReprovisionCommand() {
   HTTPClient http;
+  String endpoint = getCommandAckEndpointUrl();
+  const bool isHttps = endpoint.startsWith("https://");
   WiFiClient wifiClient;
   WiFiClientSecure secureClient;
 
@@ -459,48 +500,54 @@ void probeServerHealth() {
     http.begin(wifiClient, endpoint);
   }
 
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", "Bearer " + apiToken);
   http.setConnectTimeout(15000);
   http.setTimeout(15000);
 
-  Serial.println("[MEM] Free heap before HEALTH: " + String(ESP.getFreeHeap()));
-  Serial.println("[HEALTH] Probing server...");
-  Serial.println("[HEALTH] Endpoint: " + endpoint);
-  int httpCode = http.GET();
-  Serial.println("[HEALTH] HTTP code: " + String(httpCode));
+  telemetryDoc.clear();
+  telemetryDoc["device_code"] = deviceCode;
+  telemetryDoc["command"] = "REPROVISION";
+
+  String payload;
+  serializeJson(telemetryDoc, payload);
+
+  Serial.println("[COMMAND] Acknowledging REPROVISION...");
+  int httpCode = http.POST(payload);
   if (httpCode > 0) {
     String responseBody = http.getString();
-    Serial.println("[HEALTH] Response: " + responseBody);
+    Serial.println("[COMMAND] ACK response: " + responseBody);
   } else {
-    Serial.println("[HEALTH] Error: " + http.errorToString(httpCode));
+    Serial.println("[COMMAND] ACK error: " + http.errorToString(httpCode));
   }
   http.end();
+
+  return httpCode;
 }
 
-void probeHttpsWithHttpbin() {
-  HTTPClient http;
-  WiFiClientSecure secureClient;
-  String endpoint = getHttpbinTestUrl();
+bool commandAckAllowsReset(int httpCode) {
+  // A 401/404 after a previously authenticated command usually means the
+  // first ACK succeeded but its response was lost and the device row is gone.
+  return (httpCode >= 200 && httpCode < 300) || httpCode == 401 || httpCode == 404;
+}
 
-  secureClient.setInsecure();
-  http.begin(secureClient, endpoint);
-  http.setConnectTimeout(15000);
-  http.setTimeout(15000);
-
-  Serial.println("[MEM] Free heap before HTTPBIN: " + String(ESP.getFreeHeap()));
-  Serial.println("[HTTPBIN] Probing generic HTTPS...");
-  Serial.println("[HTTPBIN] Endpoint: " + endpoint);
-  int httpCode = http.GET();
-  Serial.println("[HTTPBIN] HTTP code: " + String(httpCode));
-  if (httpCode > 0) {
-    String responseBody = http.getString();
-    Serial.println("[HTTPBIN] Response length: " + String(responseBody.length()));
-  } else {
-    Serial.println("[HTTPBIN] Error: " + http.errorToString(httpCode));
+void processPendingReprovisionCommand() {
+  if (!reprovisionCommandPending || WiFi.status() != WL_CONNECTED) {
+    return;
   }
-  http.end();
+
+  int ackCode = acknowledgeReprovisionCommand();
+  if (commandAckAllowsReset(ackCode)) {
+    clearProvisioningAndRestart("Remote reset acknowledged");
+  }
 }
 
 void sendTelemetryBatches() {
+  if (reprovisionCommandPending) {
+    processPendingReprovisionCommand();
+    return;
+  }
+
   if (recordCount == 0) {
     return;
   }
@@ -510,13 +557,14 @@ void sendTelemetryBatches() {
     return;
   }
 
+  if (bleAdvertisingActive || provisioningConnectRequested) {
+    return;
+  }
+
   if (!ensureWiFiConnected()) {
     serverStatus = SERVER_FAIL;
     return;
   }
-
-  probeHttpsWithHttpbin();
-  probeServerHealth();
 
   if (!isTimeSynced()) {
     // Do not send data until NTP time is valid.
@@ -532,13 +580,23 @@ void sendTelemetryBatches() {
     }
     removeSentPrefix(chunkCount);
     serverStatus = SERVER_OK;
+
+    if (reprovisionCommandPending) {
+      break;
+    }
     delay(40);
   }
+
+  processPendingReprovisionCommand();
 }
 
 void enterDeepSleepFromIdle() {
   // Keep BLE provisioning available when config is not complete.
-  if (!hasProvisioningConfig()) {
+  if (
+      !hasProvisioningConfig() ||
+      bleAdvertisingActive ||
+      provisioningConnectRequested ||
+      reprovisionCommandPending) {
     return;
   }
 
@@ -600,13 +658,10 @@ class ProvisioningCallbacks : public BLECharacteristicCallbacks {
 
     updateBleCharacteristicValues();
 
-    // Auto-connect when all required values exist.
+    // Let the main loop stop BLE before starting WiFi. Connecting from this
+    // callback keeps both radios active and can cause a supply-current spike.
     if (hasProvisioningConfig()) {
-      ensureWiFiConnected(true);
-      if (WiFi.status() == WL_CONNECTED) {
-        startNtpSync();
-        stopBleProvisioning();
-      }
+      provisioningConnectRequested = true;
     }
 
     updateLcdStatus();
@@ -614,6 +669,10 @@ class ProvisioningCallbacks : public BLECharacteristicCallbacks {
 };
 
 void setupBleProvisioning() {
+  if (bleAdvertisingActive) {
+    return;
+  }
+
   uint64_t chipMac = ESP.getEfuseMac();
   uint16_t macTail = static_cast<uint16_t>(chipMac & 0xFFFF);
   char suffix[5];
@@ -686,6 +745,34 @@ void stopBleProvisioning() {
   charDeviceCode = nullptr;
 }
 
+void handleProvisioningWifiHandoff() {
+  if (!provisioningConnectRequested) {
+    return;
+  }
+
+  provisioningConnectRequested = false;
+  printLcdLine(2, "Switch BLE -> WiFi");
+
+  // Give the BLE write response time to complete, then release the BLE stack
+  // before WiFi association starts.
+  delay(250);
+  stopBleProvisioning();
+  delay(100);
+
+  if (ensureWiFiConnected(true)) {
+    startNtpSync();
+    printLcdLine(2, "WiFi connected");
+    return;
+  }
+
+  Serial.println("[WIFI] Provisioning connection failed; returning to BLE");
+  WiFi.disconnect();
+  WiFi.mode(WIFI_OFF);
+  delay(100);
+  setupBleProvisioning();
+  printLcdLine(2, "WiFi fail - BLE ON");
+}
+
 // =========================
 // Sensor ISR and Sampling
 // =========================
@@ -755,16 +842,23 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), pulseCounter, FALLING);
 
   loadConfigFromNvs();
-  setupBleProvisioning();
-
-  WiFi.mode(WIFI_STA);
+  if (!isfinite(cumulativeVolumeL) || cumulativeVolumeL < 0.0f) {
+    cumulativeVolumeL = 0.0f;
+  }
   if (hasProvisioningConfig()) {
     printLcdLine(2, "WiFi connect attempt");
+    WiFi.mode(WIFI_STA);
     if (ensureWiFiConnected(true)) {
       startNtpSync();
-      stopBleProvisioning();
+    } else {
+      WiFi.disconnect();
+      WiFi.mode(WIFI_OFF);
+      setupBleProvisioning();
+      printLcdLine(2, "WiFi fail - BLE ON");
     }
   } else {
+    WiFi.mode(WIFI_OFF);
+    setupBleProvisioning();
     printLcdLine(2, "BLE provisioning...");
   }
 
@@ -779,14 +873,15 @@ void setup() {
 void loop() {
 
   checkReProvisionButton();
+  handleProvisioningWifiHandoff();
 
-  // Keep WiFi alive when credentials are available.
-  if (hasProvisioningConfig()) {
+  // Keep WiFi alive in operational mode. While BLE provisioning is active,
+  // wait for a new write instead of repeatedly powering both radios.
+  if (hasProvisioningConfig() && !bleAdvertisingActive && !provisioningConnectRequested) {
     bool wasConnected = (WiFi.status() == WL_CONNECTED);
     bool nowConnected = ensureWiFiConnected();
     if (!wasConnected && nowConnected) {
       startNtpSync();
-      stopBleProvisioning();
     }
   }
 

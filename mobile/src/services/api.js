@@ -8,10 +8,11 @@ async function getActiveMessages() {
 }
 
 const REQUEST_TIMEOUT_MS = 20000;
+const EXPORT_REQUEST_TIMEOUT_MS = 60000;
 
-async function fetchWithTimeout(url, options = {}) {
+async function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
         return await fetch(url, {
@@ -55,9 +56,9 @@ async function requestRaw(path, options = {}) {
     return response.text();
 }
 
-async function requestBinaryRaw(path, options = {}) {
+async function requestBinaryRaw(path, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
     const messages = await getActiveMessages();
-    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, options);
+    const response = await fetchWithTimeout(`${API_BASE_URL}${path}`, options, timeoutMs);
 
     if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
@@ -281,12 +282,16 @@ export async function exportCsvApi(token, deviceCode, from, to) {
 
 export async function exportXlsxApi(token, deviceCode, from, to) {
     const params = new URLSearchParams({ device_code: deviceCode, from, to });
-    return requestBinaryRaw(`/telemetry/export-xlsx?${params.toString()}`, {
-        method: "GET",
-        headers: {
-            Authorization: `Bearer ${token}`,
+    return requestBinaryRaw(
+        `/telemetry/export-xlsx?${params.toString()}`,
+        {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
         },
-    });
+        EXPORT_REQUEST_TIMEOUT_MS
+    );
 }
 
 export async function billingSettingsApi(token) {

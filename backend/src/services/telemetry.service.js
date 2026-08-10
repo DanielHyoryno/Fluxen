@@ -24,6 +24,17 @@ function buildUsageAlertMessage(periodLabel, consumedLiters, limitLiters) {
     ).toFixed(3)} L)`;
 }
 
+function buildPendingCommand(device) {
+    if (!device.pending_command) {
+        return null;
+    }
+
+    return {
+        type: device.pending_command,
+        requested_at: device.pending_command_at,
+    };
+}
+
 async function createUsageLimitAlertIfNeeded(client, params) {
     const { deviceId, measuredAt } = params;
 
@@ -121,9 +132,13 @@ async function createTelemetry(payload) {
     try {
         await client.query("BEGIN");
 
-        const deviceQ = await client.query(`SELECT id FROM devices WHERE device_code = $1 LIMIT 1`, [
-            payload.device_code,
-        ]);
+        const deviceQ = await client.query(
+            `SELECT id, pending_command, pending_command_at
+       FROM devices
+       WHERE device_code = $1
+       LIMIT 1`,
+            [payload.device_code]
+        );
 
         if (deviceQ.rowCount === 0) throw new Error("DEVICE_NOT_FOUND");
 
@@ -162,6 +177,7 @@ async function createTelemetry(payload) {
         return {
             telemetry_id: insertQ.rows[0].id,
             alerts_triggered: triggeredAlerts,
+            command: buildPendingCommand(deviceQ.rows[0]),
         };
     } catch (err) {
         await client.query("ROLLBACK");
@@ -176,9 +192,13 @@ async function createTelemetryBatch(payload) {
     try {
         await client.query("BEGIN");
 
-        const deviceQ = await client.query(`SELECT id FROM devices WHERE device_code = $1 LIMIT 1`, [
-            payload.device_code,
-        ]);
+        const deviceQ = await client.query(
+            `SELECT id, pending_command, pending_command_at
+       FROM devices
+       WHERE device_code = $1
+       LIMIT 1`,
+            [payload.device_code]
+        );
 
         if (deviceQ.rowCount === 0) throw new Error("DEVICE_NOT_FOUND");
 
@@ -233,7 +253,53 @@ async function createTelemetryBatch(payload) {
             inserted_count: insertedCount,
             duplicate_count: duplicateCount,
             alerts_triggered: triggeredAlerts,
+            command: buildPendingCommand(deviceQ.rows[0]),
         };
+    } catch (err) {
+        await client.query("ROLLBACK");
+        throw err;
+    } finally {
+        client.release();
+    }
+}
+
+async function acknowledgeDeviceCommand(deviceId, command) {
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const deviceQ = await client.query(
+            `SELECT id, pending_command
+       FROM devices
+       WHERE id = $1
+       FOR UPDATE`,
+            [deviceId]
+        );
+
+        if (deviceQ.rowCount === 0) {
+            throw new Error("DEVICE_NOT_FOUND");
+        }
+        if (deviceQ.rows[0].pending_command !== command) {
+            throw new Error("DEVICE_COMMAND_NOT_PENDING");
+        }
+
+        const mapSupportQ = await client.query(`SELECT to_regclass($1) IS NOT NULL AS exists`, [
+            `${env.dbSchema}.device_category_map`,
+        ]);
+        if (mapSupportQ.rows[0].exists) {
+            await client.query(`DELETE FROM device_category_map WHERE device_id = $1`, [deviceId]);
+        }
+
+        // Delete explicitly for older deployments whose foreign keys did not
+        // include ON DELETE CASCADE.
+        await client.query(`DELETE FROM alerts WHERE device_id = $1`, [deviceId]);
+        await client.query(`DELETE FROM device_thresholds WHERE device_id = $1`, [deviceId]);
+        await client.query(`DELETE FROM measurements WHERE device_id = $1`, [deviceId]);
+        await client.query(`DELETE FROM devices WHERE id = $1`, [deviceId]);
+
+        await client.query("COMMIT");
+        return { device_id: deviceId, command, reset_acknowledged: true };
     } catch (err) {
         await client.query("ROLLBACK");
         throw err;
@@ -342,6 +408,7 @@ async function getXlsxExportData(userId, deviceCode, from, to) {
 module.exports = {
     createTelemetry,
     createTelemetryBatch,
+    acknowledgeDeviceCommand,
     getLatestTelemetry,
     getDailyTelemetry,
     getUsageHistory,

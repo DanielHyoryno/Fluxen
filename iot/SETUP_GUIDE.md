@@ -80,16 +80,23 @@ already included with the ESP32 board package.
 
 ## Step 4: Flash the Firmware
 
-1. Open `iot/firmware_v3.ino` in Arduino IDE
+1. Open `iot/firmware_v3/firmware_v3.ino` in Arduino IDE
 2. Connect your ESP32 via USB
 3. Select the correct COM port: **Tools > Port > COMx**
 4. Board settings (under Tools):
    - Board: **ESP32 Dev Module**
    - Upload Speed: **921600**
    - Flash Frequency: **80MHz**
-   - Partition Scheme: **Default 4MB with spiffs** (or "Huge APP")
+   - Partition Scheme: **Huge APP (3MB No OTA/1MB SPIFFS)**
 5. Click **Upload** (arrow button)
 6. Wait for "Done uploading" message
+
+> The default partition only provides about 1.3 MB for the application and is
+> too small for this firmware's BLE and HTTPS libraries. `Huge APP` is required.
+> The equivalent Arduino CLI check is:
+> ```bash
+> arduino-cli compile --fqbn "esp32:esp32:esp32:PartitionScheme=huge_app" iot/firmware_v3
+> ```
 
 After flashing, the LCD should show:
 ```
@@ -170,7 +177,8 @@ Before provisioning the ESP32, make sure the backend is running:
      (e.g., `http://192.168.1.10:8080`)
    - **API Token**: Paste the token from Step 6
 6. Tap **Send Configuration**
-7. The ESP32 will auto-connect to WiFi and start sending data
+7. The ESP32 closes BLE before connecting to WiFi. If the connection fails,
+   WiFi is turned off and BLE provisioning becomes available again.
 
 ### Option B: Using a Generic BLE App (nRF Connect)
 
@@ -200,11 +208,12 @@ After provisioning, the LCD should update to:
 WaterMeter v3 WiFi OK
 Flow: 0.000 L/m
 Total: 0.000 L
-B:ON W:OK S:OK
+B:OFF W:OK S:OK
 ```
 
 Status indicators on line 4:
-- **B:ON** = BLE advertising is active
+- **B:ON** = BLE provisioning is active; it normally changes to **B:OFF**
+  while the device operates over WiFi
 - **W:OK** = WiFi connected
 - **S:OK** = Last server request succeeded
 
@@ -223,6 +232,9 @@ In the mobile app:
 - Double-check the SSID and password (case-sensitive)
 - Make sure the ESP32 and your backend computer are on the **same network**
 - The LCD will show `W:--` if WiFi is not connected
+- After a failed provisioning attempt, scan BLE again and resend the
+  configuration. Operational WiFi retries use increasing delays up to 5 minutes
+  to avoid continuous high-current connection attempts.
 
 ### ESP32 connects to WiFi but server status shows `S:ER`
 - Check that the backend is running (`npm run dev` in the backend folder)
@@ -255,8 +267,22 @@ In the mobile app:
 ### BLE device not found during scan
 - Make sure you're within Bluetooth range (< 10 meters)
 - The device advertises as "WaterMeter-XXXX" where XXXX is derived from the MAC
-- BLE advertising is always active (B:ON on LCD)
+- BLE advertising is active only during provisioning or after a provisioning
+  WiFi connection fails (`B:ON` on the LCD)
 - On Android, make sure Location and Bluetooth permissions are granted
+
+### Reset a deleted device for provisioning
+- Deleting a device in the app queues a reset command on the backend.
+- The ESP32 receives it on its next telemetry request, clears its saved
+  configuration, restarts, and advertises through BLE again.
+- If the device cannot contact the server, hold the ESP32 **BOOT** button for
+  3 seconds to clear the configuration locally.
+
+### RAM telemetry buffer becomes full
+- The firmware retains the newest 400 readings and drops the oldest reading.
+- Serial Monitor reports the cumulative number of dropped readings.
+- The cumulative LCD value survives deep sleep through ESP32 RTC memory, but
+  it resets after complete power loss or reflashing.
 
 ---
 
@@ -279,7 +305,7 @@ If your ESP32 currently has v1 firmware (the monitor-only version):
 | Flow sensor pin | GPIO 34 |
 | LCD I2C address | 0x27 |
 | LCD size | 20x4 |
-| Pulses per liter | 572 |
+| Pulses per liter | 352 |
 | Backend port | 8080 |
 | Default device code | BV-ESP32-01 |
 | Telemetry batch interval | 30 seconds |
