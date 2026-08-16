@@ -350,9 +350,21 @@ const styles = StyleSheet.create({
     },
     modalActions: {
         flexDirection: "row",
+        flexWrap: "wrap",
         justifyContent: "flex-end",
         gap: 8,
         marginTop: 10,
+    },
+    provisionTokenButton: {
+        backgroundColor: "#0f62fe",
+        borderRadius: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+    },
+    provisionTokenButtonText: {
+        color: "#fff",
+        fontWeight: "700",
+        fontSize: 13,
     },
     closeDialogButton: {
         backgroundColor: "#eef4ff",

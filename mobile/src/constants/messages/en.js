@@ -77,6 +77,7 @@ export default {
         confirmNo: "No",
         tokenTitle: "Device API Token",
         tokenSubtitle: "Copy and store this token. It is only shown once after device creation.",
+        provisionViaBle: "Provision via BLE",
         tokenClose: "Close",
         deleteDialogTitle: "Delete Device",
         deleteDialogMessage:

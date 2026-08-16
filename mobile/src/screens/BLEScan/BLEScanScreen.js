@@ -36,7 +36,7 @@ function DeviceItem({ item, onPress, connecting }) {
     );
 }
 
-export default function BLEScanScreen() {
+export default function BLEScanScreen({ route }) {
     const { animatedStyle } = useScreenEntranceAnimation();
     const [permissionGranted, setPermissionGranted] = useState(null);
     const [devices, setDevices] = useState([]);
@@ -48,7 +48,7 @@ export default function BLEScanScreen() {
     const [wifiSsid, setWifiSsid] = useState("");
     const [wifiPassword, setWifiPassword] = useState("");
     const [serverUrl, setServerUrl] = useState(getServerBaseUrl());
-    const [apiToken, setApiToken] = useState("");
+    const [apiToken, setApiToken] = useState(() => String(route?.params?.apiToken || ""));
     const [statusMessage, setStatusMessage] = useState("");
     const [statusType, setStatusType] = useState("idle");
     const [sendingConfig, setSendingConfig] = useState(false);
@@ -63,6 +63,13 @@ export default function BLEScanScreen() {
     useEffect(() => {
         connectedDeviceIdRef.current = connectedDevice?.id || null;
     }, [connectedDevice?.id]);
+
+    useEffect(() => {
+        const incomingToken = String(route?.params?.apiToken || "").trim();
+        if (incomingToken) {
+            setApiToken(incomingToken);
+        }
+    }, [route?.params?.apiToken]);
 
     useEffect(() => {
         let mounted = true;

@@ -117,6 +117,7 @@ export default function DevicesScreen({ navigation }) {
     const [selectedCategoryId, setSelectedCategoryId] = useState(null);
     const [creating, setCreating] = useState(false);
     const [newToken, setNewToken] = useState("");
+    const [newDeviceCode, setNewDeviceCode] = useState("");
     const [tokenDialogOpen, setTokenDialogOpen] = useState(false);
     const [pendingDeleteDevice, setPendingDeleteDevice] = useState(null);
     const [fieldErrors, setFieldErrors] = useState({});
@@ -254,6 +255,7 @@ export default function DevicesScreen({ navigation }) {
         setCreating(true);
         setError("");
         setNewToken("");
+        setNewDeviceCode("");
         try {
             const data = await createDeviceApi(token, {
                 device_code: trimmedDeviceCode,
@@ -268,6 +270,7 @@ export default function DevicesScreen({ navigation }) {
             setFieldErrors({});
             setSelectedCategoryId(null);
             setNewToken(data.api_token || "");
+            setNewDeviceCode(trimmedDeviceCode);
             setTokenDialogOpen(Boolean(data.api_token));
             await loadDevices();
         } catch (err) {
@@ -310,6 +313,15 @@ export default function DevicesScreen({ navigation }) {
         if (!newToken) return;
         await Clipboard.setStringAsync(newToken);
         Alert.alert(messages.devices.copiedTitle, messages.devices.copiedMessage);
+    }
+
+    function handleProvisionWithNewToken() {
+        if (!newToken) return;
+        setTokenDialogOpen(false);
+        navigation.navigate("BLEScan", {
+            apiToken: newToken,
+            deviceCode: newDeviceCode,
+        });
     }
 
     const filteredItems = items.filter((item) => {
@@ -648,6 +660,11 @@ export default function DevicesScreen({ navigation }) {
                             </Text>
                         </View>
                         <View style={styles.modalActions}>
+                            <Pressable style={styles.provisionTokenButton} onPress={handleProvisionWithNewToken}>
+                                <Text style={styles.provisionTokenButtonText}>
+                                    {messages.devices.provisionViaBle}
+                                </Text>
+                            </Pressable>
                             <Pressable style={styles.copyTokenButton} onPress={handleCopyToken}>
                                 <Text style={styles.copyTokenButtonText}>
                                     {messages.auth.copyToken || "Copy Token"}

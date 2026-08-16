@@ -77,6 +77,7 @@ export default {
         confirmNo: "Tidak",
         tokenTitle: "API Token Perangkat",
         tokenSubtitle: "Salin dan simpan token ini. Token hanya ditampilkan sekali setelah perangkat dibuat.",
+        provisionViaBle: "Provisioning via BLE",
         tokenClose: "Tutup",
         deleteDialogTitle: "Hapus Perangkat",
         deleteDialogMessage:

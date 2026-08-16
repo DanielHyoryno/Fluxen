@@ -37,8 +37,9 @@
 // Hardware Configuration
 // =========================
 static const int FLOW_SENSOR_PIN = 34;
-static const int PULSES_PER_LITER = 352;
+static const int PULSES_PER_LITER = 349;
 static const int BATTERY_ADC_PIN = 35;
+static const int REPROVISION_BUTTON_PIN = 0;  // On-board BOOT button (active LOW)
 static const float BATTERY_VOLTAGE_DIVIDER_RATIO = 2.0f;
 // GPIO34 has no internal pull-up on ESP32, use external pull-up resistor on flow signal.
 static const uint8_t LCD_ADDR = 0x27;
@@ -66,6 +67,7 @@ static const unsigned long WIFI_RETRY_INTERVAL_MS = 10000UL;   // retry every 10
 static const unsigned long WIFI_RETRY_MAX_INTERVAL_MS = 300000UL;
 static const unsigned long HEARTBEAT_INTERVAL_SEC = 60UL;      // at least one zero record every 60s
 static const unsigned long IDLE_SLEEP_TIMEOUT_MS = 30000UL;    // sleep after 30s without pulse
+static const unsigned long REPROVISION_BUTTON_HOLD_MS = 3000UL;
 static const int MAX_RECORDS = 400;
 static const int SEND_CHUNK_SIZE = 60;
 
@@ -187,6 +189,7 @@ String getCommandAckEndpointUrl() {
 // =========================
 static unsigned long bootButtonHoldStart = 0;
 static bool bootButtonArmed = false;
+static bool bootButtonReleasedSinceBoot = false;
 
 void clearProvisioningAndRestart(const String &reason) {
   Serial.println("[REPROV] " + reason);
@@ -196,32 +199,75 @@ void clearProvisioningAndRestart(const String &reason) {
   printLcdLine(3, "Restarting...");
   delay(750);
 
-  prefs.clear();
+  // Never restart if NVS could not be cleared. Otherwise reset_pending or the
+  // saved WiFi configuration could survive and create a software-reset loop.
+  if (!prefs.clear()) {
+    reprovisionCommandPending = false;
+    Serial.println("[REPROV] ERROR: failed to clear NVS; restart cancelled");
+    printLcdLine(0, "Reset config failed");
+    printLcdLine(1, "Restart cancelled");
+    printLcdLine(2, "Check Serial log");
+    printLcdLine(3, "Device still active");
+    return;
+  }
+
   prefs.end();
 
+  Serial.println("[REPROV] NVS cleared; restarting once");
+  Serial.flush();
   ESP.restart();
 }
 
 void checkReProvisionButton() {
-  bool pressed = (digitalRead(2) == LOW); // GPIO0 = BOOT button, active LOW
+  const bool pressed = (digitalRead(REPROVISION_BUTTON_PIN) == LOW);
 
-  if (pressed) {
-    if (!bootButtonArmed) {
-      bootButtonArmed = true;
-      bootButtonHoldStart = millis();
-    } else if (millis() - bootButtonHoldStart >= 3000) {
-      // Held 3 seconds — wipe config and restart into BLE provisioning
-      Serial.println("[REPROV] BOOT held 3s — clearing NVS and restarting...");
-      printLcdLine(0, "Re-provisioning...");
-      printLcdLine(1, "Clearing config");
-      printLcdLine(2, "Restarting...");
-      printLcdLine(3, "Release button");
-      delay(1000);
-
-      clearProvisioningAndRestart("BOOT held 3s");
-    }
-  } else {
+  // Require a released state after boot before accepting a long press. This
+  // prevents a stuck/grounded pin from repeatedly clearing NVS and restarting.
+  if (!pressed) {
+    bootButtonReleasedSinceBoot = true;
     bootButtonArmed = false;
+    return;
+  }
+
+  if (!bootButtonReleasedSinceBoot) {
+    return;
+  }
+
+  if (!bootButtonArmed) {
+    bootButtonArmed = true;
+    bootButtonHoldStart = millis();
+    return;
+  }
+
+  if (millis() - bootButtonHoldStart >= REPROVISION_BUTTON_HOLD_MS) {
+    // Disarm before the reset attempt so a failed NVS clear cannot repeatedly
+    // execute this path while the button remains held.
+    bootButtonArmed = false;
+    bootButtonReleasedSinceBoot = false;
+    Serial.println("[REPROV] BOOT held 3s; waiting for button release...");
+    printLcdLine(0, "Re-provisioning...");
+    printLcdLine(1, "Release BOOT button");
+    printLcdLine(2, "Config not yet clear");
+    printLcdLine(3, "Waiting...");
+
+    const unsigned long releaseWaitStart = millis();
+    while (
+        digitalRead(REPROVISION_BUTTON_PIN) == LOW &&
+        millis() - releaseWaitStart < 5000UL) {
+      delay(20);
+    }
+
+    if (digitalRead(REPROVISION_BUTTON_PIN) == LOW) {
+      Serial.println("[REPROV] BOOT still held; reset cancelled");
+      printLcdLine(0, "Reset cancelled");
+      printLcdLine(1, "Release BOOT first");
+      printLcdLine(2, "Hold again for 3s");
+      printLcdLine(3, "Config unchanged");
+      return;
+    }
+
+    Serial.println("[REPROV] BOOT released; clearing NVS...");
+    clearProvisioningAndRestart("BOOT held 3s");
   }
 }
 
@@ -828,6 +874,9 @@ void sampleFlowAndBuildRecords() {
 
 void setup() {
   Serial.begin(115200);
+  delay(250);
+  Serial.println();
+  Serial.println("[BOOT] WaterMeter v3 starting");
 
   lcd.init();
   lcd.backlight();
@@ -838,7 +887,8 @@ void setup() {
 
   pinMode(FLOW_SENSOR_PIN, INPUT);
   pinMode(BATTERY_ADC_PIN, INPUT);
-  pinMode(2, INPUT_PULLUP); // BOOT button
+  pinMode(REPROVISION_BUTTON_PIN, INPUT_PULLUP);
+  bootButtonReleasedSinceBoot = (digitalRead(REPROVISION_BUTTON_PIN) == HIGH);
   attachInterrupt(digitalPinToInterrupt(FLOW_SENSOR_PIN), pulseCounter, FALLING);
 
   loadConfigFromNvs();

@@ -116,6 +116,26 @@ describe("DevicesScreen", () => {
         expect(createDeviceApi).not.toHaveBeenCalled();
     });
 
+    test("carries a newly created device token into BLE provisioning", async () => {
+        createDeviceApi.mockResolvedValue({ api_token: "new-device-token" });
+        const navigation = renderDevices();
+        await screen.findByText("Kitchen Meter");
+
+        fireEvent.press(screen.getByText(messages.devices.manageTab));
+        await screen.findByText(messages.devices.addDeviceTitle);
+        fireEvent.changeText(screen.getByPlaceholderText(messages.devices.deviceCodePlaceholder), "BV-ESP32-01");
+        fireEvent.changeText(screen.getByPlaceholderText(messages.devices.deviceNamePlaceholder), "Water Meter");
+        fireEvent.press(screen.getByText(messages.devices.createDevice));
+
+        expect(await screen.findByText(messages.devices.tokenTitle)).toBeTruthy();
+        fireEvent.press(screen.getByText(messages.devices.provisionViaBle));
+
+        expect(navigation.navigate).toHaveBeenCalledWith("BLEScan", {
+            apiToken: "new-device-token",
+            deviceCode: "BV-ESP32-01",
+        });
+    });
+
     test("confirms deletion and queues the remote reset", async () => {
         deleteDeviceApi.mockResolvedValue({ pending_reset: true });
         renderDevices();
