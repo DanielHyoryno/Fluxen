@@ -30,6 +30,10 @@ import {
 import SkeletonBlock from "../../components/SkeletonBlock";
 import useScreenEntranceAnimation from "../../hooks/useScreenEntranceAnimation";
 import styles from "./styles";
+import MetricGrid from "../../components/MetricGrid";
+import StatusBadge from "../../components/StatusBadge";
+import PeriodSelector from "../../components/PeriodSelector";
+import usePageInsets from "../../hooks/usePageInsets";
 
 const OFFLINE_THRESHOLD_SEC = 120;
 
@@ -41,11 +45,6 @@ function toLocalDateISO(date = new Date()) {
 
 function formatNumber(value, decimals = 2) {
     return formatValue(value, decimals);
-}
-
-function formatDateLabel(dateKey) {
-    const date = new Date(`${dateKey}T00:00:00`);
-    return date.toLocaleDateString(getLanguageTag(), { month: "short", day: "numeric" });
 }
 
 function formatDayOnlyLabel(dateKey) {
@@ -125,12 +124,13 @@ function formatRupiah(value) {
     }).format(Number(value || 0));
 }
 
-function OverallUsageChart({ series, rangePreset, messages, chartWidth }) {
+function OverallUsageChart({ series, messages, chartWidth }) {
+    const { fontScale } = useWindowDimensions();
     if (!series.length) return <Text style={styles.emptyText}>{messages.home.emptyTotalTrend}</Text>;
 
     const maxValue = series.reduce((max, item) => Math.max(max, Number(item.totalLiters || 0)), 0);
     const chartMax = maxValue > 0 ? maxValue : 1;
-    const minSlotWidth = 28;
+    const minSlotWidth = Math.ceil(30 * fontScale);
     const interBarGap = 6;
     const requiredWidth = series.length * minSlotWidth + Math.max(0, series.length - 1) * interBarGap;
     const shouldScroll = requiredWidth > chartWidth;
@@ -139,7 +139,9 @@ function OverallUsageChart({ series, rangePreset, messages, chartWidth }) {
     const bars = series.map((item) => {
         const value = Number(item.totalLiters || 0);
         const heightPct = Math.round((value / chartMax) * 100);
-        const labelText = series.length > 10 ? formatDayOnlyLabel(item.date) : formatDateLabel(item.date);
+        const date = new Date(`${item.date}T00:00:00`);
+        const labelText = series.length > 10 ? formatDayOnlyLabel(item.date)
+            : `${date.getDate()}\n${date.toLocaleDateString(getLanguageTag(), { month: "short" })}`;
 
         return (
             <View
@@ -153,7 +155,7 @@ function OverallUsageChart({ series, rangePreset, messages, chartWidth }) {
                 <View style={styles.overallBarTrack}>
                     <View style={[styles.overallBarFill, { height: `${Math.max(heightPct, value > 0 ? 4 : 0)}%` }]} />
                 </View>
-                <Text style={styles.overallBarLabel}>{labelText}</Text>
+                <Text style={[styles.overallBarLabel, { height: (series.length > 10 ? 20 : 36) * fontScale }]}>{labelText}</Text>
             </View>
         );
     });
@@ -164,7 +166,7 @@ function OverallUsageChart({ series, rangePreset, messages, chartWidth }) {
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    style={styles.overallBarsScrollView}
+                    style={[styles.overallBarsScrollView, { height: 130 + (series.length > 10 ? 20 : 36) * fontScale }]}
                     contentContainerStyle={styles.overallBarsScrollContent}
                 >
                     <View style={[styles.overallBarsDense, { width: requiredWidth }]}>{bars}</View>
@@ -282,7 +284,7 @@ function UsageByCategoryChart({ items, messages }) {
     );
 }
 
-function HoverablePressable({ onPress, style, children, disabled, hoverStyle }) {
+function HoverablePressable({ onPress, style, children, disabled, hoverStyle, containerStyle }) {
     const [hovered, setHovered] = useState(false);
 
     const resolvedHoverStyle = hovered ? hoverStyle : null;
@@ -293,7 +295,8 @@ function HoverablePressable({ onPress, style, children, disabled, hoverStyle }) 
             disabled={disabled}
             onHoverIn={() => setHovered(true)}
             onHoverOut={() => setHovered(false)}
-            style={disabled ? { opacity: 0.7 } : null}
+            accessibilityRole="button"
+            style={({ pressed }) => [containerStyle, (disabled || pressed) && { opacity: 0.7 }]}
         >
             <View style={[style, resolvedHoverStyle]}>{children}</View>
         </Pressable>
@@ -304,6 +307,8 @@ export default function HomeScreen({ navigation }) {
     useLocale();
     const { token, messages } = useAuth();
     const { width: screenWidth } = useWindowDimensions();
+    const pageInsets = usePageInsets();
+    const [trendWidth, setTrendWidth] = useState(Math.max(220, screenWidth - 62));
     const { animatedStyle } = useScreenEntranceAnimation();
     const [loading, setLoading] = useState(true);
     const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -514,8 +519,7 @@ export default function HomeScreen({ navigation }) {
         () => (overallSeries.length > 0 ? overallTotal / overallSeries.length : 0),
         [overallSeries.length, overallTotal]
     );
-    const overallAverageLabel = rangePreset === "day" ? t("Average / Hour") : t("Average / Day");
-    const dayChartWidth = useMemo(() => Math.floor(screenWidth - 88), [screenWidth]);
+    const dayChartWidth = Math.max(180, trendWidth - 18);
 
     const pickerMinDate = useMemo(() => {
         if (pickerTarget === "from") {
@@ -576,7 +580,7 @@ export default function HomeScreen({ navigation }) {
     return (
         <ScrollView
             style={styles.page}
-            contentContainerStyle={styles.content}
+            contentContainerStyle={[styles.content, pageInsets]}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
             <Animated.View style={animatedStyle}>
@@ -589,20 +593,10 @@ export default function HomeScreen({ navigation }) {
 
                 <FailureNotice error={error} onRetry={onRefresh} />
 
-                <View style={styles.kpiRow}>
-                    <View style={styles.kpiCard}>
-                        <Text style={styles.kpiLabel}>
-                            {rangePreset === "day" ? messages.home.totalUsageToday : messages.home.totalUsage}
-                        </Text>
-                        <Text style={styles.kpiValue}>{formatNumber(totalUsage, 3)} L</Text>
-                    </View>
-                    <View style={styles.kpiCard}>
-                        <Text style={styles.kpiLabel}>{messages.home.onlineOffline}</Text>
-                        <Text style={styles.kpiValue}>
-                            {onlineCount} / {offlineCount}
-                        </Text>
-                    </View>
-                </View>
+                <MetricGrid accent items={[
+                    { label: rangePreset === "day" ? messages.home.totalUsageToday : messages.home.totalUsage, value: `${formatNumber(totalUsage, 3)} L` },
+                    { label: messages.home.onlineOffline, value: `${onlineCount} / ${offlineCount}` },
+                ]} />
 
                 <HoverablePressable
                     onPress={() => navigation.navigate("BillingEstimation")}
@@ -620,29 +614,17 @@ export default function HomeScreen({ navigation }) {
 
                 <View style={styles.card}>
                     <Text style={styles.cardTitle}>{messages.home.overallUsageTrend}</Text>
-                    <View style={styles.presetRow}>
-                        {[
+                    <PeriodSelector value={rangePreset} onChange={choosePreset} options={[
                             { key: "day", label: messages.home.day },
                             { key: "week", label: messages.home.week },
                             { key: "month", label: messages.home.month },
                             { key: "custom", label: messages.home.custom },
-                        ].map((item) => (
-                            <HoverablePressable
-                                key={item.key}
-                                onPress={() => choosePreset(item.key)}
-                                style={[styles.presetButton, rangePreset === item.key && styles.presetButtonActive]}
-                                hoverStyle={styles.hoverButtonHighlight}
-                            >
-                                <Text style={[styles.presetText, rangePreset === item.key && styles.presetTextActive]}>
-                                    {item.label}
-                                </Text>
-                            </HoverablePressable>
-                        ))}
-                    </View>
+                    ]} />
 
                     {rangePreset === "custom" ? (
                         <View style={styles.customRangeRow}>
                             <HoverablePressable
+                                containerStyle={{ flex: 1, minWidth: 0 }}
                                 style={styles.customDateButton}
                                 onPress={() => openCustomPicker("from")}
                                 hoverStyle={styles.hoverButtonHighlight}
@@ -651,42 +633,32 @@ export default function HomeScreen({ navigation }) {
                                 <Text style={styles.customDateValue}>{range.from}</Text>
                             </HoverablePressable>
                             <HoverablePressable
+                                containerStyle={{ flex: 1, minWidth: 0 }}
                                 style={styles.customDateButton}
-                                onPress={() => openCustomPicker(t("to"))}
+                                onPress={() => openCustomPicker("to")}
                                 hoverStyle={styles.hoverButtonHighlight}
                             >
                                 <Text style={styles.customDateLabel}>{messages.home.to}</Text>
                                 <Text style={styles.customDateValue}>{range.to}</Text>
                             </HoverablePressable>
                         </View>
-                    ) : (
-                        <Text style={styles.rangeMeta}>
-                            {range.from} {t("to")} {range.to}
-                        </Text>
-                    )}
+                    ) : null}
 
-                    <View style={styles.overallKpiRow}>
-                        <View style={styles.overallKpiCard}>
-                            <Text style={styles.kpiLabel}>{messages.home.total}</Text>
-                            <Text style={styles.overallKpiValue}>{formatNumber(overallTotal, 3)} L</Text>
-                        </View>
-                        <View style={styles.overallKpiCard}>
-                            <Text style={styles.kpiLabel}>
-                                {rangePreset === "day" ? messages.home.averagePerHour : messages.home.averagePerDay}
-                            </Text>
-                            <Text style={styles.overallKpiValue}>{formatNumber(overallAverage, 3)} L</Text>
-                        </View>
-                    </View>
+                    <MetricGrid muted items={[
+                        { label: messages.home.total, value: `${formatNumber(overallTotal, 3)} L` },
+                        { label: rangePreset === "day" ? messages.home.averagePerHour : messages.home.averagePerDay, value: `${formatNumber(overallAverage, 3)} L` },
+                    ]} />
+                    <View onLayout={(event) => setTrendWidth(event.nativeEvent.layout.width)}>
                     {rangePreset === "day" ? (
                         <DayHourlyLineChart series={overallSeries} chartWidth={dayChartWidth} messages={messages} />
                     ) : (
                         <OverallUsageChart
                             series={overallSeries}
-                            rangePreset={rangePreset}
                             messages={messages}
-                            chartWidth={Math.max(220, Math.floor(screenWidth - 76))}
+                            chartWidth={trendWidth}
                         />
                     )}
+                    </View>
                 </View>
 
                 <View style={styles.card}>
@@ -735,12 +707,10 @@ export default function HomeScreen({ navigation }) {
                                 style={styles.deviceRow}
                                 hoverStyle={styles.hoverRowHighlight}
                             >
-                                <View
-                                    style={[styles.statusDot, item.online ? styles.statusOnline : styles.statusOffline]}
-                                />
                                 <View style={styles.deviceInfo}>
                                     <Text style={styles.deviceName}>{item.device_name}</Text>
                                     <Text style={styles.deviceMeta}>{t("Code:")} {item.device_code}</Text>
+                                    <View style={{ marginTop: 6 }}><StatusBadge online={item.online} /></View>
                                 </View>
                                 <Text style={styles.deviceUsage}>{formatNumber(item.usageLiters, 3)} L</Text>
                             </HoverablePressable>

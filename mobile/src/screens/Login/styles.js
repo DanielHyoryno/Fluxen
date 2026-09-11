@@ -1,3 +1,4 @@
+import { colors } from "../../theme/tokens";
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
         borderRadius: 24,
     },
     brandTitle: {
-        color: "#17324d",
+        color: colors.text,
         fontSize: 34,
         lineHeight: 40,
         fontWeight: "900",
@@ -47,7 +48,7 @@ const styles = StyleSheet.create({
     formCard: {
         backgroundColor: "rgba(255,255,255,0.92)",
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         borderRadius: 18,
         padding: 18,
         shadowColor: "#0d1c2f",
@@ -58,7 +59,7 @@ const styles = StyleSheet.create({
     },
     subtitle: {
         marginTop: 0,
-        color: "#0f62fe",
+        color: colors.primary,
         fontSize: 16,
         fontWeight: "700",
         lineHeight: 22,
@@ -68,27 +69,27 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#d4dde7",
         borderRadius: 10,
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         color: "#1a3047",
         paddingHorizontal: 14,
         paddingVertical: 12,
         marginBottom: 12,
     },
     primaryButton: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 10,
         paddingVertical: 14,
         alignItems: "center",
         marginTop: 4,
     },
     primaryButtonText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "700",
     },
     link: {
         marginTop: 18,
         textAlign: "center",
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "600",
         lineHeight: 20,
     },

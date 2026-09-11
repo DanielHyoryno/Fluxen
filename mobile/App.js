@@ -15,7 +15,6 @@ import {
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons } from "@expo/vector-icons";
 import { StatusBar } from "expo-status-bar";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
@@ -33,6 +32,8 @@ import ProfileScreen from "./src/screens/Profile/ProfileScreen";
 import BillingEstimationScreen from "./src/screens/BillingEstimation/BillingEstimationScreen";
 import BillingSettingsScreen from "./src/screens/BillingSettings/BillingSettingsScreen";
 import AlertNotificationWatcher from "./src/components/AlertNotificationWatcher";
+import { floatingTabLayout } from "./src/theme/tokens";
+import TabIcon from "./src/components/TabIcon";
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -227,106 +228,76 @@ function StartGate({ onStart }) {
     );
 }
 
+function MainTabs() {
+    useLocale();
+    const { width: viewportWidth } = useWindowDimensions();
+    const insets = useSafeAreaInsets();
+
+    const tabBarHeight = TAB_BAR_HEIGHT;
+
+    return (
+        <Tab.Navigator
+            screenOptions={({ route }) => ({
+                headerShown: false,
+                tabBarShowLabel: false,
+                tabBarAccessibilityLabel: t(route.name === "BLEScan" ? "BLE Provisioning" : route.name),
+                tabBarStyle: {
+                    position: "absolute",
+                    ...floatingTabLayout(viewportWidth, insets.bottom),
+                    borderRadius: 18,
+                    borderTopWidth: 0,
+                    backgroundColor: "#ffffff",
+                    shadowColor: "#0d1c2f",
+                    shadowOffset: { width: 0, height: 6 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 8,
+                    elevation: 4,
+                    paddingTop: 0,
+                    paddingBottom: 0,
+                },
+                tabBarItemStyle: {
+                    height: tabBarHeight,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    paddingTop: 0,
+                    paddingBottom: 0,
+                    margin: 0,
+                },
+                tabBarIconStyle: {
+                    height: tabBarHeight,
+                    width: 28,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginTop: 0,
+                    marginBottom: 0,
+                },
+                tabBarIcon: ({ focused }) => {
+                    const iconMap = {
+                        Home: "home-outline",
+                        Devices: "water-outline",
+                        BLEScan: "bluetooth-outline",
+                        Profile: "person-outline",
+                    };
+
+                    const iconName = focused ? iconMap[route.name].replace("-outline", "") : iconMap[route.name];
+
+                    return <TabIcon name={iconName} focused={focused} />;
+                },
+            })}
+        >
+            <Tab.Screen name="Home" component={HomeScreen} />
+            <Tab.Screen name="Devices" component={DevicesScreen} />
+            <Tab.Screen name="BLEScan" component={BLEScanScreen} />
+            <Tab.Screen name="Profile" component={ProfileScreen} />
+        </Tab.Navigator>
+    );
+}
+
 function RootNavigator() {
     const { isBooting, isAuthenticated } = useAuth();
-
     if (isBooting) {
-        return (
-            <View style={styles.loadingPage}>
-                <ActivityIndicator size="large" color="#0f62fe" />
-            </View>
-        );
+        return <View style={styles.loadingPage}><ActivityIndicator size="large" color="#0f62fe" /></View>;
     }
-
-    function MainTabs() {
-        const { width: viewportWidth, height: viewportHeight } = useWindowDimensions();
-        const insets = useSafeAreaInsets();
-        const isWeb = Platform.OS === "web";
-        const isCompactViewport = viewportWidth <= 520;
-        const isDesktopViewport = viewportWidth >= 980;
-
-        const tabBarHorizontalInset = isCompactViewport ? 14 : 18;
-        const defaultBottomInset = isCompactViewport ? 22 : 24;
-        const tabBarBottomInset = isWeb
-            ? defaultBottomInset
-            : Math.min(72, Math.max(insets.bottom + 12, Math.round(viewportHeight * 0.08)));
-        const tabBarHeight = isCompactViewport ? 52 : TAB_BAR_HEIGHT;
-        const desktopTabBarWidth = Math.min(600, Math.max(380, Math.floor(viewportWidth * 0.5)));
-
-        return (
-            <Tab.Navigator
-                screenOptions={({ route }) => ({
-                    headerShown: false,
-                    tabBarShowLabel: false,
-                    tabBarAccessibilityLabel: t(route.name === "BLEScan" ? "BLE Provisioning" : route.name),
-                    tabBarStyle: {
-                        position: "absolute",
-                        left: isDesktopViewport && isWeb ? undefined : tabBarHorizontalInset,
-                        right: isDesktopViewport && isWeb ? undefined : tabBarHorizontalInset,
-                        width: isDesktopViewport && isWeb ? desktopTabBarWidth : undefined,
-                        alignSelf: isDesktopViewport && isWeb ? "center" : undefined,
-                        bottom: tabBarBottomInset,
-                        height: tabBarHeight,
-                        borderRadius: 18,
-                        borderTopWidth: 0,
-                        backgroundColor: "#ffffff",
-                        shadowColor: "#0d1c2f",
-                        shadowOffset: { width: 0, height: 6 },
-                        shadowOpacity: 0.12,
-                        shadowRadius: 14,
-                        elevation: 8,
-                        paddingTop: 0,
-                        paddingBottom: 0,
-                    },
-                    tabBarItemStyle: {
-                        height: tabBarHeight,
-                        justifyContent: "center",
-                        alignItems: "center",
-                        paddingTop: 0,
-                        paddingBottom: 0,
-                        margin: 0,
-                    },
-                    tabBarIconStyle: {
-                        height: tabBarHeight,
-                        width: 28,
-                        justifyContent: "center",
-                        alignItems: "center",
-                        marginTop: 0,
-                        marginBottom: 0,
-                    },
-                    tabBarIcon: ({ focused }) => {
-                        const iconMap = {
-                            Home: "home-outline",
-                            Devices: "water-outline",
-                            BLEScan: "bluetooth-outline",
-                            Profile: "person-outline",
-                        };
-
-                        const iconName = focused ? iconMap[route.name].replace("-outline", "") : iconMap[route.name];
-                        const color = focused ? "#0f62fe" : "#67809a";
-
-                        return (
-                            <View
-                                style={[
-                                    styles.tabIconWrap,
-                                    isWeb && isCompactViewport && styles.tabIconWrapWebCompact,
-                                    !isWeb && styles.tabIconWrapNative,
-                                ]}
-                            >
-                                <Ionicons name={iconName} size={20} color={color} />
-                            </View>
-                        );
-                    },
-                })}
-            >
-                <Tab.Screen name="Home" component={HomeScreen} />
-                <Tab.Screen name="Devices" component={DevicesScreen} />
-                <Tab.Screen name="BLEScan" component={BLEScanScreen} />
-                <Tab.Screen name="Profile" component={ProfileScreen} />
-            </Tab.Navigator>
-        );
-    }
-
     return (
         <NavigationContainer>
             {isAuthenticated ? (
@@ -459,8 +430,8 @@ const styles = StyleSheet.create({
         lineHeight: 18,
     },
     tabIconWrap: {
-        width: 28,
-        height: 28,
+        width: 44,
+        height: 40,
         alignItems: "center",
         justifyContent: "center",
     },

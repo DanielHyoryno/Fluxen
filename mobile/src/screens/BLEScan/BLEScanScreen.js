@@ -19,6 +19,7 @@ import {
 } from "../../services/ble";
 import useScreenEntranceAnimation from "../../hooks/useScreenEntranceAnimation";
 import styles from "./styles";
+import usePageInsets from "../../hooks/usePageInsets";
 
 function getServerBaseUrl() {
     const match = API_BASE_URL.match(/^https?:\/\/[^/]+/i);
@@ -39,6 +40,7 @@ function DeviceItem({ item, onPress, connecting }) {
 }
 
 export default function BLEScanScreen({ route }) {
+    const pageInsets = usePageInsets();
     useLocale();
     const { animatedStyle } = useScreenEntranceAnimation();
     const [permissionGranted, setPermissionGranted] = useState(null);
@@ -212,8 +214,8 @@ export default function BLEScanScreen({ route }) {
 
     return (
         <Animated.ScrollView
-            style={[styles.page, animatedStyle]}
-            contentContainerStyle={styles.content}
+            style={[styles.page, { paddingTop: pageInsets.paddingTop }, animatedStyle]}
+            contentContainerStyle={[styles.content, { paddingBottom: pageInsets.paddingBottom }]}
             keyboardShouldPersistTaps="handled"
         >
             <View style={styles.header}>

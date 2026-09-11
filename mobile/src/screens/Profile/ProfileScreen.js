@@ -1,14 +1,17 @@
-import { Animated, Pressable, Text, View } from "react-native";
+import { Animated, Pressable, ScrollView, Text, View } from "react-native";
+import usePageInsets from "../../hooks/usePageInsets";
 import { useAuth } from "../../context/AuthContext";
 import useScreenEntranceAnimation from "../../hooks/useScreenEntranceAnimation";
 import styles from "./styles";
 
 export default function ProfileScreen() {
+    const pageInsets = usePageInsets();
     const { user, logout, locale, messages, setLocale } = useAuth();
     const { animatedStyle } = useScreenEntranceAnimation();
 
     return (
-        <Animated.View style={[styles.page, animatedStyle]}>
+        <ScrollView style={{ flex: 1, backgroundColor: "#f4f8ff" }} contentContainerStyle={[{ paddingHorizontal: 16 }, pageInsets]}>
+        <Animated.View style={animatedStyle}>
             <View style={styles.header}>
                 <Text style={styles.title}>{messages.profile.pageTitle}</Text>
                 <Text style={styles.subtitle}>{messages.profile.subtitle}</Text>
@@ -49,5 +52,6 @@ export default function ProfileScreen() {
                 <Text style={styles.logoutText}>{messages.profile.logout}</Text>
             </Pressable>
         </Animated.View>
+        </ScrollView>
     );
 }

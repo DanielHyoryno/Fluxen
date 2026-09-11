@@ -1,9 +1,10 @@
+import { colors } from "../../theme/tokens";
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
     page: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
         paddingTop: 42,
         paddingBottom: 98,
     },
@@ -26,10 +27,10 @@ const styles = StyleSheet.create({
         fontSize: 24,
         lineHeight: 30,
         fontWeight: "800",
-        color: "#17324d",
+        color: colors.text,
     },
     subtitle: {
-        color: "#4f6982",
+        color: colors.textMuted,
         marginTop: 6,
         marginBottom: 14,
         lineHeight: 22,
@@ -47,20 +48,20 @@ const styles = StyleSheet.create({
         justifyContent: "flex-start",
     },
     scanButton: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         paddingHorizontal: 14,
         paddingVertical: 10,
         borderRadius: 10,
     },
     scanText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "700",
     },
     scanHeroCard: {
         backgroundColor: "#eef5ff",
         borderRadius: 14,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 14,
         marginBottom: 12,
         flexDirection: "row",
@@ -72,31 +73,31 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     scanHeroTitle: {
-        color: "#17324d",
+        color: colors.text,
         fontSize: 16,
         fontWeight: "800",
     },
     scanHeroSubtitle: {
-        color: "#55708a",
+        color: colors.textMuted,
         marginTop: 6,
         lineHeight: 20,
     },
     scanHeroButton: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 12,
         paddingHorizontal: 14,
         paddingVertical: 10,
     },
     scanHeroButtonText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "800",
         fontSize: 13,
     },
     createBox: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 16,
         marginBottom: 10,
     },
@@ -104,27 +105,27 @@ const styles = StyleSheet.create({
         backgroundColor: "#f7fbff",
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 16,
         marginBottom: 10,
     },
     listStatusCard: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 10,
         padding: 12,
     },
     listSectionCard: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         marginBottom: 12,
         overflow: "hidden",
     },
     listSectionDivider: {
         marginTop: 2,
         borderBottomWidth: 1,
-        borderBottomColor: "#edf2fa",
+        borderBottomColor: colors.track,
     },
     filterChipRow: {
         flexDirection: "row",
@@ -147,15 +148,15 @@ const styles = StyleSheet.create({
     },
     filterChip: {
         borderWidth: 1,
-        borderColor: "#dbe6f5",
-        backgroundColor: "#fff",
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 6,
     },
     filterChipActive: {
-        backgroundColor: "#edf4ff",
-        borderColor: "#0f62fe",
+        backgroundColor: colors.primarySoft,
+        borderColor: colors.primary,
     },
     filterChipText: {
         color: "#35506d",
@@ -163,30 +164,30 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
     filterChipTextActive: {
-        color: "#0f62fe",
+        color: colors.primary,
     },
     createTitle: {
         fontWeight: "700",
-        color: "#1d3551",
+        color: colors.text,
         marginBottom: 12,
         lineHeight: 28,
         fontSize: 15,
     },
     categoryHelpText: {
-        color: "#4f6982",
+        color: colors.textMuted,
         marginBottom: 12,
         fontSize: 13,
         lineHeight: 19,
     },
     manageCategoryButton: {
         alignSelf: "flex-start",
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 10,
         paddingHorizontal: 14,
         paddingVertical: 10,
     },
     manageCategoryButtonText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "700",
         fontSize: 13,
     },
@@ -194,7 +195,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#d4dde7",
         borderRadius: 10,
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         color: "#1a3047",
         paddingHorizontal: 12,
         paddingVertical: 11,
@@ -208,15 +209,15 @@ const styles = StyleSheet.create({
     sectionSwitchButton: {
         flex: 1,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
-        backgroundColor: "#fff",
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
         borderRadius: 10,
         paddingVertical: 10,
         alignItems: "center",
     },
     sectionSwitchButtonActive: {
-        backgroundColor: "#0f62fe",
-        borderColor: "#0f62fe",
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     sectionSwitchText: {
         color: "#35506d",
@@ -224,7 +225,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
     sectionSwitchTextActive: {
-        color: "#fff",
+        color: colors.surface,
     },
     inputError: {
         borderColor: "#d54646",
@@ -247,15 +248,15 @@ const styles = StyleSheet.create({
     },
     categoryChip: {
         borderWidth: 1,
-        borderColor: "#dbe6f5",
-        backgroundColor: "#fff",
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
         borderRadius: 8,
         paddingHorizontal: 11,
         paddingVertical: 6,
     },
     categoryChipActive: {
-        backgroundColor: "#edf4ff",
-        borderColor: "#0f62fe",
+        backgroundColor: colors.primarySoft,
+        borderColor: colors.primary,
     },
     categoryChipText: {
         color: "#35506d",
@@ -263,17 +264,17 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
     categoryChipTextActive: {
-        color: "#0f62fe",
+        color: colors.primary,
     },
     primaryButton: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 10,
         paddingVertical: 12,
         alignItems: "center",
         marginTop: 4,
     },
     primaryText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "700",
     },
     tokenBox: {
@@ -310,7 +311,7 @@ const styles = StyleSheet.create({
     },
     showTokenButton: {
         marginTop: 12,
-        backgroundColor: "#edf4ff",
+        backgroundColor: colors.primarySoft,
         borderWidth: 1,
         borderColor: "#c8daf9",
         borderRadius: 8,
@@ -318,7 +319,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
     },
     showTokenButtonText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "700",
         fontSize: 13,
     },
@@ -332,10 +333,10 @@ const styles = StyleSheet.create({
     modalCard: {
         width: "100%",
         maxWidth: 420,
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 14,
     },
     modalTitle: {
@@ -344,7 +345,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
     },
     modalSubtitle: {
-        color: "#4f6982",
+        color: colors.textMuted,
         marginTop: 4,
         marginBottom: 10,
     },
@@ -356,24 +357,24 @@ const styles = StyleSheet.create({
         marginTop: 10,
     },
     provisionTokenButton: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 8,
         paddingVertical: 8,
         paddingHorizontal: 12,
     },
     provisionTokenButtonText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "700",
         fontSize: 13,
     },
     closeDialogButton: {
-        backgroundColor: "#eef4ff",
+        backgroundColor: colors.primarySoft,
         borderRadius: 8,
         paddingVertical: 8,
         paddingHorizontal: 12,
     },
     closeDialogButtonText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "700",
         fontSize: 13,
     },
@@ -395,10 +396,10 @@ const styles = StyleSheet.create({
         height: 0,
     },
     card: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         paddingHorizontal: 12,
         paddingVertical: 10,
         marginBottom: 0,
@@ -410,7 +411,7 @@ const styles = StyleSheet.create({
     },
     cardEmbeddedWithDivider: {
         borderBottomWidth: 1,
-        borderBottomColor: "#edf2fa",
+        borderBottomColor: colors.track,
     },
     deviceRowCompact: {
         flexDirection: "row",
@@ -432,17 +433,17 @@ const styles = StyleSheet.create({
     deviceName: {
         fontSize: 14,
         fontWeight: "700",
-        color: "#17324d",
+        color: colors.text,
     },
     deviceCodePill: {
         marginTop: 4,
-        color: "#55708a",
+        color: colors.textMuted,
         fontSize: 13,
         fontWeight: "500",
     },
     deviceMetaInline: {
         marginTop: 2,
-        color: "#55708a",
+        color: colors.textMuted,
         fontSize: 13,
         fontWeight: "500",
     },
@@ -485,12 +486,12 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     metaCompactLabel: {
-        color: "#55708a",
+        color: colors.textMuted,
         fontSize: 13,
         fontWeight: "500",
     },
     metaCompactValue: {
-        color: "#17324d",
+        color: colors.text,
         fontWeight: "600",
         fontSize: 13,
         flexShrink: 1,
@@ -528,7 +529,7 @@ const styles = StyleSheet.create({
     empty: {
         marginTop: 18,
         textAlign: "center",
-        color: "#4d6480",
+        color: colors.textMuted,
     },
     loading: {
         marginTop: 24,

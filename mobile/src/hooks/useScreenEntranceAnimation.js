@@ -1,14 +1,21 @@
-import { useRef } from "react";
+import { useCallback, useRef } from "react";
 import { Animated, Easing } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import useReducedMotion from "./useReducedMotion";
 
 export default function useScreenEntranceAnimation(options = {}) {
     const { duration = 280, translateY = 12 } = options;
+    const reducedMotion = useReducedMotion();
     const opacity = useRef(new Animated.Value(0)).current;
     const offsetY = useRef(new Animated.Value(translateY)).current;
 
     useFocusEffect(
-        useRef(() => {
+        useCallback(() => {
+            if (reducedMotion) {
+                opacity.setValue(1);
+                offsetY.setValue(0);
+                return;
+            }
             opacity.setValue(0);
             offsetY.setValue(translateY);
 
@@ -32,7 +39,7 @@ export default function useScreenEntranceAnimation(options = {}) {
             return () => {
                 animation.stop();
             };
-        }).current
+        }, [duration, translateY, reducedMotion, opacity, offsetY])
     );
 
     return {

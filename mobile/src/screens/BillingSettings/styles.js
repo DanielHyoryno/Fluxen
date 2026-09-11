@@ -1,3 +1,4 @@
+import { colors } from "../../theme/tokens";
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
@@ -5,11 +6,11 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
     },
     page: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
     },
     content: {
         padding: 16,
@@ -18,10 +19,10 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 28,
         fontWeight: "800",
-        color: "#17324d",
+        color: colors.text,
     },
     subtitle: {
-        color: "#55708a",
+        color: colors.textMuted,
         marginTop: 6,
         marginBottom: 14,
     },
@@ -34,41 +35,41 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     card: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 16,
     },
     cardTitle: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "800",
         marginBottom: 12,
     },
     label: {
-        color: "#4d6480",
+        color: colors.textMuted,
         fontSize: 13,
         fontWeight: "700",
         marginBottom: 8,
     },
     input: {
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         borderRadius: 10,
         paddingHorizontal: 12,
         paddingVertical: 11,
-        backgroundColor: "#f9fbff",
-        color: "#17324d",
+        backgroundColor: colors.surfaceMuted,
+        color: colors.text,
     },
     helperText: {
-        color: "#55708a",
+        color: colors.textMuted,
         marginTop: 10,
         lineHeight: 19,
         fontSize: 13,
     },
     button: {
         marginTop: 16,
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 10,
         alignItems: "center",
         justifyContent: "center",
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     buttonText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "800",
     },
 });

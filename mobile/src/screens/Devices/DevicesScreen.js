@@ -1,6 +1,8 @@
 import FailureNotice from "../../components/FailureNotice";
+import StatusBadge from "../../components/StatusBadge";
+import usePageInsets from "../../hooks/usePageInsets";
 import { t, useLocale } from "../../services/i18n";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
     ActivityIndicator,
     Animated,
@@ -29,35 +31,6 @@ const AUTO_REFRESH_MS = 5000;
 
 function DeviceCard({ item, onRequestDelete, messages, isEmbedded, isLast }) {
     const online = item.status === "online";
-    const pulse = useRef(new Animated.Value(1)).current;
-
-    useEffect(() => {
-        if (!online) {
-            pulse.stopAnimation();
-            pulse.setValue(1);
-            return;
-        }
-
-        const loop = Animated.loop(
-            Animated.sequence([
-                Animated.timing(pulse, {
-                    toValue: 0.72,
-                    duration: 900,
-                    easing: Easing.inOut(Easing.quad),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(pulse, {
-                    toValue: 1,
-                    duration: 900,
-                    easing: Easing.inOut(Easing.quad),
-                    useNativeDriver: true,
-                }),
-            ])
-        );
-
-        loop.start();
-        return () => loop.stop();
-    }, [online, pulse]);
 
     return (
         <View
@@ -69,7 +42,6 @@ function DeviceCard({ item, onRequestDelete, messages, isEmbedded, isLast }) {
         >
             <View style={styles.deviceRowCompact}>
                 <View style={styles.deviceRowLeft}>
-                    <View style={[styles.statusDot, online ? styles.statusOnline : styles.statusOffline]} />
                     <View style={styles.deviceTitleBlock}>
                         <Text style={styles.deviceName}>{item.device_name}</Text>
                         <Text style={styles.deviceMetaInline}>
@@ -82,11 +54,7 @@ function DeviceCard({ item, onRequestDelete, messages, isEmbedded, isLast }) {
                 </View>
 
                 <View style={styles.deviceRowRight}>
-                    <Text
-                        style={[styles.statusTextCompact, online ? styles.statusTextOnline : styles.statusTextOffline]}
-                    >
-                        {online ? messages.devices.online : messages.devices.offline}
-                    </Text>
+                    <StatusBadge online={online} />
                     <Pressable
                         style={styles.deleteButton}
                         onPress={(event) => {
@@ -103,6 +71,7 @@ function DeviceCard({ item, onRequestDelete, messages, isEmbedded, isLast }) {
 }
 
 export default function DevicesScreen({ navigation }) {
+    const pageInsets = usePageInsets();
     useLocale();
     const { token, user, messages } = useAuth();
     const { width: screenWidth } = useWindowDimensions();
@@ -344,7 +313,7 @@ export default function DevicesScreen({ navigation }) {
     });
 
     return (
-        <View style={styles.page}>
+        <View style={[styles.page, { paddingTop: pageInsets.paddingTop, paddingBottom: 0 }]}>
             <FlatList
                 style={styles.list}
                 data={[]}
@@ -426,6 +395,9 @@ export default function DevicesScreen({ navigation }) {
                                                 return (
                                                     <Pressable
                                                         key={item.key}
+                                                        accessibilityRole="button"
+                                                        accessibilityLabel={item.label}
+                                                        accessibilityState={{ selected: active }}
                                                         style={[styles.filterChip, active && styles.filterChipActive]}
                                                         onPress={() => setStatusFilter(item.key)}
                                                     >
@@ -642,7 +614,7 @@ export default function DevicesScreen({ navigation }) {
                         {activeSection !== "list" && loading ? <ActivityIndicator style={styles.loading} /> : null}
                     </Animated.View>
                 }
-                contentContainerStyle={styles.listContent}
+                contentContainerStyle={[styles.listContent, { paddingBottom: pageInsets.paddingBottom }]}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
                 ListHeaderComponentStyle={activeSection === "list" ? undefined : styles.listHeaderManageOnly}
             />

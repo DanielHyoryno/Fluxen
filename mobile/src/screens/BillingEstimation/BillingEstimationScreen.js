@@ -6,6 +6,8 @@ import Calendar from "../../components/LocalizedCalendar";
 import { useAuth } from "../../context/AuthContext";
 import { estimateBillApi, listCategoriesApi, listDevicesApi } from "../../services/api";
 import styles from "./styles";
+import MetricGrid from "../../components/MetricGrid";
+import PeriodSelector from "../../components/PeriodSelector";
 
 function toLocalDateISO(date = new Date()) {
     const tzOffset = date.getTimezoneOffset() * 60000;
@@ -251,29 +253,12 @@ export default function BillingEstimationScreen({ navigation }) {
                 </View>
                 <Text style={styles.heroValue}>{formatMoney(estimate?.summary?.estimated_cost)}</Text>
                 <View style={styles.heroRangeBlock}>
-                    <View style={styles.presetRow}>
-                        {[
+                    <PeriodSelector value={rangePreset} onChange={choosePreset} options={[
                             { key: "day", label: messages.billing.day },
                             { key: "month", label: messages.billing.month },
                             { key: "year", label: messages.billing.year },
                             { key: "custom", label: messages.billing.custom },
-                        ].map((item) => (
-                            <Pressable
-                                key={item.key}
-                                style={[styles.presetButton, rangePreset === item.key && styles.presetButtonActive]}
-                                onPress={() => choosePreset(item.key)}
-                            >
-                                <Text
-                                    style={[
-                                        styles.presetButtonText,
-                                        rangePreset === item.key && styles.presetButtonTextActive,
-                                    ]}
-                                >
-                                    {item.label}
-                                </Text>
-                            </Pressable>
-                        ))}
-                    </View>
+                    ]} />
 
                     {rangePreset === "custom" ? (
                         <View style={styles.row}>
@@ -281,29 +266,17 @@ export default function BillingEstimationScreen({ navigation }) {
                                 <Text style={styles.customDateLabel}>{messages.billing.from}</Text>
                                 <Text style={styles.customDateValue}>{range.from}</Text>
                             </Pressable>
-                            <Pressable style={styles.customDateButton} onPress={() => openCustomPicker(t("to"))}>
+                            <Pressable style={styles.customDateButton} onPress={() => openCustomPicker("to")}>
                                 <Text style={styles.customDateLabel}>{messages.billing.to}</Text>
                                 <Text style={styles.customDateValue}>{range.to}</Text>
                             </Pressable>
                         </View>
-                    ) : (
-                        <Text style={styles.rangeText}>
-                            {range.from} {t("to")} {range.to}
-                        </Text>
-                    )}
+                    ) : null}
                 </View>
-                <View style={styles.heroStats}>
-                    <View style={styles.heroStatBox}>
-                        <Text style={styles.heroStatLabel}>{messages.billing.usage}</Text>
-                        <Text style={styles.heroStatValue}>
-                            {formatValue(estimate?.summary?.total_liters, 3)} L
-                        </Text>
-                    </View>
-                    <View style={styles.heroStatBox}>
-                        <Text style={styles.heroStatLabel}>{messages.billing.devices}</Text>
-                        <Text style={styles.heroStatValue}>{estimate?.summary?.device_count || 0}</Text>
-                    </View>
-                </View>
+                <MetricGrid muted items={[
+                    { label: messages.billing.usage, value: `${formatValue(estimate?.summary?.total_liters, 3)} L` },
+                    { label: messages.billing.devices, value: String(estimate?.summary?.device_count || 0) },
+                ]} />
             </View>
 
             <View style={styles.card}>

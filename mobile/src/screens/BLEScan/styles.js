@@ -1,9 +1,10 @@
+import { colors } from "../../theme/tokens";
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
     page: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
         paddingTop: 42,
     },
     content: {
@@ -17,29 +18,29 @@ const styles = StyleSheet.create({
         fontSize: 24,
         lineHeight: 30,
         fontWeight: "800",
-        color: "#17324d",
+        color: colors.text,
     },
     subtitle: {
-        color: "#4f6982",
+        color: colors.textMuted,
         marginTop: 6,
         marginBottom: 14,
         lineHeight: 22,
     },
     card: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 14,
         marginBottom: 10,
     },
     sectionTitle: {
         fontWeight: "700",
-        color: "#1d3551",
+        color: colors.text,
         marginBottom: 10,
     },
     primaryButton: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 10,
         paddingVertical: 12,
         alignItems: "center",
@@ -49,18 +50,18 @@ const styles = StyleSheet.create({
         opacity: 0.7,
     },
     primaryText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "700",
     },
     secondaryButton: {
-        backgroundColor: "#eef4ff",
+        backgroundColor: colors.primarySoft,
         borderRadius: 10,
         paddingVertical: 10,
         alignItems: "center",
         marginTop: 10,
     },
     secondaryText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "700",
     },
     cardHeader: {
@@ -72,16 +73,16 @@ const styles = StyleSheet.create({
     deviceName: {
         fontSize: 17,
         fontWeight: "700",
-        color: "#17324d",
+        color: colors.text,
         flex: 1,
         marginRight: 8,
     },
     meta: {
-        color: "#4d6480",
+        color: colors.textMuted,
         marginTop: 2,
     },
     metaLabel: {
-        color: "#4f6982",
+        color: colors.textMuted,
         fontWeight: "600",
         marginBottom: 6,
     },
@@ -89,7 +90,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#d4dde7",
         borderRadius: 10,
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         color: "#1a3047",
         paddingHorizontal: 12,
         paddingVertical: 10,
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
     empty: {
         marginTop: 8,
         textAlign: "center",
-        color: "#4d6480",
+        color: colors.textMuted,
     },
     feedbackBox: {
         borderRadius: 10,

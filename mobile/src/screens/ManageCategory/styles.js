@@ -1,3 +1,4 @@
+import { colors } from "../../theme/tokens";
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
@@ -5,35 +6,35 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
     },
     page: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
         paddingTop: 16,
         paddingHorizontal: 16,
     },
     title: {
         fontSize: 30,
         fontWeight: "800",
-        color: "#17324d",
+        color: colors.text,
     },
     subtitle: {
-        color: "#4f6982",
+        color: colors.textMuted,
         marginTop: 2,
         marginBottom: 14,
     },
     card: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 16,
         marginBottom: 10,
     },
     cardTitle: {
         fontWeight: "800",
-        color: "#1d3551",
+        color: colors.text,
         marginBottom: 12,
     },
     addRow: {
@@ -46,7 +47,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#d4dde7",
         borderRadius: 10,
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         color: "#1a3047",
         paddingHorizontal: 12,
         paddingVertical: 11,
@@ -61,7 +62,7 @@ const styles = StyleSheet.create({
         minWidth: 64,
     },
     addButtonText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "700",
     },
     error: {
@@ -70,8 +71,8 @@ const styles = StyleSheet.create({
     },
     editBox: {
         borderWidth: 1,
-        borderColor: "#dbe6f5",
-        backgroundColor: "#f9fbff",
+        borderColor: colors.border,
+        backgroundColor: colors.surfaceMuted,
         borderRadius: 10,
         padding: 10,
         marginBottom: 10,
@@ -88,24 +89,24 @@ const styles = StyleSheet.create({
         justifyContent: "flex-end",
     },
     saveButton: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 8,
     },
     saveText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "700",
         fontSize: 13,
     },
     cancelButton: {
-        backgroundColor: "#eef4ff",
+        backgroundColor: colors.primarySoft,
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 8,
     },
     cancelText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "700",
         fontSize: 13,
     },
@@ -117,13 +118,13 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "space-between",
         borderTopWidth: 1,
-        borderTopColor: "#edf2fa",
+        borderTopColor: colors.track,
         paddingVertical: 10,
         gap: 8,
     },
     rowName: {
         flex: 1,
-        color: "#17324d",
+        color: colors.text,
         fontWeight: "700",
     },
     rowActions: {
@@ -131,13 +132,13 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     editButton: {
-        backgroundColor: "#eef4ff",
+        backgroundColor: colors.primarySoft,
         borderRadius: 8,
         paddingHorizontal: 10,
         paddingVertical: 6,
     },
     editText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "700",
         fontSize: 13,
     },
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
     empty: {
-        color: "#55708a",
+        color: colors.textMuted,
         fontStyle: "italic",
         marginTop: 6,
     },

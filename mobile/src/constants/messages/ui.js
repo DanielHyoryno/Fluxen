@@ -32,7 +32,7 @@ export default {
     "Confirm Action": ["Confirm action", "Konfirmasi tindakan"],
     "Connection": ["Connection", "Koneksi"],
     "Copy Token": ["Copy token", "Salin token"],
-    "Custom": ["Custom", "Pilih tanggal"],
+    "Custom": ["Custom", "Custom"],
     "Custom range maximum: 30 days": ["Up to 30 days", "Maksimal 30 hari"],
     "Daily Average": ["Daily average", "Rata-rata harian"],
     "Daily Details": ["Daily details", "Rincian harian"],

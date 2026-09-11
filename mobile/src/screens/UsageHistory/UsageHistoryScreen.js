@@ -25,6 +25,8 @@ import { saveAndShareXlsx, sanitizeXlsxFilename } from "../../services/xlsx-expo
 import SectionAccordion from "../../components/SectionAccordion";
 import SkeletonBlock from "../../components/SkeletonBlock";
 import styles from "./styles";
+import MetricGrid from "../../components/MetricGrid";
+import PeriodSelector from "../../components/PeriodSelector";
 
 const AUTO_REFRESH_MS = 5000;
 const EXPORT_MONTH_OPTIONS = [
@@ -573,40 +575,11 @@ export default function UsageHistoryScreen({ route }) {
 
             <SectionAccordion title={t("Date Range")} defaultExpanded>
                 <View style={styles.cardInner}>
-                    <View style={styles.rangeRow}>
-                        <Pressable
-                            style={({ pressed }) => [
-                                styles.rangeButton,
-                                rangeMode === "7d" && styles.rangeButtonActive,
-                                pressed && styles.rangeButtonPressed,
-                            ]}
-                            onPress={() => setRangeMode("7d")}
-                        >
-                            <Text style={[styles.rangeButtonText, rangeMode === "7d" && styles.rangeButtonTextActive]}>{t("Last 7 days")}</Text>
-                        </Pressable>
-                        <Pressable
-                            style={({ pressed }) => [
-                                styles.rangeButton,
-                                rangeMode === "30d" && styles.rangeButtonActive,
-                                pressed && styles.rangeButtonPressed,
-                            ]}
-                            onPress={() => setRangeMode("30d")}
-                        >
-                            <Text style={[styles.rangeButtonText, rangeMode === "30d" && styles.rangeButtonTextActive]}>{t("Last 30 days")}</Text>
-                        </Pressable>
-                        <Pressable
-                            style={({ pressed }) => [
-                                styles.rangeButton,
-                                rangeMode === "custom" && styles.rangeButtonActive,
-                                pressed && styles.rangeButtonPressed,
-                            ]}
-                            onPress={() => setRangeMode("custom")}
-                        >
-                            <Text
-                                style={[styles.rangeButtonText, rangeMode === "custom" && styles.rangeButtonTextActive]}
-                            >{t("Custom")}</Text>
-                        </Pressable>
-                    </View>
+                    <PeriodSelector value={rangeMode} onChange={setRangeMode} options={[
+                        { key: "7d", label: t("Last 7 days") },
+                        { key: "30d", label: t("Last 30 days") },
+                        { key: "custom", label: t("Custom") },
+                    ]} />
                     {rangeMode === "custom" ? (
                         <View style={styles.customRangeWrap}>
                             <Pressable style={styles.customDateButton} onPress={openCalendarDialog}>
@@ -623,10 +596,6 @@ export default function UsageHistoryScreen({ route }) {
                             </Pressable>
                         </View>
                     ) : null}
-                    <Text style={styles.meta}>
-                        {parseDateOnly(range.from).toLocaleDateString(getLanguageTag())} -{" "}
-                        {parseDateOnly(range.to).toLocaleDateString(getLanguageTag())}
-                    </Text>
                     <Text style={styles.meta}>{t("Custom range maximum: 30 days")}</Text>
                 </View>
             </SectionAccordion>
@@ -720,16 +689,10 @@ export default function UsageHistoryScreen({ route }) {
 
             <SectionAccordion title={t("Summary")} defaultExpanded>
                 <View style={styles.cardInner}>
-                    <View style={styles.summaryGrid}>
-                        <View style={styles.summaryTile}>
-                            <Text style={styles.summaryLabel}>{t("Total Usage")}</Text>
-                            <Text style={styles.metric}>{formatNumber(totalLiters, 3)} L</Text>
-                        </View>
-                        <View style={styles.summaryTile}>
-                            <Text style={styles.summaryLabel}>{t("Daily Average")}</Text>
-                            <Text style={styles.summaryTileValue}>{formatNumber(averageDailyUsage, 3)} {t("L/day")}</Text>
-                        </View>
-                    </View>
+                    <MetricGrid muted items={[
+                        { label: t("Total Usage"), value: `${formatNumber(totalLiters, 3)} L` },
+                        { label: t("Daily Average"), value: `${formatNumber(averageDailyUsage, 3)} ${t("L/day")}` },
+                    ]} />
                     <View style={styles.peakDayCard}>
                         <Text style={styles.summaryLabel}>{t("Peak Day")}</Text>
                         <Text style={styles.summaryTileValue}>

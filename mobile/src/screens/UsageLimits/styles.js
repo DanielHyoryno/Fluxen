@@ -1,3 +1,4 @@
+import { colors } from "../../theme/tokens";
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
@@ -5,11 +6,11 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
     },
     page: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
     },
     content: {
         padding: 16,
@@ -17,19 +18,19 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: "700",
-        color: "#183654",
+        color: colors.text,
         marginBottom: 6,
     },
     subtitle: {
-        color: "#55708a",
+        color: colors.textMuted,
         marginBottom: 20,
         lineHeight: 20,
     },
     card: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 16,
     },
     inputGroup: {
@@ -37,20 +38,20 @@ const styles = StyleSheet.create({
     },
     label: {
         fontWeight: "600",
-        color: "#1d3551",
+        color: colors.text,
         marginBottom: 8,
     },
     input: {
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
-        color: "#183654",
+        color: colors.text,
         backgroundColor: "#fcfdff",
     },
     button: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         padding: 14,
         borderRadius: 8,
         alignItems: "center",
@@ -63,7 +64,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#8daee6",
     },
     buttonText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "600",
         fontSize: 16,
     },

@@ -1,9 +1,10 @@
+import { colors } from "../../theme/tokens";
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
     page: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
     },
     content: {
         padding: 16,
@@ -11,19 +12,19 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 24,
         fontWeight: "700",
-        color: "#183654",
+        color: colors.text,
         marginBottom: 6,
     },
     subtitle: {
-        color: "#55708a",
+        color: colors.textMuted,
         marginBottom: 20,
         lineHeight: 20,
     },
     card: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 16,
     },
     infoRow: {
@@ -33,14 +34,14 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         paddingBottom: 12,
         borderBottomWidth: 1,
-        borderBottomColor: "#edf2fa",
+        borderBottomColor: colors.track,
     },
     infoLabel: {
-        color: "#4d6480",
+        color: colors.textMuted,
         fontWeight: "600",
     },
     infoValue: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "700",
         fontFamily: "monospace",
     },
@@ -49,16 +50,16 @@ const styles = StyleSheet.create({
     },
     label: {
         fontWeight: "600",
-        color: "#1d3551",
+        color: colors.text,
         marginBottom: 8,
     },
     input: {
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         borderRadius: 8,
         padding: 12,
         fontSize: 16,
-        color: "#183654",
+        color: colors.text,
         backgroundColor: "#fcfdff",
     },
     categoryOptions: {
@@ -75,7 +76,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#f8fbff",
     },
     categoryChipActive: {
-        borderColor: "#0f62fe",
+        borderColor: colors.primary,
         backgroundColor: "#e8f0ff",
     },
     categoryChipText: {
@@ -83,10 +84,10 @@ const styles = StyleSheet.create({
         fontWeight: "600",
     },
     categoryChipTextActive: {
-        color: "#0f62fe",
+        color: colors.primary,
     },
     button: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         padding: 14,
         borderRadius: 8,
         alignItems: "center",
@@ -99,7 +100,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#8daee6",
     },
     buttonText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "600",
         fontSize: 16,
     },

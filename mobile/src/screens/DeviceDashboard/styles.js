@@ -1,3 +1,4 @@
+import { colors } from "../../theme/tokens";
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
@@ -5,11 +6,11 @@ const styles = StyleSheet.create({
         flex: 1,
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
     },
     page: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
     },
     content: {
         padding: 16,
@@ -31,42 +32,48 @@ const styles = StyleSheet.create({
     },
     deviceHeader: {
         flexDirection: "row",
+        gap: 12,
         justifyContent: "space-between",
         alignItems: "flex-start",
         marginBottom: 12,
     },
     deviceHeaderLeft: {
         flex: 1,
+        minWidth: 0,
     },
     deviceName: {
         fontSize: 26,
         fontWeight: "700",
-        color: "#183654",
+        color: colors.text,
     },
     deviceMeta: {
-        color: "#55708a",
+        color: colors.textMuted,
         marginTop: 4,
     },
     editDeviceButton: {
-        backgroundColor: "#edf2fa",
+        flexShrink: 1,
+        maxWidth: "40%",
+        minHeight: 44,
+        justifyContent: "center",
+        backgroundColor: colors.track,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 6,
         marginTop: 4,
     },
     editDeviceButtonPressed: {
-        backgroundColor: "#dbe6f5",
+        backgroundColor: colors.border,
     },
     editDeviceButtonText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "600",
         fontSize: 14,
     },
     card: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 14,
         marginBottom: 10,
     },
@@ -78,12 +85,15 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     cardTitle: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "700",
         marginBottom: 6,
     },
     liveHeader: {
         flexDirection: "row",
+        flexWrap: "wrap",
+        gap: 8,
+        marginBottom: 8,
         justifyContent: "space-between",
         alignItems: "center",
     },
@@ -91,7 +101,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 6,
-        backgroundColor: "#eef4ff",
+        backgroundColor: colors.primarySoft,
         borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 4,
@@ -103,13 +113,13 @@ const styles = StyleSheet.create({
         width: 7,
         height: 7,
         borderRadius: 4,
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
     },
     liveDotOffline: {
         backgroundColor: "#8fa0b4",
     },
     liveText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontSize: 13,
         fontWeight: "700",
     },
@@ -119,15 +129,15 @@ const styles = StyleSheet.create({
     mainMetric: {
         fontSize: 30,
         fontWeight: "700",
-        color: "#0f62fe",
+        color: colors.primary,
     },
     metric: {
         fontSize: 21,
         fontWeight: "700",
-        color: "#16426d",
+        color: colors.text,
     },
     meta: {
-        color: "#4d6480",
+        color: colors.textMuted,
         marginTop: 2,
     },
     metaStrong: {
@@ -139,7 +149,7 @@ const styles = StyleSheet.create({
     overviewDetailButton: {
         marginTop: 12,
         alignSelf: "flex-start",
-        backgroundColor: "#eef4ff",
+        backgroundColor: colors.primarySoft,
         borderRadius: 8,
         paddingHorizontal: 12,
         paddingVertical: 8,
@@ -148,13 +158,13 @@ const styles = StyleSheet.create({
         opacity: 0.85,
     },
     overviewDetailButtonText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "700",
         fontSize: 13,
     },
     alertItem: {
         borderTopWidth: 1,
-        borderTopColor: "#edf2fa",
+        borderTopColor: colors.track,
         paddingTop: 8,
         marginTop: 8,
     },
@@ -204,7 +214,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         justifyContent: "space-between",
         borderTopWidth: 1,
-        borderTopColor: "#edf2fa",
+        borderTopColor: colors.track,
         paddingTop: 8,
         marginTop: 8,
     },
@@ -226,35 +236,35 @@ const styles = StyleSheet.create({
     todayHistoryMoreButton: {
         marginTop: 10,
         alignSelf: "center",
-        backgroundColor: "#eef4ff",
+        backgroundColor: colors.primarySoft,
         borderRadius: 8,
         paddingVertical: 8,
         paddingHorizontal: 12,
     },
     todayHistoryMoreText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "700",
         fontSize: 13,
     },
     limitButton: {
-        backgroundColor: "#edf2fa",
+        backgroundColor: colors.track,
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 6,
     },
     limitButtonPressed: {
-        backgroundColor: "#dbe6f5",
+        backgroundColor: colors.border,
     },
     limitButtonText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "600",
         fontSize: 14,
     },
     historyButton: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#0f62fe",
+        borderColor: colors.primary,
         paddingVertical: 12,
         alignItems: "center",
         marginBottom: 4,
@@ -263,7 +273,7 @@ const styles = StyleSheet.create({
         opacity: 0.85,
     },
     historyButtonText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "700",
         fontSize: 15,
     },
@@ -284,12 +294,12 @@ const styles = StyleSheet.create({
     chartBarTrack: {
         flex: 1,
         justifyContent: "flex-end",
-        backgroundColor: "#edf2fa",
+        backgroundColor: colors.track,
         borderRadius: 3,
         overflow: "hidden",
     },
     chartBar: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 3,
         minHeight: 2,
     },
@@ -299,19 +309,19 @@ const styles = StyleSheet.create({
         marginTop: 6,
     },
     chartLabel: {
-        color: "#55708a",
+        color: colors.textMuted,
         fontSize: 13,
     },
     chartCaption: {
-        color: "#55708a",
+        color: colors.textMuted,
         fontSize: 13,
         textAlign: "center",
         marginTop: 4,
     },
     lineChartBox: {
-        backgroundColor: "#f9fbff",
+        backgroundColor: colors.surfaceMuted,
         borderWidth: 1,
-        borderColor: "#e1eaf8",
+        borderColor: colors.border,
         borderRadius: 8,
         paddingHorizontal: 8,
         paddingVertical: 8,
@@ -320,9 +330,9 @@ const styles = StyleSheet.create({
     hourlyLineChartBox: {
         marginTop: 4,
         width: "100%",
-        backgroundColor: "#f9fbff",
+        backgroundColor: colors.surfaceMuted,
         borderWidth: 1,
-        borderColor: "#e1eaf8",
+        borderColor: colors.border,
         borderRadius: 8,
         paddingHorizontal: 8,
         paddingVertical: 8,
@@ -336,7 +346,7 @@ const styles = StyleSheet.create({
         width: "100%",
     },
     hourlyLineLabel: {
-        color: "#55708a",
+        color: colors.textMuted,
         fontSize: 13,
     },
     hourlyGuideText: {
@@ -355,12 +365,12 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
-        backgroundColor: "#fff",
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
     },
     chartTypeButtonActive: {
-        borderColor: "#0f62fe",
-        backgroundColor: "#edf4ff",
+        borderColor: colors.primary,
+        backgroundColor: colors.primarySoft,
     },
     chartTypeText: {
         color: "#35506d",
@@ -368,7 +378,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
     chartTypeTextActive: {
-        color: "#0f62fe",
+        color: colors.primary,
     },
 });
 

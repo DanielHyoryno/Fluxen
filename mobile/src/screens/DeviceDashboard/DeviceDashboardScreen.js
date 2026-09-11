@@ -1,5 +1,7 @@
 import { getLanguageTag, t, useLocale } from "../../services/i18n";
 import FailureNotice from "../../components/FailureNotice";
+import StatusBadge from "../../components/StatusBadge";
+import MetricGrid from "../../components/MetricGrid";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
@@ -70,7 +72,6 @@ export default function DeviceDashboardScreen({ route, navigation }) {
     const [showAllTodayHistory, setShowAllTodayHistory] = useState(false);
     const entryOpacity = useRef(new Animated.Value(0)).current;
     const entryTranslateY = useRef(new Animated.Value(14)).current;
-    const livePulse = useRef(new Animated.Value(1)).current;
 
     const today = toLocalDateISO();
     const chartWidth = useMemo(() => Math.max(220, Math.floor(screenWidth - 120)), [screenWidth]);
@@ -106,32 +107,6 @@ export default function DeviceDashboardScreen({ route, navigation }) {
     const isDeviceOnline = latestAgeSec !== null && latestAgeSec <= OFFLINE_THRESHOLD_SEC;
     const displayFlowRate = isDeviceOnline ? Number(latest?.flow_rate_lpm || 0) : 0;
 
-    useEffect(() => {
-        if (!isDeviceOnline) {
-            livePulse.stopAnimation();
-            livePulse.setValue(0.45);
-            return;
-        }
-
-        const loop = Animated.loop(
-            Animated.sequence([
-                Animated.timing(livePulse, {
-                    toValue: 0.6,
-                    duration: 900,
-                    easing: Easing.inOut(Easing.quad),
-                    useNativeDriver: true,
-                }),
-                Animated.timing(livePulse, {
-                    toValue: 1,
-                    duration: 900,
-                    easing: Easing.inOut(Easing.quad),
-                    useNativeDriver: true,
-                }),
-            ])
-        );
-        loop.start();
-        return () => loop.stop();
-    }, [isDeviceOnline, livePulse]);
 
     const lastSeenText = useMemo(() => {
         if (!latest?.measured_at) return messages.dashboard.noTelemetryYet;
@@ -303,18 +278,7 @@ export default function DeviceDashboardScreen({ route, navigation }) {
                         <StaggerCard index={0} style={styles.card}>
                             <View style={styles.liveHeader}>
                                 <Text style={styles.cardTitle}>{messages.dashboard.currentStatus}</Text>
-                                <View style={[styles.liveChip, !isDeviceOnline && styles.liveChipOffline]}>
-                                    <Animated.View
-                                        style={[
-                                            styles.liveDot,
-                                            !isDeviceOnline && styles.liveDotOffline,
-                                            { opacity: livePulse },
-                                        ]}
-                                    />
-                                    <Text style={[styles.liveText, !isDeviceOnline && styles.liveTextOffline]}>
-                                        {isDeviceOnline ? messages.devices.online : messages.devices.offline}
-                                    </Text>
-                                </View>
+                                <StatusBadge online={isDeviceOnline} />
                             </View>
                             <Text style={styles.mainMetric}>{formatNumber(displayFlowRate, 2)} {t("L/min")}</Text>
                             <Text style={styles.meta}>
@@ -335,15 +299,11 @@ export default function DeviceDashboardScreen({ route, navigation }) {
                             </Pressable>
                         </StaggerCard>
 
-                        <StaggerCard index={1} style={styles.row}>
-                            <View style={[styles.card, styles.cardHalf]}>
-                                <Text style={styles.cardTitle}>{messages.dashboard.todayTotal}</Text>
-                                <Text style={styles.metric}>{formatNumber(totalTodayLiters, 3)} L</Text>
-                            </View>
-                            <View style={[styles.card, styles.cardHalf]}>
-                                <Text style={styles.cardTitle}>{messages.dashboard.averageFlow}</Text>
-                                <Text style={styles.metric}>{formatNumber(avgFlowToday, 2)} {t("L/min")}</Text>
-                            </View>
+                        <StaggerCard index={1}>
+                            <MetricGrid muted items={[
+                                { label: messages.dashboard.todayTotal, value: `${formatNumber(totalTodayLiters, 3)} L` },
+                                { label: messages.dashboard.averageFlow, value: `${formatNumber(avgFlowToday, 2)} ${t("L/min")}` },
+                            ]} />
                         </StaggerCard>
 
                         <StaggerCard index={2} style={styles.card}>

@@ -87,7 +87,7 @@ describe("DevicesScreen", () => {
         expect(await screen.findByText("Kitchen Meter")).toBeTruthy();
         expect(screen.getByText("Garden Meter")).toBeTruthy();
 
-        fireEvent.press(screen.getByText(messages.home.online));
+        fireEvent.press(screen.getByRole("button", { name: messages.home.online }));
 
         expect(screen.getByText("Kitchen Meter")).toBeTruthy();
         expect(screen.queryByText("Garden Meter")).toBeNull();

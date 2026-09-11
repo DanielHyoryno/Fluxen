@@ -1,9 +1,10 @@
+import { colors } from "../../theme/tokens";
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
     page: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
         paddingTop: 42,
         paddingHorizontal: 16,
         paddingBottom: 120,
@@ -15,41 +16,41 @@ const styles = StyleSheet.create({
         fontSize: 24,
         lineHeight: 30,
         fontWeight: "800",
-        color: "#17324d",
+        color: colors.text,
     },
     subtitle: {
         marginTop: 6,
         marginBottom: 14,
-        color: "#4f6982",
+        color: colors.textMuted,
         lineHeight: 22,
     },
     card: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 14,
         marginBottom: 12,
     },
     label: {
-        color: "#55708a",
+        color: colors.textMuted,
         fontSize: 13,
         fontWeight: "700",
         textTransform: "uppercase",
         marginTop: 6,
     },
     value: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "700",
         marginTop: 4,
     },
     sectionTitle: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "800",
         marginBottom: 8,
     },
     sectionHelp: {
-        color: "#55708a",
+        color: colors.textMuted,
         fontSize: 13,
         marginBottom: 10,
     },
@@ -60,15 +61,15 @@ const styles = StyleSheet.create({
     },
     languageButton: {
         borderWidth: 1,
-        borderColor: "#dbe6f5",
-        backgroundColor: "#fff",
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
         borderRadius: 10,
         paddingHorizontal: 14,
         paddingVertical: 10,
     },
     languageButtonActive: {
-        backgroundColor: "#0f62fe",
-        borderColor: "#0f62fe",
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     languageButtonText: {
         color: "#35506d",
@@ -76,7 +77,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
     languageButtonTextActive: {
-        color: "#fff",
+        color: colors.surface,
     },
     logoutButton: {
         marginTop: 14,

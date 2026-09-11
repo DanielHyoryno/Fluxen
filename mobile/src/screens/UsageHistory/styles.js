@@ -1,9 +1,10 @@
+import { colors } from "../../theme/tokens";
 import { StyleSheet } from "react-native";
 
 const styles = StyleSheet.create({
     loadingPage: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
         padding: 16,
     },
     skeletonPage: {
@@ -11,7 +12,7 @@ const styles = StyleSheet.create({
     },
     page: {
         flex: 1,
-        backgroundColor: "#f4f8ff",
+        backgroundColor: colors.background,
     },
     content: {
         padding: 16,
@@ -20,18 +21,18 @@ const styles = StyleSheet.create({
     deviceName: {
         fontSize: 26,
         fontWeight: "700",
-        color: "#1d3551",
+        color: colors.text,
     },
     deviceMeta: {
-        color: "#4d6480",
+        color: colors.textMuted,
         marginTop: 4,
         marginBottom: 12,
     },
     card: {
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 14,
         marginBottom: 10,
     },
@@ -46,42 +47,42 @@ const styles = StyleSheet.create({
     summaryTile: {
         flex: 1,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
-        backgroundColor: "#f9fbff",
+        borderColor: colors.border,
+        backgroundColor: colors.surfaceMuted,
         borderRadius: 10,
         padding: 12,
     },
     summaryLabel: {
-        color: "#55708a",
+        color: colors.textMuted,
         fontSize: 13,
         fontWeight: "700",
         textTransform: "uppercase",
     },
     summaryTileValue: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "700",
         fontSize: 18,
         marginTop: 6,
     },
     peakDayCard: {
         borderWidth: 1,
-        borderColor: "#dbe6f5",
-        backgroundColor: "#fff",
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
         borderRadius: 10,
         padding: 12,
     },
     cardTitle: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "700",
         marginBottom: 6,
     },
     metric: {
         fontSize: 24,
         fontWeight: "700",
-        color: "#0f62fe",
+        color: colors.primary,
     },
     meta: {
-        color: "#4d6480",
+        color: colors.textMuted,
         marginTop: 2,
     },
     rangeRow: {
@@ -91,25 +92,25 @@ const styles = StyleSheet.create({
     rangeButton: {
         flex: 1,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         borderRadius: 8,
         paddingVertical: 8,
         alignItems: "center",
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
     },
     rangeButtonActive: {
-        backgroundColor: "#0f62fe",
-        borderColor: "#0f62fe",
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     rangeButtonPressed: {
         opacity: 0.85,
     },
     rangeButtonText: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "600",
     },
     rangeButtonTextActive: {
-        color: "#fff",
+        color: colors.surface,
     },
     chartContainer: {
         marginTop: 4,
@@ -128,12 +129,12 @@ const styles = StyleSheet.create({
     chartBarTrack: {
         flex: 1,
         justifyContent: "flex-end",
-        backgroundColor: "#edf2fa",
+        backgroundColor: colors.track,
         borderRadius: 3,
         overflow: "hidden",
     },
     chartBar: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 3,
         minHeight: 2,
     },
@@ -143,19 +144,19 @@ const styles = StyleSheet.create({
         marginTop: 6,
     },
     chartLabel: {
-        color: "#4d6480",
+        color: colors.textMuted,
         fontSize: 13,
     },
     chartCaption: {
-        color: "#4d6480",
+        color: colors.textMuted,
         fontSize: 13,
         textAlign: "center",
         marginTop: 4,
     },
     lineChartBox: {
-        backgroundColor: "#f9fbff",
+        backgroundColor: colors.surfaceMuted,
         borderWidth: 1,
-        borderColor: "#e1eaf8",
+        borderColor: colors.border,
         borderRadius: 8,
         paddingHorizontal: 8,
         paddingVertical: 8,
@@ -169,20 +170,20 @@ const styles = StyleSheet.create({
     customDateButton: {
         flex: 1,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         borderRadius: 8,
         paddingHorizontal: 10,
         paddingVertical: 8,
-        backgroundColor: "#f9fbff",
+        backgroundColor: colors.surfaceMuted,
     },
     customDateLabel: {
-        color: "#4d6480",
+        color: colors.textMuted,
         fontSize: 13,
         fontWeight: "700",
         textTransform: "uppercase",
     },
     customDateValue: {
-        color: "#1d3551",
+        color: colors.text,
         marginTop: 4,
         fontWeight: "600",
     },
@@ -196,12 +197,12 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         borderRadius: 8,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
-        backgroundColor: "#fff",
+        borderColor: colors.border,
+        backgroundColor: colors.surface,
     },
     chartTypeButtonActive: {
-        borderColor: "#0f62fe",
-        backgroundColor: "#edf4ff",
+        borderColor: colors.primary,
+        backgroundColor: colors.primarySoft,
     },
     chartTypeText: {
         color: "#35506d",
@@ -209,7 +210,7 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
     chartTypeTextActive: {
-        color: "#0f62fe",
+        color: colors.primary,
     },
     dailyTotalsStrip: {
         paddingTop: 8,
@@ -217,19 +218,19 @@ const styles = StyleSheet.create({
     },
     dailyTotalChip: {
         borderWidth: 1,
-        borderColor: "#dbe6f5",
-        backgroundColor: "#f9fbff",
+        borderColor: colors.border,
+        backgroundColor: colors.surfaceMuted,
         borderRadius: 8,
         paddingHorizontal: 10,
         paddingVertical: 8,
         minWidth: 88,
     },
     dailyTotalDate: {
-        color: "#4d6480",
+        color: colors.textMuted,
         fontSize: 13,
     },
     dailyTotalValue: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "700",
         marginTop: 3,
     },
@@ -243,10 +244,10 @@ const styles = StyleSheet.create({
     calendarDialogCard: {
         width: "100%",
         maxWidth: 420,
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
         borderRadius: 12,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         padding: 14,
     },
     modalTitle: {
@@ -256,20 +257,20 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     calendarHint: {
-        color: "#4d6480",
+        color: colors.textMuted,
         fontSize: 13,
         marginTop: 8,
     },
     webPickerWrap: {
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         borderRadius: 8,
         padding: 10,
-        backgroundColor: "#f9fbff",
+        backgroundColor: colors.surfaceMuted,
         gap: 8,
     },
     webPickerValue: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "600",
     },
     modalActions: {
@@ -279,23 +280,23 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     modalSecondaryButton: {
-        backgroundColor: "#eef4ff",
+        backgroundColor: colors.primarySoft,
         borderRadius: 8,
         paddingVertical: 8,
         paddingHorizontal: 12,
     },
     modalSecondaryText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "700",
     },
     modalPrimaryButton: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 8,
         paddingVertical: 8,
         paddingHorizontal: 12,
     },
     modalPrimaryText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "700",
     },
     monthOptionGrid: {
@@ -307,38 +308,38 @@ const styles = StyleSheet.create({
         width: "31%",
         minWidth: 92,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         borderRadius: 8,
         paddingVertical: 9,
         paddingHorizontal: 6,
         alignItems: "center",
-        backgroundColor: "#f9fbff",
+        backgroundColor: colors.surfaceMuted,
     },
     monthOptionSelected: {
-        backgroundColor: "#0f62fe",
-        borderColor: "#0f62fe",
+        backgroundColor: colors.primary,
+        borderColor: colors.primary,
     },
     monthOptionPressed: {
         opacity: 0.82,
     },
     monthOptionText: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "600",
         fontSize: 13,
     },
     monthOptionTextSelected: {
-        color: "#fff",
+        color: colors.surface,
     },
     tableHeader: {
         flexDirection: "row",
         alignItems: "center",
         paddingBottom: 6,
         borderBottomWidth: 1,
-        borderBottomColor: "#dbe6f5",
+        borderBottomColor: colors.border,
         marginBottom: 2,
     },
     headerText: {
-        color: "#4d6480",
+        color: colors.textMuted,
         fontSize: 13,
         fontWeight: "700",
         textTransform: "uppercase",
@@ -348,12 +349,12 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         borderTopWidth: 1,
-        borderTopColor: "#edf2fa",
+        borderTopColor: colors.track,
         paddingTop: 8,
         marginTop: 8,
     },
     historyText: {
-        color: "#1d3551",
+        color: colors.text,
         fontSize: 13,
     },
     historyDate: {
@@ -371,20 +372,20 @@ const styles = StyleSheet.create({
     viewMoreButton: {
         marginTop: 10,
         alignSelf: "center",
-        backgroundColor: "#eef4ff",
+        backgroundColor: colors.primarySoft,
         borderRadius: 8,
         paddingVertical: 8,
         paddingHorizontal: 12,
     },
     viewMoreText: {
-        color: "#0f62fe",
+        color: colors.primary,
         fontWeight: "700",
         fontSize: 13,
     },
     detailCard: {
         borderWidth: 1,
-        borderColor: "#dbe6f5",
-        backgroundColor: "#f9fbff",
+        borderColor: colors.border,
+        backgroundColor: colors.surfaceMuted,
         borderRadius: 10,
         padding: 12,
         marginTop: 8,
@@ -393,7 +394,7 @@ const styles = StyleSheet.create({
         maxHeight: 360,
     },
     detailDate: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "700",
         marginBottom: 8,
     },
@@ -405,13 +406,13 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     detailMetricLabel: {
-        color: "#55708a",
+        color: colors.textMuted,
         fontSize: 13,
         fontWeight: "700",
         textTransform: "uppercase",
     },
     detailMetricValue: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "700",
         marginTop: 4,
         fontSize: 13,
@@ -423,11 +424,11 @@ const styles = StyleSheet.create({
     exportPeriodField: {
         flex: 1,
         borderWidth: 1,
-        borderColor: "#dbe6f5",
+        borderColor: colors.border,
         borderRadius: 10,
         paddingVertical: 10,
         paddingHorizontal: 12,
-        backgroundColor: "#fff",
+        backgroundColor: colors.surface,
     },
     exportPeriodFieldDisabled: {
         backgroundColor: "#edf1f6",
@@ -437,7 +438,7 @@ const styles = StyleSheet.create({
         opacity: 0.82,
     },
     exportPeriodLabel: {
-        color: "#55708a",
+        color: colors.textMuted,
         fontSize: 13,
         fontWeight: "700",
         textTransform: "uppercase",
@@ -449,7 +450,7 @@ const styles = StyleSheet.create({
         textTransform: "uppercase",
     },
     exportPeriodValue: {
-        color: "#1d3551",
+        color: colors.text,
         fontWeight: "700",
         marginTop: 5,
     },
@@ -459,12 +460,12 @@ const styles = StyleSheet.create({
         marginTop: 5,
     },
     exportPeriodHint: {
-        color: "#4d6480",
+        color: colors.textMuted,
         fontSize: 13,
         marginTop: 8,
     },
     exportButton: {
-        backgroundColor: "#0f62fe",
+        backgroundColor: colors.primary,
         borderRadius: 12,
         paddingVertical: 12,
         alignItems: "center",
@@ -478,7 +479,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#8daee6",
     },
     exportButtonText: {
-        color: "#fff",
+        color: colors.surface,
         fontWeight: "700",
         fontSize: 15,
     },

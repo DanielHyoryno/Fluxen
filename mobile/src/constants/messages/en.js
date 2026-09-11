@@ -31,8 +31,8 @@ export default {
         "authProviderError": "useAuth must be used inside AuthProvider"
     },
     "devices": {
-        "online": "ONLINE",
-        "offline": "OFFLINE",
+        "online": "Online",
+        "offline": "Offline",
         "codeLabel": "Code",
         "categoryLabel": "Category",
         "uncategorized": "Uncategorized",
