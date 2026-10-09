@@ -124,21 +124,29 @@ function formatRupiah(value) {
     }).format(Number(value || 0));
 }
 
-function OverallUsageChart({ series, messages, chartWidth }) {
-    const { fontScale } = useWindowDimensions();
+export function OverallUsageChart({ series, messages, chartWidth }) {
+    const { fontScale, width: screenWidth } = useWindowDimensions();
     if (!series.length) return <Text style={styles.emptyText}>{messages.home.emptyTotalTrend}</Text>;
 
+    const viewportWidth = Number.isFinite(chartWidth) && chartWidth > 0
+        ? chartWidth
+        : Math.max(1, screenWidth - 64);
+    const trackHeight = 120;
     const maxValue = series.reduce((max, item) => Math.max(max, Number(item.totalLiters || 0)), 0);
     const chartMax = maxValue > 0 ? maxValue : 1;
     const minSlotWidth = Math.ceil(30 * fontScale);
     const interBarGap = 6;
     const requiredWidth = series.length * minSlotWidth + Math.max(0, series.length - 1) * interBarGap;
-    const shouldScroll = requiredWidth > chartWidth;
-    const slotWidth = shouldScroll ? minSlotWidth : null;
+    const shouldScroll = requiredWidth > viewportWidth;
+    const contentWidth = Math.max(requiredWidth, viewportWidth);
+    const slotWidth = (contentWidth - (series.length - 1) * interBarGap) / series.length;
+    const labelHeight = (series.length > 10 ? 20 : 36) * fontScale;
+    const contentHeight = trackHeight + 6 + labelHeight;
+    const rowStyle = { flexDirection: "row", gap: interBarGap, width: contentWidth, height: contentHeight, alignItems: "flex-start" };
 
     const bars = series.map((item) => {
         const value = Number(item.totalLiters || 0);
-        const heightPct = Math.round((value / chartMax) * 100);
+        const fillHeight = value > 0 ? Math.max((value / chartMax) * trackHeight, 3) : 0;
         const date = new Date(`${item.date}T00:00:00`);
         const labelText = series.length > 10 ? formatDayOnlyLabel(item.date)
             : `${date.getDate()}\n${date.toLocaleDateString(getLanguageTag(), { month: "short" })}`;
@@ -146,33 +154,34 @@ function OverallUsageChart({ series, messages, chartWidth }) {
         return (
             <View
                 key={item.date}
-                style={[
-                    styles.overallBarCol,
-                    shouldScroll && styles.overallBarColDense,
-                    shouldScroll && { width: slotWidth },
-                ]}
+                testID={`usage-bar-${item.date}`}
+                style={{ width: slotWidth, height: contentHeight, flexShrink: 0, alignItems: "center" }}
             >
-                <View style={styles.overallBarTrack}>
-                    <View style={[styles.overallBarFill, { height: `${Math.max(heightPct, value > 0 ? 4 : 0)}%` }]} />
+                <View
+                    testID={`usage-track-${item.date}`}
+                    style={[styles.overallBarTrack, { width: slotWidth, height: trackHeight }]}
+                >
+                    <View testID={`usage-fill-${item.date}`} style={[styles.overallBarFill, { height: fillHeight }]} />
                 </View>
-                <Text style={[styles.overallBarLabel, { height: (series.length > 10 ? 20 : 36) * fontScale }]}>{labelText}</Text>
+                <Text numberOfLines={series.length > 10 ? 1 : 2} style={[styles.overallBarLabel, { height: labelHeight }]}>{labelText}</Text>
             </View>
         );
     });
 
     return (
-        <View style={styles.overallChartWrap}>
+        <View testID="usage-chart" style={[styles.overallChartWrap, { height: contentHeight, flexShrink: 0 }]}>
             {shouldScroll ? (
                 <ScrollView
                     horizontal
                     showsHorizontalScrollIndicator={false}
-                    style={[styles.overallBarsScrollView, { height: 130 + (series.length > 10 ? 20 : 36) * fontScale }]}
-                    contentContainerStyle={styles.overallBarsScrollContent}
+                    testID="usage-bars-scroll"
+                    style={{ width: viewportWidth, height: contentHeight, flexGrow: 0, flexShrink: 0 }}
+                    contentContainerStyle={rowStyle}
                 >
-                    <View style={[styles.overallBarsDense, { width: requiredWidth }]}>{bars}</View>
+                    {bars}
                 </ScrollView>
             ) : (
-                <View style={styles.overallBars}>{bars}</View>
+                <View style={rowStyle}>{bars}</View>
             )}
         </View>
     );
