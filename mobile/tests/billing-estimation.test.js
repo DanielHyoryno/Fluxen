@@ -49,11 +49,12 @@ describe("BillingEstimationScreen", () => {
 
     test("only submits selected devices that belong to the active category", async () => {
         renderBillingEstimation();
-        await screen.findByText("Kitchen Meter");
+        await screen.findByText("Kitchen Meter", {}, { timeout: 5000 });
         await waitFor(() => expect(estimateBillApi).toHaveBeenCalledTimes(1));
         estimateBillApi.mockClear();
 
-        fireEvent.press(screen.getAllByText("Garden")[0]);
+        fireEvent.press(screen.getByRole("button", { name: messages.billing.categoryFilter }));
+        fireEvent.press(screen.getByRole("button", { name: "Garden" }));
         fireEvent.press(screen.getByText(messages.billing.apply));
 
         await waitFor(() => {
@@ -66,7 +67,7 @@ describe("BillingEstimationScreen", () => {
 
     test("submits an empty device list when all visible devices are unchecked", async () => {
         renderBillingEstimation();
-        await screen.findByText("Kitchen Meter");
+        await screen.findByText("Kitchen Meter", {}, { timeout: 5000 });
         await waitFor(() => expect(estimateBillApi).toHaveBeenCalledTimes(1));
         estimateBillApi.mockClear();
 

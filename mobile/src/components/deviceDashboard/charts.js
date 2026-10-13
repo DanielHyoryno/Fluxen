@@ -39,7 +39,6 @@ export function FlowBarChart({ data }) {
                     </Text>
                 ))}
             </View>
-            <Text style={styles.chartCaption}>{t("Flow rate (peak")} {formatNumber(maxFlow, 2)} {t("L/min)")}</Text>
         </View>
     );
 }
@@ -90,7 +89,6 @@ export function FlowLineChart({ data, chartWidth }) {
                     </Text>
                 ))}
             </View>
-            <Text style={styles.chartCaption}>{t("Line trend (peak")} {formatNumber(maxFlow, 2)} {t("L/min)")}</Text>
         </View>
     );
 }
@@ -149,7 +147,6 @@ export function HourlyUsageLineChart({ hourlySeries, chartWidth, hourlyGuide }) 
                     </Text>
                 ))}
             </View>
-            <Text style={styles.chartCaption}>{t("Hourly usage trend (today)")}</Text>
             {hourlyGuide && hourlyGuide > 0 ? (
                 <Text style={styles.hourlyGuideText}>{t("Guide from daily limit:")}{formatNumber(hourlyGuide, 3)}{t("L/hour")}</Text>
             ) : null}

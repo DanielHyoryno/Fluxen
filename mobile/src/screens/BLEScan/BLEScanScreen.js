@@ -1,7 +1,8 @@
 import { bleErrorCopy } from "../../common/bleErrorCopy";
 import { t, useLocale } from "../../services/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Animated, FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, Animated, FlatList, Text, View } from "react-native";
+import { BleConnectionCard, BleDeviceItem, BleProvisionForm, BleScanPanel } from "../../components/DeviceSetupPanels";
 import { API_BASE_URL } from "../../config/api";
 import {
     BLE_API_TOKEN_CHAR_UUID,
@@ -24,19 +25,6 @@ import usePageInsets from "../../hooks/usePageInsets";
 function getServerBaseUrl() {
     const match = API_BASE_URL.match(/^https?:\/\/[^/]+/i);
     return match ? match[0] : API_BASE_URL;
-}
-
-function DeviceItem({ item, onPress, connecting }) {
-    return (
-        <Pressable style={styles.card} onPress={() => onPress(item)} disabled={connecting}>
-            <View style={styles.cardHeader}>
-                <Text style={styles.deviceName}>{item.name || t("Unknown device")}</Text>
-                {connecting ? <ActivityIndicator color="#0f62fe" size="small" /> : null}
-            </View>
-            <Text style={styles.meta}>ID: {item.id}</Text>
-            <Text style={styles.meta}>RSSI: {item.rssi ?? "-"} dBm</Text>
-        </Pressable>
-    );
 }
 
 export default function BLEScanScreen({ route }) {
@@ -232,106 +220,26 @@ export default function BLEScanScreen({ route }) {
                 ) : null}
             </View>
 
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>{t("Scan for Devices")}</Text>
-                <Pressable
-                    style={[styles.primaryButton, isScanning && styles.primaryButtonDisabled]}
-                    onPress={handleStartScan}
-                    disabled={isScanning || !permissionGranted}
-                >
-                    {isScanning ? (
-                        <ActivityIndicator color="#fff" />
-                    ) : (
-                        <Text style={styles.primaryText}>{t("Scan for Devices")}</Text>
-                    )}
-                </Pressable>
-                {isScanning ? <Text style={styles.meta}>{t("Scanning... auto-stop in 15 seconds.")}</Text> : null}
-                {scanError ? <Text style={styles.error}>{scanError}</Text> : null}
-
+            <BleScanPanel isScanning={isScanning} permissionGranted={permissionGranted}
+                scanError={scanError} onScan={handleStartScan}>
                 <FlatList
                     data={devices}
                     keyExtractor={(item) => item.id}
                     scrollEnabled={false}
                     renderItem={({ item }) => (
-                        <DeviceItem item={item} onPress={handleConnect} connecting={connectingId === item.id} />
+                        <BleDeviceItem item={item} onPress={handleConnect} connecting={connectingId === item.id} />
                     )}
                     ListEmptyComponent={<Text style={styles.empty}>{t("No WaterMeter BLE devices found yet.")}</Text>}
                 />
-            </View>
+            </BleScanPanel>
 
-            <View style={styles.card}>
-                <Text style={styles.sectionTitle}>{t("Connection")}</Text>
-                <Text style={styles.meta}>{t("Status:")}{" "}{" "}
-                    {connectedDevice ? t("connectedDevice", { name: connectedDevice.name || connectedDevice.id }) : t("Not connected")}
-                </Text>
-                {connectedDevice ? (
-                    <Pressable style={styles.secondaryButton} onPress={handleDisconnect}>
-                        <Text style={styles.secondaryText}>{t("Disconnect")}</Text>
-                    </Pressable>
-                ) : null}
-            </View>
+            <BleConnectionCard connectedDevice={connectedDevice} onDisconnect={handleDisconnect} />
 
             {connectedDevice ? (
-                <View style={styles.card}>
-                    <Text style={styles.sectionTitle}>{t("Provisioning")}</Text>
-                    <Text style={styles.metaLabel}>{t("Device code")}</Text>
-                    <View style={styles.readOnlyBox}>
-                        <Text style={styles.readOnlyText}>{deviceCode || t("Reading...")}</Text>
-                    </View>
-
-                    <Text style={styles.metaLabel}>{t("WiFi SSID")}</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={wifiSsid}
-                        onChangeText={setWifiSsid}
-                        placeholder={t("Enter WiFi SSID")}
-                        placeholderTextColor="#8aa0b8"
-                        autoCapitalize="none"
-                    />
-
-                    <Text style={styles.metaLabel}>{t("WiFi Password")}</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={wifiPassword}
-                        onChangeText={setWifiPassword}
-                        placeholder={t("Enter WiFi password")}
-                        placeholderTextColor="#8aa0b8"
-                        secureTextEntry
-                        autoCapitalize="none"
-                    />
-
-                    <Text style={styles.metaLabel}>{t("Server URL")}</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={serverUrl}
-                        onChangeText={setServerUrl}
-                        placeholder="http://192.168.1.10:8080"
-                        placeholderTextColor="#8aa0b8"
-                        autoCapitalize="none"
-                    />
-
-                    <Text style={styles.metaLabel}>{t("API Token")}</Text>
-                    <TextInput
-                        style={styles.input}
-                        value={apiToken}
-                        onChangeText={setApiToken}
-                        placeholder={t("Paste device API token")}
-                        placeholderTextColor="#8aa0b8"
-                        autoCapitalize="none"
-                    />
-
-                    <Pressable
-                        style={[styles.primaryButton, !canSendConfig && styles.primaryButtonDisabled]}
-                        onPress={handleSendConfiguration}
-                        disabled={!canSendConfig}
-                    >
-                        {sendingConfig ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.primaryText}>{t("Send Configuration")}</Text>
-                        )}
-                    </Pressable>
-                </View>
+                <BleProvisionForm deviceCode={deviceCode} wifiSsid={wifiSsid} wifiPassword={wifiPassword}
+                    serverUrl={serverUrl} apiToken={apiToken} canSendConfig={canSendConfig} sendingConfig={sendingConfig}
+                    onSsidChange={setWifiSsid} onPasswordChange={setWifiPassword}
+                    onServerChange={setServerUrl} onTokenChange={setApiToken} onSend={handleSendConfiguration} />
             ) : null}
 
             {statusMessage ? (

@@ -1,6 +1,7 @@
 import FailureNotice from "../../components/FailureNotice";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import usePageInsets from "../../hooks/usePageInsets";
 import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import { createCategoryApi, deleteCategoryApi, listCategoriesApi, updateCategoryApi } from "../../services/api";
@@ -24,6 +25,7 @@ function CategoryRow({ item, onEdit, onDelete, messages }) {
 }
 
 export default function ManageCategoryScreen() {
+    const pageInsets = usePageInsets();
     const { token, messages } = useAuth();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -165,7 +167,7 @@ export default function ManageCategoryScreen() {
     }
 
     return (
-        <View style={styles.page}>
+        <ScrollView style={styles.page} contentContainerStyle={{ paddingBottom: pageInsets.paddingBottom }} keyboardShouldPersistTaps="handled">
             <Text style={styles.title}>{messages.categories.pageTitle}</Text>
             <Text style={styles.subtitle}>{messages.categories.subtitle}</Text>
 
@@ -236,6 +238,6 @@ export default function ManageCategoryScreen() {
                 onCancel={() => setPendingDeleteCategory(null)}
                 onConfirm={handleConfirmDeleteCategory}
             />
-        </View>
+        </ScrollView>
     );
 }

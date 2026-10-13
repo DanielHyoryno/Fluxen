@@ -3,13 +3,14 @@
 const path = require("node:path");
 const fs = require("node:fs");
 
-module.exports = async function createReviewSession(playwright, executablePath) {
+module.exports = async function createReviewSession(playwright, executablePath, { tutorialSeen = true, deviceToken = "a1b2c3d4".repeat(6) } = {}) {
     const browser = await playwright.chromium.launch({ headless: true, executablePath });
     const context = await browser.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 1 });
-    await context.addInitScript(() => {
+    await context.addInitScript((seen) => {
         localStorage.setItem("wm_access_token", "visual-test-token");
+        if (seen) localStorage.setItem("wm_device_tutorial_seen_v1", "true");
         if (!localStorage.getItem("wm_app_locale")) localStorage.setItem("wm_app_locale", "id");
-    });
+    }, tutorialSeen);
     const devices = [
         { id: 1, device_code: "METER-01", device_name: "Meter air dapur dan ruang cuci lantai bawah", category_id: 1, category_name: "Rumah utama dan area belakang", status: "online" },
         { id: 2, device_code: "METER-02", device_name: "Meter taman", category_id: 2, category_name: "Taman", status: "offline" },
@@ -22,7 +23,7 @@ module.exports = async function createReviewSession(playwright, executablePath) 
         const endpoint = url.pathname;
         let data = { items: [] };
         if (endpoint.endsWith("/auth/me")) data = { id: 1, full_name: "Pengujian desain Fluxen", email: "visual@example.test" };
-        else if (endpoint.endsWith("/devices")) data = { items: devices };
+        else if (endpoint.endsWith("/devices")) data = route.request().method() === "POST" ? { api_token: deviceToken } : { items: devices };
         else if (endpoint.endsWith("/categories")) data = { items: [{ id: 1, name: devices[0].category_name }, { id: 2, name: "Taman" }] };
         else if (endpoint.endsWith("/telemetry/latest")) data = { measured_at: url.searchParams.get("device_code") === "METER-02" ? "2026-09-01T00:00:00Z" : new Date().toISOString(), flow_rate_lpm: zeroUsage ? 0 : 2.1, volume_delta_l: zeroUsage ? 0 : 0.3 };
         else if (endpoint.endsWith("/telemetry/history")) {

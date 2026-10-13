@@ -11,9 +11,11 @@ import {
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { PlatformPressable } from "@react-navigation/elements";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
+import { DeviceTutorialProvider } from "./src/context/DeviceTutorialContext";
 import LoginScreen from "./src/screens/Login/LoginScreen";
 import RegisterScreen from "./src/screens/Register/RegisterScreen";
 import DevicesScreen from "./src/screens/Devices/DevicesScreen";
@@ -28,7 +30,7 @@ import ProfileScreen from "./src/screens/Profile/ProfileScreen";
 import BillingEstimationScreen from "./src/screens/BillingEstimation/BillingEstimationScreen";
 import BillingSettingsScreen from "./src/screens/BillingSettings/BillingSettingsScreen";
 import AlertNotificationWatcher from "./src/components/AlertNotificationWatcher";
-import { floatingTabLayout } from "./src/theme/tokens";
+import { floatingTabBarStyle } from "./src/theme/tokens";
 import TabIcon from "./src/components/TabIcon";
 import StartGate from "./src/components/StartGate";
 
@@ -49,21 +51,11 @@ function MainTabs() {
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarShowLabel: false,
+                tabBarButton: (props) => (
+                    <PlatformPressable {...props} style={[props.style, { padding: 0, justifyContent: "center", alignItems: "center" }]} />
+                ),
                 tabBarAccessibilityLabel: t(route.name === "BLEScan" ? "BLE Provisioning" : route.name),
-                tabBarStyle: {
-                    position: "absolute",
-                    ...floatingTabLayout(viewportWidth, insets.bottom),
-                    borderRadius: 18,
-                    borderTopWidth: 0,
-                    backgroundColor: "#ffffff",
-                    shadowColor: "#0d1c2f",
-                    shadowOffset: { width: 0, height: 6 },
-                    shadowOpacity: 0.08,
-                    shadowRadius: 8,
-                    elevation: 4,
-                    paddingTop: 0,
-                    paddingBottom: 0,
-                },
+                tabBarStyle: floatingTabBarStyle(viewportWidth, insets.bottom),
                 tabBarItemStyle: {
                     height: tabBarHeight,
                     justifyContent: "center",
@@ -73,8 +65,8 @@ function MainTabs() {
                     margin: 0,
                 },
                 tabBarIconStyle: {
-                    height: tabBarHeight,
-                    width: 28,
+                    height: 40,
+                    width: 44,
                     justifyContent: "center",
                     alignItems: "center",
                     marginTop: 0,
@@ -109,6 +101,7 @@ function RootNavigator() {
     }
     return (
         <NavigationContainer>
+            <DeviceTutorialProvider enabled={isAuthenticated}>
             {isAuthenticated ? (
                 <Stack.Navigator>
                     <Stack.Screen name="MainTabs" component={MainTabs} options={{ headerShown: false }} />
@@ -151,6 +144,7 @@ function RootNavigator() {
                 </Stack.Navigator>
             )}
             <StatusBar style="dark" />
+            </DeviceTutorialProvider>
         </NavigationContainer>
     );
 }

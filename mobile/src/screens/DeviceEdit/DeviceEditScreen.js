@@ -1,3 +1,4 @@
+import CategoryDropdown from "../../components/CategoryDropdown";
 import FailureNotice from "../../components/FailureNotice";
 import { t, useLocale } from "../../services/i18n";
 import { useEffect, useState } from "react";
@@ -116,41 +117,8 @@ export default function DeviceEditScreen({ route, navigation }) {
                     {categoriesLoading ? (
                         <ActivityIndicator color="#0f62fe" size="small" />
                     ) : (
-                        <View style={styles.categoryOptions}>
-                            <Pressable
-                                style={[
-                                    styles.categoryChip,
-                                    selectedCategoryId === null && styles.categoryChipActive,
-                                ]}
-                                onPress={() => setSelectedCategoryId(null)}
-                            >
-                                <Text
-                                    style={[
-                                        styles.categoryChipText,
-                                        selectedCategoryId === null && styles.categoryChipTextActive,
-                                    ]}
-                                >{t("Uncategorized")}</Text>
-                            </Pressable>
-                            {categories.map((category) => {
-                                const selected = String(selectedCategoryId) === String(category.id);
-                                return (
-                                    <Pressable
-                                        key={String(category.id)}
-                                        style={[styles.categoryChip, selected && styles.categoryChipActive]}
-                                        onPress={() => setSelectedCategoryId(category.id)}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.categoryChipText,
-                                                selected && styles.categoryChipTextActive,
-                                            ]}
-                                        >
-                                            {category.name}
-                                        </Text>
-                                    </Pressable>
-                                );
-                            })}
-                        </View>
+                        <CategoryDropdown categories={categories} value={selectedCategoryId}
+                            onChange={setSelectedCategoryId} emptyLabel={t("Uncategorized")} label={t("Category")} />
                     )}
                 </View>
 

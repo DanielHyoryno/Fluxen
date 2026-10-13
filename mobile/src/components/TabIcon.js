@@ -16,9 +16,9 @@ export default function TabIcon({ name, focused }) {
         return () => animation.stop();
     }, [focused, reducedMotion, scale]);
     return (
-        <Animated.View style={{ width: 44, height: 40, alignItems: "center", justifyContent: "center",
+        <Animated.View testID={`tab-icon-${name}`} style={{ width: 44, height: 40, alignItems: "center", justifyContent: "center",
             borderRadius: 12, backgroundColor: focused ? colors.primarySoft : "transparent", transform: [{ scale }] }}>
-            <Ionicons name={name} size={22} color={focused ? colors.primary : colors.textMuted} />
+            <Ionicons name={name} size={22} style={{ includeFontPadding: false, textAlignVertical: "center" }} color={focused ? colors.primary : colors.textMuted} />
         </Animated.View>
     );
 }

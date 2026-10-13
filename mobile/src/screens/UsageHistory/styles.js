@@ -115,29 +115,6 @@ const styles = StyleSheet.create({
     chartContainer: {
         marginTop: 4,
     },
-    chartBars: {
-        flexDirection: "row",
-        alignItems: "flex-end",
-        height: 110,
-        gap: 3,
-    },
-    chartBarCol: {
-        flex: 1,
-        height: "100%",
-        justifyContent: "flex-end",
-    },
-    chartBarTrack: {
-        flex: 1,
-        justifyContent: "flex-end",
-        backgroundColor: colors.track,
-        borderRadius: 3,
-        overflow: "hidden",
-    },
-    chartBar: {
-        backgroundColor: colors.primary,
-        borderRadius: 3,
-        minHeight: 2,
-    },
     chartLabels: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -211,28 +188,6 @@ const styles = StyleSheet.create({
     },
     chartTypeTextActive: {
         color: colors.primary,
-    },
-    dailyTotalsStrip: {
-        paddingTop: 8,
-        gap: 8,
-    },
-    dailyTotalChip: {
-        borderWidth: 1,
-        borderColor: colors.border,
-        backgroundColor: colors.surfaceMuted,
-        borderRadius: 8,
-        paddingHorizontal: 10,
-        paddingVertical: 8,
-        minWidth: 88,
-    },
-    dailyTotalDate: {
-        color: colors.textMuted,
-        fontSize: 13,
-    },
-    dailyTotalValue: {
-        color: colors.text,
-        fontWeight: "700",
-        marginTop: 3,
     },
     modalBackdrop: {
         flex: 1,
@@ -423,6 +378,7 @@ const styles = StyleSheet.create({
     },
     exportPeriodField: {
         flex: 1,
+        minWidth: 0,
         borderWidth: 1,
         borderColor: colors.border,
         borderRadius: 10,
@@ -439,29 +395,34 @@ const styles = StyleSheet.create({
     },
     exportPeriodLabel: {
         color: colors.textMuted,
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: "700",
         textTransform: "uppercase",
     },
     exportPeriodLabelDisabled: {
         color: "#8a98a8",
-        fontSize: 13,
+        fontSize: 11,
         fontWeight: "700",
         textTransform: "uppercase",
     },
     exportPeriodValue: {
+        fontSize: 14,
+        lineHeight: 20,
         color: colors.text,
         fontWeight: "700",
         marginTop: 5,
     },
     exportPeriodValueDisabled: {
+        fontSize: 14,
+        lineHeight: 20,
         color: "#8a98a8",
         fontWeight: "700",
         marginTop: 5,
     },
     exportPeriodHint: {
         color: colors.textMuted,
-        fontSize: 13,
+        fontSize: 12,
+        lineHeight: 18,
         marginTop: 8,
     },
     exportButton: {

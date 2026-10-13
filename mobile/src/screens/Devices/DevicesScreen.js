@@ -1,3 +1,5 @@
+import CategoryDropdown from "../../components/CategoryDropdown";
+import { AddDeviceForm, DeviceCategoryCard, DeviceScanCard, DeviceSectionSwitch, DeviceTokenCard } from "../../components/DeviceSetupPanels";
 import FailureNotice from "../../components/FailureNotice";
 import StatusBadge from "../../components/StatusBadge";
 import usePageInsets from "../../hooks/usePageInsets";
@@ -14,7 +16,6 @@ import {
     Pressable,
     RefreshControl,
     Text,
-    TextInput,
     View,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
@@ -329,50 +330,8 @@ export default function DevicesScreen({ navigation }) {
                             </View>
                         </View>
 
-                        <View style={styles.scanHeroCard}>
-                            <View style={styles.scanHeroTextWrap}>
-                                <Text style={styles.scanHeroTitle}>{messages.devices.prepareDeviceTitle}</Text>
-                                <Text style={styles.scanHeroSubtitle}>{messages.devices.prepareDeviceSubtitle}</Text>
-                            </View>
-                            <Pressable style={styles.scanHeroButton} onPress={() => navigation.navigate("BLEScan")}>
-                                <Text style={styles.scanHeroButtonText}>{messages.devices.scanBle}</Text>
-                            </Pressable>
-                        </View>
-
-                        <View style={styles.sectionSwitchWrap}>
-                            <Pressable
-                                style={[
-                                    styles.sectionSwitchButton,
-                                    activeSection === "list" && styles.sectionSwitchButtonActive,
-                                ]}
-                                onPress={() => switchSection("list")}
-                            >
-                                <Text
-                                    style={[
-                                        styles.sectionSwitchText,
-                                        activeSection === "list" && styles.sectionSwitchTextActive,
-                                    ]}
-                                >
-                                    {messages.devices.listTab}
-                                </Text>
-                            </Pressable>
-                            <Pressable
-                                style={[
-                                    styles.sectionSwitchButton,
-                                    activeSection === "manage" && styles.sectionSwitchButtonActive,
-                                ]}
-                                onPress={() => switchSection("manage")}
-                            >
-                                <Text
-                                    style={[
-                                        styles.sectionSwitchText,
-                                        activeSection === "manage" && styles.sectionSwitchTextActive,
-                                    ]}
-                                >
-                                    {messages.devices.manageTab}
-                                </Text>
-                            </Pressable>
-                        </View>
+                        <DeviceScanCard messages={messages} onScan={() => navigation.navigate("BLEScan")} />
+                        <DeviceSectionSwitch messages={messages} activeSection={activeSection} onChange={switchSection} />
 
                         <Animated.View
                             style={{
@@ -417,38 +376,10 @@ export default function DevicesScreen({ navigation }) {
                                         <Text style={styles.filterGroupLabel}>
                                             {messages.devices.categoryFilterLabel}
                                         </Text>
-                                        <FlatList
-                                            data={[
-                                                { id: null, name: messages.home.all },
-                                                { id: "uncategorized", name: messages.devices.uncategorized },
-                                                ...categories,
-                                            ]}
-                                            keyExtractor={(item, index) => String(item.id ?? `all-${index}`)}
-                                            horizontal
-                                            showsHorizontalScrollIndicator={false}
-                                            contentContainerStyle={styles.filterChipRowCompact}
-                                            renderItem={({ item }) => {
-                                                const active = categoryFilter === item.id;
-                                                return (
-                                                    <Pressable
-                                                        style={[
-                                                            styles.categoryChip,
-                                                            active && styles.categoryChipActive,
-                                                        ]}
-                                                        onPress={() => setCategoryFilter(item.id)}
-                                                    >
-                                                        <Text
-                                                            style={[
-                                                                styles.categoryChipText,
-                                                                active && styles.categoryChipTextActive,
-                                                            ]}
-                                                        >
-                                                            {item.name}
-                                                        </Text>
-                                                    </Pressable>
-                                                );
-                                            }}
-                                        />
+                                        <CategoryDropdown
+                                            categories={[{ id: "uncategorized", name: messages.devices.uncategorized }, ...categories]}
+                                            value={categoryFilter} onChange={setCategoryFilter}
+                                            emptyLabel={messages.home.all} label={messages.devices.categoryFilterLabel} />
                                         <View style={styles.listSectionDivider} />
 
                                         {loading ? (
@@ -489,123 +420,24 @@ export default function DevicesScreen({ navigation }) {
 
                             {activeSection === "manage" ? (
                                 <>
-                                    <View style={styles.categoryBox}>
-                                        <Text style={styles.createTitle}>{messages.devices.categoryTitle}</Text>
-                                        <Text style={styles.categoryHelpText}>{messages.devices.categoryHelp}</Text>
-                                        <Pressable
-                                            style={styles.manageCategoryButton}
-                                            onPress={() => navigation.navigate("ManageCategory")}
-                                        >
-                                            <Text style={styles.manageCategoryButtonText}>
-                                                {messages.devices.manageCategory}
-                                            </Text>
-                                        </Pressable>
-                                    </View>
-
-                                    <View style={styles.createBox}>
-                                        <Text style={styles.createTitle}>{messages.devices.addDeviceTitle}</Text>
-                                        <TextInput
-                                            style={[styles.input, fieldErrors.deviceCode && styles.inputError]}
-                                            value={deviceCode}
-                                            onChangeText={(value) => {
-                                                setDeviceCode(value);
-                                                if (fieldErrors.deviceCode) {
-                                                    setFieldErrors((prev) => ({ ...prev, deviceCode: undefined }));
-                                                }
-                                            }}
-                                            placeholder={messages.devices.deviceCodePlaceholder}
-                                            placeholderTextColor="#8aa0b8"
-                                            autoCapitalize="characters"
-                                        />
-                                        {fieldErrors.deviceCode ? (
-                                            <Text style={styles.fieldError}>{fieldErrors.deviceCode}</Text>
-                                        ) : null}
-                                        <TextInput
-                                            style={[styles.input, fieldErrors.deviceName && styles.inputError]}
-                                            value={deviceName}
-                                            onChangeText={(value) => {
-                                                setDeviceName(value);
-                                                if (fieldErrors.deviceName) {
-                                                    setFieldErrors((prev) => ({ ...prev, deviceName: undefined }));
-                                                }
-                                            }}
-                                            placeholder={messages.devices.deviceNamePlaceholder}
-                                            placeholderTextColor="#8aa0b8"
-                                        />
-                                        {fieldErrors.deviceName ? (
-                                            <Text style={styles.fieldError}>{fieldErrors.deviceName}</Text>
-                                        ) : null}
-                                        <TextInput
-                                            style={[styles.input, fieldErrors.location && styles.inputError]}
-                                            value={location}
-                                            onChangeText={(value) => {
-                                                setLocation(value);
-                                                if (fieldErrors.location) {
-                                                    setFieldErrors((prev) => ({ ...prev, location: undefined }));
-                                                }
-                                            }}
-                                            placeholder={messages.devices.locationPlaceholder}
-                                            placeholderTextColor="#8aa0b8"
-                                        />
-                                        {fieldErrors.location ? (
-                                            <Text style={styles.fieldError}>{fieldErrors.location}</Text>
-                                        ) : null}
-
-                                        <Text style={styles.categoryLabel}>{messages.devices.assignCategory}</Text>
-                                        <FlatList
-                                            data={[{ id: null, name: messages.devices.uncategorized }, ...categories]}
-                                            keyExtractor={(item, index) => String(item.id ?? `uncat-${index}`)}
-                                            horizontal
-                                            showsHorizontalScrollIndicator={false}
-                                            contentContainerStyle={styles.categoryChipRow}
-                                            renderItem={({ item }) => {
-                                                const active = selectedCategoryId === item.id;
-                                                return (
-                                                    <Pressable
-                                                        style={[
-                                                            styles.categoryChip,
-                                                            active && styles.categoryChipActive,
-                                                        ]}
-                                                        onPress={() => setSelectedCategoryId(item.id)}
-                                                    >
-                                                        <Text
-                                                            style={[
-                                                                styles.categoryChipText,
-                                                                active && styles.categoryChipTextActive,
-                                                            ]}
-                                                        >
-                                                            {item.name}
-                                                        </Text>
-                                                    </Pressable>
-                                                );
-                                            }}
-                                        />
-
-                                        <Pressable
-                                            style={styles.primaryButton}
-                                            onPress={handleCreateDevice}
-                                            disabled={creating}
-                                        >
-                                            {creating ? (
-                                                <ActivityIndicator color="#fff" />
-                                            ) : (
-                                                <Text style={styles.primaryText}>{messages.devices.createDevice}</Text>
-                                            )}
-                                        </Pressable>
-                                        {newToken ? (
-                                            <Text style={styles.meta}>{messages.devices.newTokenHint}</Text>
-                                        ) : null}
-                                        {newToken ? (
-                                            <Pressable
-                                                style={styles.showTokenButton}
-                                                onPress={() => setTokenDialogOpen(true)}
-                                            >
-                                                <Text style={styles.showTokenButtonText}>
-                                                    {messages.devices.showApiToken}
-                                                </Text>
-                                            </Pressable>
-                                        ) : null}
-                                    </View>
+                                    <DeviceCategoryCard messages={messages} onManage={() => navigation.navigate("ManageCategory")} />
+                                    <AddDeviceForm messages={messages} deviceCode={deviceCode} deviceName={deviceName}
+                                        location={location} categories={categories} selectedCategoryId={selectedCategoryId}
+                                        fieldErrors={fieldErrors} creating={creating} newToken={newToken}
+                                        onCodeChange={(value) => {
+                                            setDeviceCode(value);
+                                            if (fieldErrors.deviceCode) setFieldErrors((prev) => ({ ...prev, deviceCode: undefined }));
+                                        }}
+                                        onNameChange={(value) => {
+                                            setDeviceName(value);
+                                            if (fieldErrors.deviceName) setFieldErrors((prev) => ({ ...prev, deviceName: undefined }));
+                                        }}
+                                        onLocationChange={(value) => {
+                                            setLocation(value);
+                                            if (fieldErrors.location) setFieldErrors((prev) => ({ ...prev, location: undefined }));
+                                        }}
+                                        onCategoryChange={setSelectedCategoryId} onCreate={handleCreateDevice}
+                                        onShowToken={() => setTokenDialogOpen(true)} />
                                 </>
                             ) : null}
                         </Animated.View>
@@ -626,30 +458,8 @@ export default function DevicesScreen({ navigation }) {
                 onRequestClose={() => setTokenDialogOpen(false)}
             >
                 <View style={styles.modalBackdrop}>
-                    <View style={styles.modalCard}>
-                        <Text style={styles.modalTitle}>{messages.devices.tokenTitle}</Text>
-                        <Text style={styles.modalSubtitle}>{messages.devices.tokenSubtitle}</Text>
-                        <View style={styles.tokenBox}>
-                            <Text style={styles.tokenValue} selectable>
-                                {newToken}
-                            </Text>
-                        </View>
-                        <View style={styles.modalActions}>
-                            <Pressable style={styles.provisionTokenButton} onPress={handleProvisionWithNewToken}>
-                                <Text style={styles.provisionTokenButtonText}>
-                                    {messages.devices.provisionViaBle}
-                                </Text>
-                            </Pressable>
-                            <Pressable style={styles.copyTokenButton} onPress={handleCopyToken}>
-                                <Text style={styles.copyTokenButtonText}>
-                                    {messages.auth.copyToken || t("Copy Token")}
-                                </Text>
-                            </Pressable>
-                            <Pressable style={styles.closeDialogButton} onPress={() => setTokenDialogOpen(false)}>
-                                <Text style={styles.closeDialogButtonText}>{messages.devices.tokenClose}</Text>
-                            </Pressable>
-                        </View>
-                    </View>
+                    <DeviceTokenCard messages={messages} token={newToken} onProvision={handleProvisionWithNewToken}
+                        onCopy={handleCopyToken} onClose={() => setTokenDialogOpen(false)} />
                 </View>
             </Modal>
 

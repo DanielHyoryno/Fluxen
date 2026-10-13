@@ -1,10 +1,14 @@
 import { Animated, Pressable, ScrollView, Text, View } from "react-native";
 import usePageInsets from "../../hooks/usePageInsets";
 import { useAuth } from "../../context/AuthContext";
+import { useDeviceTutorial } from "../../context/DeviceTutorialContext";
+import { t, useLocale } from "../../services/i18n";
 import useScreenEntranceAnimation from "../../hooks/useScreenEntranceAnimation";
 import styles from "./styles";
 
 export default function ProfileScreen() {
+    useLocale();
+    const tutorial = useDeviceTutorial();
     const pageInsets = usePageInsets();
     const { user, logout, locale, messages, setLocale } = useAuth();
     const { animatedStyle } = useScreenEntranceAnimation();
@@ -47,6 +51,11 @@ export default function ProfileScreen() {
                     </Pressable>
                 </View>
             </View>
+
+            <Pressable style={styles.tutorialButton} onPress={tutorial?.openTutorial} accessibilityRole="button" accessibilityLabel={t("deviceTutorialTitle")}>
+                <Text style={styles.tutorialText}>{t("deviceTutorialTitle")}</Text>
+                <Text style={styles.tutorialArrow} accessible={false}>›</Text>
+            </Pressable>
 
             <Pressable style={styles.logoutButton} onPress={logout}>
                 <Text style={styles.logoutText}>{messages.profile.logout}</Text>

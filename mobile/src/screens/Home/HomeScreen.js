@@ -1,5 +1,6 @@
-import { formatValue, getLanguageTag, t, useLocale } from "../../services/i18n";
+import { formatValue, t, useLocale } from "../../services/i18n";
 import FailureNotice from "../../components/FailureNotice";
+import DailyUsageBarChart from "../../components/DailyUsageBarChart";
 import { useCallback, useMemo, useState } from "react";
 import {
     ActivityIndicator,
@@ -31,7 +32,7 @@ import SkeletonBlock from "../../components/SkeletonBlock";
 import useScreenEntranceAnimation from "../../hooks/useScreenEntranceAnimation";
 import styles from "./styles";
 import MetricGrid from "../../components/MetricGrid";
-import StatusBadge from "../../components/StatusBadge";
+import HomeDeviceReading from "../../components/HomeDeviceReading";
 import PeriodSelector from "../../components/PeriodSelector";
 import usePageInsets from "../../hooks/usePageInsets";
 
@@ -45,11 +46,6 @@ function toLocalDateISO(date = new Date()) {
 
 function formatNumber(value, decimals = 2) {
     return formatValue(value, decimals);
-}
-
-function formatDayOnlyLabel(dateKey) {
-    const date = new Date(`${dateKey}T00:00:00`);
-    return String(date.getDate());
 }
 
 function getDateRange(days) {
@@ -125,65 +121,8 @@ function formatRupiah(value) {
 }
 
 export function OverallUsageChart({ series, messages, chartWidth }) {
-    const { fontScale, width: screenWidth } = useWindowDimensions();
-    if (!series.length) return <Text style={styles.emptyText}>{messages.home.emptyTotalTrend}</Text>;
-
-    const viewportWidth = Number.isFinite(chartWidth) && chartWidth > 0
-        ? chartWidth
-        : Math.max(1, screenWidth - 64);
-    const trackHeight = 120;
-    const maxValue = series.reduce((max, item) => Math.max(max, Number(item.totalLiters || 0)), 0);
-    const chartMax = maxValue > 0 ? maxValue : 1;
-    const minSlotWidth = Math.ceil(30 * fontScale);
-    const interBarGap = 6;
-    const requiredWidth = series.length * minSlotWidth + Math.max(0, series.length - 1) * interBarGap;
-    const shouldScroll = requiredWidth > viewportWidth;
-    const contentWidth = Math.max(requiredWidth, viewportWidth);
-    const slotWidth = (contentWidth - (series.length - 1) * interBarGap) / series.length;
-    const labelHeight = (series.length > 10 ? 20 : 36) * fontScale;
-    const contentHeight = trackHeight + 6 + labelHeight;
-    const rowStyle = { flexDirection: "row", gap: interBarGap, width: contentWidth, height: contentHeight, alignItems: "flex-start" };
-
-    const bars = series.map((item) => {
-        const value = Number(item.totalLiters || 0);
-        const fillHeight = value > 0 ? Math.max((value / chartMax) * trackHeight, 3) : 0;
-        const date = new Date(`${item.date}T00:00:00`);
-        const labelText = series.length > 10 ? formatDayOnlyLabel(item.date)
-            : `${date.getDate()}\n${date.toLocaleDateString(getLanguageTag(), { month: "short" })}`;
-
-        return (
-            <View
-                key={item.date}
-                testID={`usage-bar-${item.date}`}
-                style={{ width: slotWidth, height: contentHeight, flexShrink: 0, alignItems: "center" }}
-            >
-                <View
-                    testID={`usage-track-${item.date}`}
-                    style={[styles.overallBarTrack, { width: slotWidth, height: trackHeight }]}
-                >
-                    <View testID={`usage-fill-${item.date}`} style={[styles.overallBarFill, { height: fillHeight }]} />
-                </View>
-                <Text numberOfLines={series.length > 10 ? 1 : 2} style={[styles.overallBarLabel, { height: labelHeight }]}>{labelText}</Text>
-            </View>
-        );
-    });
-
     return (
-        <View testID="usage-chart" style={[styles.overallChartWrap, { height: contentHeight, flexShrink: 0 }]}>
-            {shouldScroll ? (
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    testID="usage-bars-scroll"
-                    style={{ width: viewportWidth, height: contentHeight, flexGrow: 0, flexShrink: 0 }}
-                    contentContainerStyle={rowStyle}
-                >
-                    {bars}
-                </ScrollView>
-            ) : (
-                <View style={rowStyle}>{bars}</View>
-            )}
-        </View>
+        <DailyUsageBarChart series={series} chartWidth={chartWidth} emptyMessage={messages.home.emptyTotalTrend} />
     );
 }
 
@@ -716,12 +655,7 @@ export default function HomeScreen({ navigation }) {
                                 style={styles.deviceRow}
                                 hoverStyle={styles.hoverRowHighlight}
                             >
-                                <View style={styles.deviceInfo}>
-                                    <Text style={styles.deviceName}>{item.device_name}</Text>
-                                    <Text style={styles.deviceMeta}>{t("Code:")} {item.device_code}</Text>
-                                    <View style={{ marginTop: 6 }}><StatusBadge online={item.online} /></View>
-                                </View>
-                                <Text style={styles.deviceUsage}>{formatNumber(item.usageLiters, 3)} L</Text>
+                                <HomeDeviceReading item={item} />
                             </HoverablePressable>
                         )}
                     />

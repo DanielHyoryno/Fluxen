@@ -1,5 +1,6 @@
 import { getLanguageTag, formatValue, t, useLocale } from "../../services/i18n";
 import FailureNotice from "../../components/FailureNotice";
+import DailyUsageBarChart from "../../components/DailyUsageBarChart";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
@@ -11,7 +12,6 @@ import {
     Platform,
     Pressable,
     RefreshControl,
-    ScrollView,
     Text,
     useWindowDimensions,
     View,
@@ -129,42 +129,6 @@ function getDateKeysBetween(from, to) {
     return out;
 }
 
-function UsageBarChart({ data }) {
-    if (!data || data.length === 0) return null;
-
-    const maxUsage = data.reduce((max, item) => Math.max(max, Number(item.total_liters || 0)), 0);
-    const chartMax = maxUsage > 0 ? maxUsage * 1.15 : 1;
-    const tickIndexes = [0, Math.floor((data.length - 1) / 2), data.length - 1].filter(
-        (v, i, arr) => arr.indexOf(v) === i
-    );
-
-    return (
-        <View style={styles.chartContainer}>
-            <View style={styles.chartBars}>
-                {data.map((item) => {
-                    const value = Number(item.total_liters || 0);
-                    const pct = (value / chartMax) * 100;
-                    return (
-                        <View key={item.date} style={styles.chartBarCol}>
-                            <View style={styles.chartBarTrack}>
-                                <View style={[styles.chartBar, { height: `${Math.max(pct, 2)}%` }]} />
-                            </View>
-                        </View>
-                    );
-                })}
-            </View>
-            <View style={styles.chartLabels}>
-                {tickIndexes.map((idx) => (
-                    <Text key={`date-tick-${idx}`} style={styles.chartLabel}>
-                        {parseDateOnly(data[idx].date).toLocaleDateString(getLanguageTag())}
-                    </Text>
-                ))}
-            </View>
-            <Text style={styles.chartCaption}>{t("Daily usage (peak")} {formatNumber(maxUsage, 3)} L)</Text>
-        </View>
-    );
-}
-
 function UsageLineChart({ data, chartWidth }) {
     if (!data || data.length === 0) return null;
 
@@ -207,7 +171,6 @@ function UsageLineChart({ data, chartWidth }) {
                     </Text>
                 ))}
             </View>
-            <Text style={styles.chartCaption}>{t("Line trend (peak")} {formatNumber(maxUsage, 3)} L)</Text>
         </View>
     );
 }
@@ -691,7 +654,7 @@ export default function UsageHistoryScreen({ route }) {
                 <View style={styles.cardInner}>
                     <MetricGrid muted items={[
                         { label: t("Total Usage"), value: `${formatNumber(totalLiters, 3)} L` },
-                        { label: t("Daily Average"), value: `${formatNumber(averageDailyUsage, 3)} ${t("L/day")}` },
+                        { label: t("Daily Average"), value: `${formatNumber(averageDailyUsage, 3)} L` },
                     ]} />
                     <View style={styles.peakDayCard}>
                         <Text style={styles.summaryLabel}>{t("Peak Day")}</Text>
@@ -728,26 +691,12 @@ export default function UsageHistoryScreen({ route }) {
                     ) : (
                         <>
                             {usageChartType === "bar" ? (
-                                <UsageBarChart data={chartItems} />
+                                <DailyUsageBarChart
+                                    series={chartItems.map((item) => ({ date: item.date, totalLiters: item.total_liters }))}
+                                />
                             ) : (
                                 <UsageLineChart data={chartItems} chartWidth={chartWidth} />
                             )}
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                contentContainerStyle={styles.dailyTotalsStrip}
-                            >
-                                {chartItems.map((row) => (
-                                    <View key={`total-${row.date}`} style={styles.dailyTotalChip}>
-                                        <Text style={styles.dailyTotalDate}>
-                                            {parseDateOnly(row.date).toLocaleDateString(getLanguageTag())}
-                                        </Text>
-                                        <Text style={styles.dailyTotalValue}>
-                                            {formatNumber(row.total_liters, 3)} L
-                                        </Text>
-                                    </View>
-                                ))}
-                            </ScrollView>
                         </>
                     )}
                 </View>
@@ -811,8 +760,6 @@ export default function UsageHistoryScreen({ route }) {
             <SectionAccordion title={t("Export XLSX")} defaultExpanded>
                 <View style={styles.cardInner}>
                     <FailureNotice error={exportError} onRetry={handleExportXlsx} title={t("Export failed")} />
-                    <Text style={styles.summaryTileValue}>{t("reportFor", { month: t(exportMonthLabel), year: exportYear })}</Text>
-                    <Text style={styles.exportPeriodHint}>{t("reportScope")}</Text>
                     <View style={styles.exportPeriodRow}>
                         <Pressable
                             style={({ pressed }) => [styles.exportPeriodField, pressed && styles.exportPeriodPressed]}
@@ -822,12 +769,11 @@ export default function UsageHistoryScreen({ route }) {
                             accessibilityState={{ disabled: exporting }}
                         >
                             <Text style={styles.exportPeriodLabel}>{t("Month")}</Text>
-                            <Text style={styles.exportPeriodValue}>{t(exportMonthLabel)}</Text>
+                            <Text numberOfLines={1} adjustsFontSizeToFit style={styles.exportPeriodValue}>{t(exportMonthLabel)}</Text>
                         </Pressable>
                         <View style={[styles.exportPeriodField, styles.exportPeriodFieldDisabled]}>
                             <Text style={styles.exportPeriodLabelDisabled}>{t("Year")}</Text>
                             <Text style={styles.exportPeriodValueDisabled}>{exportYear}</Text>
-                            <Text style={styles.exportPeriodLabelDisabled}>{t("yearHint")}</Text>
                         </View>
                     </View>
                     <Text style={styles.exportPeriodHint}>{t("Export range:")}{" "}{exportRange.from} {t("to")} {exportRange.to}

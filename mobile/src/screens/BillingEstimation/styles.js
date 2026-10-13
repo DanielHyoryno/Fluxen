@@ -16,16 +16,6 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingBottom: 40,
     },
-    title: {
-        fontSize: 28,
-        fontWeight: "800",
-        color: colors.text,
-    },
-    subtitle: {
-        color: colors.textMuted,
-        marginTop: 6,
-        marginBottom: 14,
-    },
     heroCard: {
         backgroundColor: colors.surface,
         borderRadius: 12,
@@ -41,16 +31,11 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         gap: 10,
     },
-    heroEyebrow: {
-        flexGrow: 1,
-        flexBasis: 120,
-        color: colors.text,
-        fontWeight: "800",
-        fontSize: 18,
-    },
     heroHeaderAction: {
         flexShrink: 1,
         minHeight: 44,
+        alignItems: "center",
+        justifyContent: "center",
         backgroundColor: colors.primary,
         borderRadius: 10,
         paddingHorizontal: 14,
@@ -63,10 +48,12 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     heroValue: {
+        flexGrow: 1,
+        flexShrink: 1,
+        flexBasis: 160,
         color: colors.text,
         fontSize: 26,
         fontWeight: "900",
-        marginTop: 6,
     },
     heroRangeBlock: {
         marginTop: 12,

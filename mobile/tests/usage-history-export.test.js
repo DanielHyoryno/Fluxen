@@ -159,7 +159,7 @@ describe("UsageHistoryScreen XLSX export", () => {
         await renderHistoryScreen();
         usageHistoryApi.mockClear();
 
-        fireEvent.press(screen.getByText("Last 30 days"));
+        fireEvent.press(screen.getByText("30 days"));
 
         await waitFor(() => expect(usageHistoryApi).toHaveBeenCalled());
         const [, , from, to] = usageHistoryApi.mock.calls.at(-1);
@@ -188,8 +188,10 @@ describe("UsageHistoryScreen XLSX export", () => {
         await renderHistoryScreen();
         act(() => setLanguage("id"));
         expect(screen.getByText("Bulan")).toBeTruthy();
-        expect(screen.getByText("Tahun berjalan saja")).toBeTruthy();
-        expect(screen.getByText("Laporan mengikuti periode ini, terpisah dari grafik.")).toBeTruthy();
+        expect(screen.getByText("Tahun")).toBeTruthy();
+        expect(screen.queryByText("Tahun berjalan saja")).toBeNull();
+        expect(screen.queryByText("Laporan mengikuti periode ini, terpisah dari grafik.")).toBeNull();
+        expect(screen.getByText(/Periode laporan:/)).toBeTruthy();
         act(() => setLanguage("en"));
     });
 

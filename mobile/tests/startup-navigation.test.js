@@ -5,11 +5,13 @@ import { useAuth } from "../src/context/AuthContext";
 import { setLanguage } from "../src/services/i18n";
 
 jest.mock("react-native-gesture-handler", () => ({}));
+jest.mock("@expo/vector-icons", () => ({ Ionicons: () => null }), { virtual: true });
 jest.mock("react-native-safe-area-context", () => ({
     SafeAreaProvider: ({ children }) => children,
     useSafeAreaInsets: () => ({ top: 24, bottom: 24, left: 0, right: 0 }),
 }));
 jest.mock("../src/context/AuthContext", () => ({ AuthProvider: ({ children }) => children, useAuth: jest.fn() }));
+jest.mock("../src/services/storage", () => ({ getDeviceTutorialSeen: jest.fn(async () => true), saveDeviceTutorialSeen: jest.fn(async () => {}) }));
 jest.mock("../src/components/AlertNotificationWatcher", () => () => null);
 jest.mock("../src/components/TabIcon", () => () => null);
 jest.mock("@react-navigation/native", () => ({ NavigationContainer: ({ children }) => children }));

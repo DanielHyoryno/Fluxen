@@ -32,7 +32,7 @@ test.each([10, 11, 30, 31].flatMap((days) => [true, false].map((zeroUsage) => [d
         const content = StyleSheet.flatten(screen.getByTestId("usage-bars-scroll").props.contentContainerStyle);
         expect(viewport.width).toBe(298);
         expect(viewport.height).toBe(content.height);
-        expect(content.width).toBe(days * 30 + (days - 1) * 6);
+        expect(content.width).toBe(days * 40 + (days - 1) * 6);
         expect(StyleSheet.flatten(screen.getByTestId("usage-chart").props.style).height).toBe(content.height);
 
         const maxVolume = Math.max(...series.map((item) => item.totalLiters));
@@ -40,7 +40,7 @@ test.each([10, 11, 30, 31].flatMap((days) => [true, false].map((zeroUsage) => [d
             const column = StyleSheet.flatten(screen.getByTestId(`usage-bar-${item.date}`).props.style);
             const track = StyleSheet.flatten(screen.getByTestId(`usage-track-${item.date}`).props.style);
             const fill = StyleSheet.flatten(screen.getByTestId(`usage-fill-${item.date}`).props.style);
-            expect(column.width).toBe(30);
+            expect(column.width).toBe(40);
             expect(column.height).toBe(content.height);
             expect(column.flex).toBeUndefined();
             expect(column.flexShrink).toBe(0);
@@ -52,15 +52,15 @@ test.each([10, 11, 30, 31].flatMap((days) => [true, false].map((zeroUsage) => [d
 );
 
 test("switching between short and long ranges preserves all bars", () => {
-    const { rerender } = render(<OverallUsageChart series={makeSeries(7)} chartWidth={298} messages={getMessages("en")} />);
+    const { rerender } = render(<OverallUsageChart series={makeSeries(7)} chartWidth={329} messages={getMessages("en")} />);
     expect(screen.queryByTestId("usage-bars-scroll")).toBeNull();
     expect(screen.getAllByTestId(/^usage-bar-/)).toHaveLength(7);
 
-    rerender(<OverallUsageChart series={makeSeries(30)} chartWidth={298} messages={getMessages("en")} />);
+    rerender(<OverallUsageChart series={makeSeries(30)} chartWidth={329} messages={getMessages("en")} />);
     expect(screen.getByTestId("usage-bars-scroll")).toBeTruthy();
     expect(screen.getAllByTestId(/^usage-bar-/)).toHaveLength(30);
 
-    rerender(<OverallUsageChart series={makeSeries(7)} chartWidth={298} messages={getMessages("en")} />);
+    rerender(<OverallUsageChart series={makeSeries(7)} chartWidth={329} messages={getMessages("en")} />);
     expect(screen.queryByTestId("usage-bars-scroll")).toBeNull();
     expect(screen.getAllByTestId(/^usage-bar-/)).toHaveLength(7);
 });

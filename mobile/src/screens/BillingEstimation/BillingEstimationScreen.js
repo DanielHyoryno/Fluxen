@@ -8,6 +8,7 @@ import { estimateBillApi, listCategoriesApi, listDevicesApi } from "../../servic
 import styles from "./styles";
 import MetricGrid from "../../components/MetricGrid";
 import PeriodSelector from "../../components/PeriodSelector";
+import CategoryDropdown from "../../components/CategoryDropdown";
 
 function toLocalDateISO(date = new Date()) {
     const tzOffset = date.getTimezoneOffset() * 60000;
@@ -237,21 +238,17 @@ export default function BillingEstimationScreen({ navigation }) {
 
     return (
         <ScrollView style={styles.page} contentContainerStyle={styles.content}>
-            <Text style={styles.title}>{messages.billing.pageTitle}</Text>
-            <Text style={styles.subtitle}>{messages.billing.subtitle}</Text>
-
             <FailureNotice error={loadError} onRetry={() => setLoadAttempt((n) => n + 1)} />
             <FailureNotice error={error} onRetry={handleApply} />
             {successMsg ? <Text style={styles.success}>{successMsg}</Text> : null}
 
             <View style={styles.heroCard}>
                 <View style={styles.heroHeader}>
-                    <Text style={styles.heroEyebrow}>{messages.billing.currentEstimate}</Text>
+                    <Text style={styles.heroValue}>{formatMoney(estimate?.summary?.estimated_cost)}</Text>
                     <Pressable style={styles.heroHeaderAction} onPress={() => navigation.navigate("BillingSettings")}>
                         <Text style={styles.heroHeaderActionText}>{messages.billing.manageWaterPrice}</Text>
                     </Pressable>
                 </View>
-                <Text style={styles.heroValue}>{formatMoney(estimate?.summary?.estimated_cost)}</Text>
                 <View style={styles.heroRangeBlock}>
                     <PeriodSelector value={rangePreset} onChange={choosePreset} options={[
                             { key: "day", label: messages.billing.day },
@@ -281,29 +278,9 @@ export default function BillingEstimationScreen({ navigation }) {
 
             <View style={styles.card}>
                 <Text style={styles.cardTitle}>{messages.billing.categoryFilter}</Text>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-                    <Pressable
-                        style={[styles.chip, selectedCategoryId === null && styles.chipActive]}
-                        onPress={() => setSelectedCategoryId(null)}
-                    >
-                        <Text style={[styles.chipText, selectedCategoryId === null && styles.chipTextActive]}>
-                            {messages.billing.showAll}
-                        </Text>
-                    </Pressable>
-                    {categories.map((category) => (
-                        <Pressable
-                            key={category.id}
-                            style={[styles.chip, selectedCategoryId === category.id && styles.chipActive]}
-                            onPress={() => setSelectedCategoryId(category.id)}
-                        >
-                            <Text
-                                style={[styles.chipText, selectedCategoryId === category.id && styles.chipTextActive]}
-                            >
-                                {category.name}
-                            </Text>
-                        </Pressable>
-                    ))}
-                </ScrollView>
+                <CategoryDropdown categories={categories} value={selectedCategoryId}
+                    onChange={setSelectedCategoryId} emptyLabel={messages.billing.showAll}
+                    label={messages.billing.categoryFilter} />
             </View>
 
             <View style={styles.card}>

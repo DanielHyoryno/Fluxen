@@ -24,3 +24,20 @@ export function floatingTabLayout(width, bottomInset = 0) {
         height: 56,
     };
 }
+
+export function floatingTabBarStyle(width, bottomInset = 0) {
+    return {
+        position: "absolute",
+        ...floatingTabLayout(width, bottomInset),
+        borderRadius: 18,
+        borderTopWidth: 0,
+        backgroundColor: colors.surface,
+        shadowColor: "#0d1c2f",
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 4,
+        paddingTop: 0,
+        paddingBottom: 0,
+    };
+}

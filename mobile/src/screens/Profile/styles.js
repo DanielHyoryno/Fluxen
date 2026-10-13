@@ -79,6 +79,22 @@ const styles = StyleSheet.create({
     languageButtonTextActive: {
         color: colors.surface,
     },
+    tutorialButton: {
+        marginTop: 10,
+        minHeight: 48,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        backgroundColor: colors.surface,
+        borderColor: colors.border,
+        borderWidth: 1,
+        borderRadius: 10,
+    },
+    tutorialText: { flex: 1, color: colors.primary, fontSize: 14, fontWeight: "600" },
+    tutorialArrow: { color: colors.primary, fontSize: 22, lineHeight: 24 },
     logoutButton: {
         marginTop: 14,
         backgroundColor: "#ffe9e9",

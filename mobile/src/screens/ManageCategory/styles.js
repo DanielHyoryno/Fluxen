@@ -15,8 +15,8 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
     },
     title: {
-        fontSize: 30,
-        fontWeight: "800",
+        fontSize: 24,
+        fontWeight: "700",
         color: colors.text,
     },
     subtitle: {
@@ -45,15 +45,15 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         borderWidth: 1,
-        borderColor: "#d4dde7",
+        borderColor: colors.border,
         borderRadius: 10,
         backgroundColor: colors.surface,
-        color: "#1a3047",
+        color: colors.text,
         paddingHorizontal: 12,
         paddingVertical: 11,
     },
     addButton: {
-        backgroundColor: "#1f7a3d",
+        backgroundColor: colors.primary,
         borderRadius: 10,
         paddingHorizontal: 14,
         paddingVertical: 11,
@@ -66,7 +66,7 @@ const styles = StyleSheet.create({
         fontWeight: "700",
     },
     error: {
-        color: "#a61d1d",
+        color: colors.danger,
         marginBottom: 8,
     },
     editBox: {
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     editTitle: {
-        color: "#35506d",
+        color: colors.text,
         fontWeight: "700",
         marginBottom: 10,
     },
@@ -132,7 +132,8 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     editButton: {
-        backgroundColor: colors.primarySoft,
+        minHeight: 44,
+        justifyContent: "center",
         borderRadius: 8,
         paddingHorizontal: 10,
         paddingVertical: 6,
@@ -143,13 +144,14 @@ const styles = StyleSheet.create({
         fontSize: 13,
     },
     deleteButton: {
-        backgroundColor: "#ffe3e3",
+        minHeight: 44,
+        justifyContent: "center",
         borderRadius: 8,
         paddingHorizontal: 10,
         paddingVertical: 6,
     },
     deleteText: {
-        color: "#a61d1d",
+        color: colors.danger,
         fontWeight: "700",
         fontSize: 13,
     },

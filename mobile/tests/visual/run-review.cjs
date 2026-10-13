@@ -24,8 +24,7 @@ async function run() {
                         return { x: rect.x, y: rect.y, height: rect.height };
                     });
                 });
-                if (width >= 360) assert.ok(Math.abs(values[0].y - values[1].y) <= 1, "Metric values must align");
-                else assert.ok(values[1].y > values[0].y, "Narrow metric grid must stack");
+                assert.ok(Math.abs(values[0].y - values[1].y) <= 1, "Compact metric values must align");
                 const nav = await page.getByRole("tab").first().evaluate((element) => {
                     const rect = element.closest('[role="tablist"]').getBoundingClientRect();
                     return { x: rect.x, right: rect.right, bottom: rect.bottom };
@@ -33,11 +32,25 @@ async function run() {
                 assert.equal(nav.x, 16);
                 assert.equal(nav.right, width - 16);
                 assert.equal(nav.bottom, 842);
+                const iconSpacing = await page.getByRole("tab").first().evaluate((element) => {
+                    const tab = element.getBoundingClientRect();
+                    const icon = element.querySelector('[data-testid^="tab-icon-"]').getBoundingClientRect();
+                    return { top: icon.top - tab.top, bottom: tab.bottom - icon.bottom };
+                });
+                assert.ok(Math.abs(iconSpacing.top - iconSpacing.bottom) <= 1, "Navbar icons must be vertically centered");
                 assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
                 await page.screenshot({ path: `${output}/home-${locale}-${width}.png` });
                 await page.getByRole("button", { name: "Custom", exact: true }).click();
                 await page.waitForTimeout(250);
                 await page.screenshot({ path: `${output}/custom-${locale}-${width}.png` });
+                await page.getByRole("button", { name: locale === "id" ? "Bulan" : "Month", exact: true }).click();
+                await page.waitForTimeout(250);
+                const bars = await page.locator('[data-testid^="usage-bar-"]').evaluateAll((elements) => elements.map((element) => {
+                    const rect = element.getBoundingClientRect();
+                    return { width: rect.width, height: rect.height };
+                }));
+                assert.ok(bars.length > 0 && bars.every((bar) => bar.width > 0 && bar.height >= 140), "Monthly bars must retain their dimensions");
+                await page.screenshot({ path: `${output}/month-${locale}-${width}.png` });
                 results.push({ locale, width, metricsAlignedOrStacked: true, navbarInset: 16, overflow: false });
             }
             await page.getByRole("tab", { name: locale === "id" ? "Profil" : "Profile", exact: true }).click();

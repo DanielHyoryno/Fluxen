@@ -3,6 +3,15 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const ACCESS_TOKEN_KEY = "wm_access_token";
 const APP_LOCALE_KEY = "wm_app_locale";
 const NOTIFIED_ALERT_IDS_KEY = "wm_notified_alert_ids";
+const DEVICE_TUTORIAL_SEEN_KEY = "wm_device_tutorial_seen_v1";
+
+export async function getDeviceTutorialSeen() {
+    return (await AsyncStorage.getItem(DEVICE_TUTORIAL_SEEN_KEY)) === "true";
+}
+
+export async function saveDeviceTutorialSeen() {
+    await AsyncStorage.setItem(DEVICE_TUTORIAL_SEEN_KEY, "true");
+}
 
 export async function saveAccessToken(token) {
     await AsyncStorage.setItem(ACCESS_TOKEN_KEY, token);

@@ -1,4 +1,5 @@
 import { Alert, Animated } from "react-native";
+import * as Clipboard from "expo-clipboard";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import DevicesScreen from "../src/screens/Devices/DevicesScreen";
 import { getMessages } from "../src/constants/messages";
@@ -97,7 +98,8 @@ describe("DevicesScreen", () => {
         renderDevices();
         expect(await screen.findByText("Kitchen Meter")).toBeTruthy();
 
-        fireEvent.press(screen.getAllByText("Garden")[0]);
+        fireEvent.press(screen.getByRole("button", { name: messages.devices.categoryFilterLabel }));
+        fireEvent.press(screen.getByRole("button", { name: "Garden" }));
 
         expect(screen.queryByText("Kitchen Meter")).toBeNull();
         expect(screen.getByText("Garden Meter")).toBeTruthy();
@@ -128,6 +130,12 @@ describe("DevicesScreen", () => {
         fireEvent.press(screen.getByText(messages.devices.createDevice));
 
         expect(await screen.findByText(messages.devices.tokenTitle)).toBeTruthy();
+        fireEvent.press(screen.getByRole("button", { name: messages.auth.copyToken }));
+        await waitFor(() => expect(Clipboard.setStringAsync).toHaveBeenCalledWith("new-device-token"));
+        fireEvent.press(screen.getByRole("button", { name: messages.devices.tokenClose }));
+        expect(screen.queryByTestId("device-token-card")).toBeNull();
+        fireEvent.press(screen.getByText(messages.devices.showApiToken));
+        expect(screen.getByTestId("device-token-card")).toBeTruthy();
         fireEvent.press(screen.getByText(messages.devices.provisionViaBle));
 
         expect(navigation.navigate).toHaveBeenCalledWith("BLEScan", {
