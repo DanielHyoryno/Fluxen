@@ -4,6 +4,11 @@ const ACCESS_TOKEN_KEY = "wm_access_token";
 const APP_LOCALE_KEY = "wm_app_locale";
 const NOTIFIED_ALERT_IDS_KEY = "wm_notified_alert_ids";
 const DEVICE_TUTORIAL_SEEN_KEY = "wm_device_tutorial_seen_v1";
+const PUSH_TOKEN_KEY = "wm_expo_push_token";
+
+export async function getPushToken() { return AsyncStorage.getItem(PUSH_TOKEN_KEY); }
+export async function savePushToken(token) { await AsyncStorage.setItem(PUSH_TOKEN_KEY, token); }
+export async function clearPushToken() { await AsyncStorage.removeItem(PUSH_TOKEN_KEY); }
 
 export async function getDeviceTutorialSeen() {
     return (await AsyncStorage.getItem(DEVICE_TUTORIAL_SEEN_KEY)) === "true";

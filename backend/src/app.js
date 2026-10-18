@@ -8,6 +8,7 @@ const authRoutes = require("./routes/auth.routes");
 const deviceRoutes = require("./routes/device.routes");
 const categoryRoutes = require("./routes/category.routes");
 const billingRoutes = require("./routes/billing.routes");
+const notificationRoutes = require("./routes/notification.routes");
 const { errorHandler, notFoundHandler } = require("./middlewares/error.middleware");
 
 const app = express();
@@ -27,6 +28,7 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/devices", deviceRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/billing", billingRoutes);
+app.use("/api/v1/notifications", notificationRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

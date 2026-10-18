@@ -4,9 +4,13 @@ CREATE TABLE users (
   email VARCHAR(150) UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'user',
+  push_subscription JSONB,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX uq_users_push_subscription_token
+  ON users ((push_subscription->>'token')) WHERE push_subscription IS NOT NULL;
 
 CREATE TABLE device_categories (
   id BIGSERIAL PRIMARY KEY,

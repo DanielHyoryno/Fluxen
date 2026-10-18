@@ -27,6 +27,7 @@ async function requireAuth(req, res, next) {
         }
 
         req.user = userQ.rows[0];
+        req.auth = { expiresAt: payload.exp };
         return next();
     } catch (err) {
         return fail(res, "Unauthorized", 401, "UNAUTHORIZED");

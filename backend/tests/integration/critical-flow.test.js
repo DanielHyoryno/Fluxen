@@ -47,6 +47,7 @@ if (testDatabaseUrl)
         process.env.JWT_SECRET = process.env.JWT_SECRET || "test-only-secret";
         process.env.BUSINESS_TIMEZONE = "Asia/Jakarta";
         process.env.DB_SSL = process.env.DB_SSL || "false";
+        process.env.PUSH_NOTIFICATIONS_ENABLED = "false";
 
         pool = require("../../src/config/db");
         const schema = fs.readFileSync(path.join(__dirname, "../fixtures/schema.sql"), "utf8");
@@ -70,6 +71,60 @@ if (testDatabaseUrl)
         await cleanupPool.query(`DROP SCHEMA IF EXISTS ${testDatabaseSchema} CASCADE`);
         await cleanupPool.end();
     });
+
+test("push registration, ownership transfer, logout and telemetry dispatch", { skip: !testDatabaseUrl }, async () => {
+    const env = require("../../src/config/env");
+    const originalFetch = global.fetch;
+    const sends = [];
+    const pushToken = "ExpoPushToken[integration_phone_12345]";
+    try {
+        // Migration is additive and can be rerun in the isolated test schema.
+        const migration = fs.readFileSync(path.join(__dirname, "../../sql/migrations/004_push_subscription.sql"), "utf8");
+        await pool.query(migration);
+        await pool.query(migration);
+        env.push.enabled = true;
+        global.fetch = async (url, options) => {
+            if (String(url).startsWith("https://exp.host/--/api/v2/push/")) {
+                sends.push(JSON.parse(options.body));
+                return { ok: true, json: async () => ({ data: { status: "ok", id: "integration-ticket" } }) };
+            }
+            return originalFetch(url, options);
+        };
+        const owner = await request("/auth/register", { method: "POST", body: { full_name: "Push Owner", email: "push-owner@test.local", password: "password123" } });
+        const other = await request("/auth/register", { method: "POST", body: { full_name: "Push Other", email: "push-other@test.local", password: "password123" } });
+        const token = owner.payload.data.access_token;
+        const otherToken = other.payload.data.access_token;
+        assert.equal((await request("/notifications/push-token", { method: "PUT", body: { token: pushToken } })).status, 401);
+        assert.equal((await request("/notifications/push-token", { method: "PUT", token, body: { token: "invalid" } })).status, 422);
+        assert.equal((await request("/notifications/push-token", { method: "PUT", token, body: { token: pushToken, locale: "id" } })).status, 200);
+        const created = await request("/devices", { method: "POST", token, body: { device_code: "PUSH-TEST-01", device_name: "Push Meter" } });
+        await request("/usage/limits", { method: "PUT", token, body: { device_code: "PUSH-TEST-01", daily_usage_limit_l: 1 } });
+        const reading = { device_code: "PUSH-TEST-01", measured_at: new Date().toISOString(), flow_rate_lpm: 2, volume_delta_l: 2 };
+        const telemetry = await request("/telemetry/batch", { method: "POST", token: created.payload.data.api_token, body: { device_code: reading.device_code, records: [reading] } });
+        assert.equal(telemetry.status, 201);
+        for (let i = 0; i < 50 && !sends.length; i++) await new Promise(resolve => setTimeout(resolve, 20));
+        assert.equal(sends.length, 1);
+        assert.equal(sends[0].to, pushToken);
+        assert.equal(sends[0].title, "Batas harian terlampaui");
+        assert.equal(sends[0].data.deviceCode, "PUSH-TEST-01");
+        await request("/telemetry/batch", { method: "POST", token: created.payload.data.api_token, body: { device_code: reading.device_code, records: [reading] } });
+        assert.equal(sends.length, 1, "duplicate telemetry must not send another notification");
+        await request("/notifications/push-token", { method: "PUT", token: otherToken, body: { token: pushToken, locale: "en" } });
+        let subscriptions = await pool.query("SELECT id, push_subscription FROM users WHERE id IN ($1,$2) ORDER BY id", [owner.payload.data.user.id, other.payload.data.user.id]);
+        assert.equal(subscriptions.rows[0].push_subscription, null);
+        assert.equal(subscriptions.rows[1].push_subscription.token, pushToken);
+        await request("/notifications/push-token", { method: "DELETE", token, body: { token: pushToken } });
+        subscriptions = await pool.query("SELECT push_subscription FROM users WHERE id = $1", [other.payload.data.user.id]);
+        assert.equal(subscriptions.rows[0].push_subscription.token, pushToken, "old user logout must not detach the new user");
+        await request("/notifications/push-token", { method: "PUT", token: otherToken, body: { token: "ExpoPushToken[new_phone_12345678]", locale: "en" } });
+        await request("/notifications/push-token", { method: "DELETE", token: otherToken, body: { token: pushToken } });
+        subscriptions = await pool.query("SELECT push_subscription FROM users WHERE id = $1", [other.payload.data.user.id]);
+        assert.equal(subscriptions.rows[0].push_subscription.token, "ExpoPushToken[new_phone_12345678]", "old phone logout must not detach a newer phone");
+        await request("/notifications/push-token", { method: "DELETE", token: otherToken, body: { token: "ExpoPushToken[new_phone_12345678]" } });
+        subscriptions = await pool.query("SELECT push_subscription FROM users WHERE id = $1", [other.payload.data.user.id]);
+        assert.equal(subscriptions.rows[0].push_subscription, null);
+    } finally { env.push.enabled = false; global.fetch = originalFetch; }
+});
 
 test("critical API flow uses WIB boundaries and enforces ownership", { skip: !testDatabaseUrl }, async () => {
     const register = await request("/auth/register", {
@@ -159,6 +214,45 @@ test("critical API flow uses WIB boundaries and enforces ownership", { skip: !te
     assert.equal(afterMidnight.payload.data.duplicate_count, 1);
     assert.equal(afterMidnight.payload.data.alerts_triggered[0].period_key, "2026-07-12");
 
+    const activeAlerts = await request("/usage/alerts?device_code=TEST-ESP32-01&status=active", {
+        token: ownerToken,
+    });
+    assert.equal(activeAlerts.status, 200);
+    assert.equal(activeAlerts.payload.data.items.length, 1);
+    assert.equal(activeAlerts.payload.data.items[0].alert_type, "USAGE_LIMIT_DAILY");
+
+    const dismissedAlert = await request(`/usage/alerts/${activeAlerts.payload.data.items[0].id}/dismiss`, {
+        method: "PATCH",
+        token: ownerToken,
+    });
+    assert.equal(dismissedAlert.status, 200);
+    assert.equal(dismissedAlert.payload.data.status, "resolved");
+
+    const activeAlertsAfterDismiss = await request("/usage/alerts?device_code=TEST-ESP32-01&status=active", {
+        token: ownerToken,
+    });
+    assert.equal(activeAlertsAfterDismiss.status, 200);
+    assert.equal(activeAlertsAfterDismiss.payload.data.items.length, 0);
+
+    for (const invalidLimit of [0, -1, "not-a-number"]) {
+        const invalidLimits = await request("/usage/limits", {
+            method: "PUT",
+            token: ownerToken,
+            body: { device_code: "TEST-ESP32-01", daily_usage_limit_l: invalidLimit },
+        });
+        assert.equal(invalidLimits.status, 422);
+        assert.equal(invalidLimits.payload.error_code, "VALIDATION_ERROR");
+    }
+
+    const disabledLimits = await request("/usage/limits", {
+        method: "PUT",
+        token: ownerToken,
+        body: { device_code: "TEST-ESP32-01", daily_usage_limit_l: null, monthly_usage_limit_l: null },
+    });
+    assert.equal(disabledLimits.status, 200);
+    assert.equal(disabledLimits.payload.data.daily_usage_limit_l, null);
+    assert.equal(disabledLimits.payload.data.monthly_usage_limit_l, null);
+
     const history = await request("/telemetry/history?device_code=TEST-ESP32-01&from=2026-07-11&to=2026-07-12", {
         token: ownerToken,
     });
@@ -170,6 +264,16 @@ test("critical API flow uses WIB boundaries and enforces ownership", { skip: !te
             ["2026-07-12", 3],
         ]
     );
+
+    const dailyTelemetry = await request(
+        "/telemetry/daily?device_code=TEST-ESP32-01&date=2026-07-12",
+        { token: ownerToken }
+    );
+    assert.equal(dailyTelemetry.status, 200);
+    assert.equal(dailyTelemetry.payload.data.items.length, 1);
+    assert.equal(dailyTelemetry.payload.data.items[0].hour, 0);
+    assert.equal(Number(dailyTelemetry.payload.data.items[0].volume_delta_l), 3);
+    assert.equal(dailyTelemetry.payload.data.items[0].reading_count, 1);
 
     const exportResponse = await fetch(
         `${baseUrl}/telemetry/export-xlsx?device_code=TEST-ESP32-01&from=2026-07-11&to=2026-07-12`,
@@ -187,6 +291,24 @@ test("critical API flow uses WIB boundaries and enforces ownership", { skip: !te
     assert.equal(exportedWorkbook.getWorksheet("Daily Records").getCell("E2").value, 2);
     assert.equal(exportedWorkbook.getWorksheet("Daily Records").getCell("E3").value, 3);
 
+    const estimateWithoutPrice = await request("/billing/estimate", {
+        method: "POST",
+        token: ownerToken,
+        body: { from: "2026-07-12", to: "2026-07-12", device_ids: [deviceId] },
+    });
+    assert.equal(estimateWithoutPrice.status, 404);
+    assert.equal(estimateWithoutPrice.payload.error_code, "BILLING_SETTINGS_NOT_FOUND");
+
+    for (const invalidPrice of ["", 0, -1]) {
+        const invalidBillingSettings = await request("/billing/settings", {
+            method: "PUT",
+            token: ownerToken,
+            body: { price_per_liter: invalidPrice, currency: "IDR" },
+        });
+        assert.equal(invalidBillingSettings.status, 422);
+        assert.equal(invalidBillingSettings.payload.error_code, "VALIDATION_ERROR");
+    }
+
     const billingSettings = await request("/billing/settings", {
         method: "PUT",
         token: ownerToken,
@@ -202,6 +324,54 @@ test("critical API flow uses WIB boundaries and enforces ownership", { skip: !te
     assert.equal(estimate.status, 200);
     assert.equal(estimate.payload.data.summary.total_liters, 3);
     assert.equal(estimate.payload.data.summary.estimated_cost, 30);
+
+    const createDeviceWithoutData = await request("/devices", {
+        method: "POST",
+        token: ownerToken,
+        body: {
+            device_code: "TEST-ESP32-02",
+            device_name: "Unused Test Meter",
+            category_id: homeCategory.payload.data.id,
+        },
+    });
+    assert.equal(createDeviceWithoutData.status, 201);
+    const deviceWithoutDataId = createDeviceWithoutData.payload.data.id;
+
+    const categoryEstimate = await request("/billing/estimate", {
+        method: "POST",
+        token: ownerToken,
+        body: {
+            from: "2026-07-12",
+            to: "2026-07-12",
+            category_id: gardenCategory.payload.data.id,
+            device_ids: [deviceId],
+        },
+    });
+    assert.equal(categoryEstimate.status, 200);
+    assert.equal(categoryEstimate.payload.data.summary.device_count, 1);
+    assert.deepEqual(categoryEstimate.payload.data.items.map((item) => item.device_name), ["Test Meter"]);
+
+    const estimateWithoutDevices = await request("/billing/estimate", {
+        method: "POST",
+        token: ownerToken,
+        body: { from: "2026-07-12", to: "2026-07-12", device_ids: [] },
+    });
+    assert.equal(estimateWithoutDevices.status, 200);
+    assert.equal(estimateWithoutDevices.payload.data.summary.device_count, 0);
+    assert.equal(estimateWithoutDevices.payload.data.summary.total_liters, 0);
+    assert.equal(estimateWithoutDevices.payload.data.summary.estimated_cost, 0);
+    assert.deepEqual(estimateWithoutDevices.payload.data.items, []);
+
+    const estimateWithoutData = await request("/billing/estimate", {
+        method: "POST",
+        token: ownerToken,
+        body: { from: "2026-07-12", to: "2026-07-12", device_ids: [deviceWithoutDataId] },
+    });
+    assert.equal(estimateWithoutData.status, 200);
+    assert.equal(estimateWithoutData.payload.data.summary.device_count, 1);
+    assert.equal(estimateWithoutData.payload.data.summary.total_liters, 0);
+    assert.equal(estimateWithoutData.payload.data.summary.estimated_cost, 0);
+    assert.equal(estimateWithoutData.payload.data.items[0].device_name, "Unused Test Meter");
 
     const secondUser = await request("/auth/register", {
         method: "POST",
@@ -247,6 +417,8 @@ test("critical API flow uses WIB boundaries and enforces ownership", { skip: !te
         },
     });
     assert.equal(commandDelivery.status, 201);
+    assert.equal(commandDelivery.payload.data.inserted_count, 0);
+    assert.equal(commandDelivery.payload.data.heartbeat_count, 1);
     assert.equal(commandDelivery.payload.data.command.type, "REPROVISION");
 
     const commandAck = await request("/telemetry/command-ack", {

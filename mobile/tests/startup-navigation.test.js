@@ -5,6 +5,10 @@ import { useAuth } from "../src/context/AuthContext";
 import { setLanguage } from "../src/services/i18n";
 
 jest.mock("react-native-gesture-handler", () => ({}));
+jest.mock("expo-notifications", () => ({
+    getLastNotificationResponseAsync: jest.fn(async () => null),
+    addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+}));
 jest.mock("@expo/vector-icons", () => ({ Ionicons: () => null }), { virtual: true });
 jest.mock("react-native-safe-area-context", () => ({
     SafeAreaProvider: ({ children }) => children,
@@ -13,6 +17,7 @@ jest.mock("react-native-safe-area-context", () => ({
 jest.mock("../src/context/AuthContext", () => ({ AuthProvider: ({ children }) => children, useAuth: jest.fn() }));
 jest.mock("../src/services/storage", () => ({ getDeviceTutorialSeen: jest.fn(async () => true), saveDeviceTutorialSeen: jest.fn(async () => {}) }));
 jest.mock("../src/components/AlertNotificationWatcher", () => () => null);
+jest.mock("../src/components/NotificationNavigation", () => () => null);
 jest.mock("../src/components/TabIcon", () => () => null);
 jest.mock("@react-navigation/native", () => ({ NavigationContainer: ({ children }) => children }));
 jest.mock("@react-navigation/native-stack", () => ({

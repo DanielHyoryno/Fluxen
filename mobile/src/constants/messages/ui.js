@@ -1,5 +1,6 @@
 // Stable source phrases map to concise English and Indonesian copy.
 export default {
+    "pushLogoutFailed": ["Could not disconnect notifications. Check your connection and try signing out again.", "Notifikasi belum dapat diputus. Periksa koneksi lalu coba keluar lagi."],
     "deviceTutorialTitle": ["Connect IoT guide", "Panduan menghubungkan IoT"],
     "tutorialExample": ["Example screen", "Contoh tampilan"],
     "tutorialSkip": ["Skip", "Lewati"],

@@ -1,8 +1,9 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { clearAccessToken, getAccessToken, getAppLocale, saveAccessToken, saveAppLocale } from "../services/storage";
 import { loginApi, meApi, registerApi } from "../services/api";
 import messages, { DEFAULT_LOCALE, getMessages } from "../constants/messages";
 import { setLanguage } from "../services/i18n";
+import { unregisterCurrentPush } from "../services/pushNotifications";
 
 const AuthContext = createContext(null);
 
@@ -11,9 +12,12 @@ export function AuthProvider({ children }) {
     const [token, setToken] = useState(null);
     const [user, setUser] = useState(null);
     const [locale, setLocale] = useState(DEFAULT_LOCALE);
+    const [isSigningOut, setIsSigningOut] = useState(false);
+    const logoutRequest = useRef(null);
 
     useEffect(() => {
         async function restore() {
+            let storedToken = null;
             try {
                 const storedLocale = await getAppLocale();
                 if (storedLocale) {
@@ -21,14 +25,16 @@ export function AuthProvider({ children }) {
                     setLocale(storedLocale);
                 }
 
-                const storedToken = await getAccessToken();
+                storedToken = await getAccessToken();
                 if (!storedToken) return;
 
                 const currentUser = await meApi(storedToken);
                 setToken(storedToken);
                 setUser(currentUser);
-            } catch {
-                await clearAccessToken();
+            } catch (error) {
+                // A network outage must not masquerade as logout while push is still subscribed.
+                if (error.status === 401) await clearAccessToken();
+                else if (storedToken) setToken(storedToken);
             } finally {
                 setIsBooting(false);
             }
@@ -48,10 +54,17 @@ export function AuthProvider({ children }) {
         return registerApi({ full_name: fullName, email, password });
     }
 
-    async function logout() {
-        await clearAccessToken();
-        setToken(null);
-        setUser(null);
+    function logout() {
+        if (logoutRequest.current) return logoutRequest.current;
+        setIsSigningOut(true);
+        logoutRequest.current = (async () => {
+            // Do not report logout as successful while this phone remains subscribed.
+            if (token) await unregisterCurrentPush(token);
+            await clearAccessToken();
+            setToken(null);
+            setUser(null);
+        })().finally(() => { logoutRequest.current = null; setIsSigningOut(false); });
+        return logoutRequest.current;
     }
 
     async function changeLocale(nextLocale) {
@@ -66,6 +79,7 @@ export function AuthProvider({ children }) {
         () => ({
             isBooting,
             isAuthenticated: Boolean(token),
+            isSigningOut,
             token,
             user,
             locale,
@@ -75,7 +89,7 @@ export function AuthProvider({ children }) {
             logout,
             setLocale: changeLocale,
         }),
-        [activeMessages, isBooting, locale, token, user]
+        [activeMessages, isBooting, isSigningOut, locale, token, user]
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

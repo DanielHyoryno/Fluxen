@@ -21,6 +21,7 @@
       }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./AppLogo/FluxenLogo.png",
         "backgroundColor": "#ffffff"

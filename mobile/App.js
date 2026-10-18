@@ -1,6 +1,7 @@
 import "react-native-gesture-handler";
 import { t, useLocale } from "./src/services/i18n";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import * as Notifications from "expo-notifications";
 import {
     ActivityIndicator,
     Platform,
@@ -30,6 +31,7 @@ import ProfileScreen from "./src/screens/Profile/ProfileScreen";
 import BillingEstimationScreen from "./src/screens/BillingEstimation/BillingEstimationScreen";
 import BillingSettingsScreen from "./src/screens/BillingSettings/BillingSettingsScreen";
 import AlertNotificationWatcher from "./src/components/AlertNotificationWatcher";
+import NotificationNavigation from "./src/components/NotificationNavigation";
 import { floatingTabBarStyle } from "./src/theme/tokens";
 import TabIcon from "./src/components/TabIcon";
 import StartGate from "./src/components/StartGate";
@@ -95,12 +97,15 @@ function MainTabs() {
 }
 
 function RootNavigator() {
-    const { isBooting, isAuthenticated } = useAuth();
+    const { isBooting, isAuthenticated, token } = useAuth();
+    const navigationRef = useRef(null);
+    const [navigationReady, setNavigationReady] = useState(false);
     if (isBooting) {
         return <View style={styles.loadingPage}><ActivityIndicator size="large" color="#0f62fe" /></View>;
     }
     return (
-        <NavigationContainer>
+        <NavigationContainer ref={navigationRef} onReady={() => setNavigationReady(true)}>
+            <NotificationNavigation navigationRef={navigationRef} token={token} ready={navigationReady} />
             <DeviceTutorialProvider enabled={isAuthenticated}>
             {isAuthenticated ? (
                 <Stack.Navigator>
@@ -152,6 +157,15 @@ function RootNavigator() {
 export default function App() {
     useLocale();
     const [started, setStarted] = useState(Platform.OS === "web");
+    useEffect(() => {
+        if (Platform.OS !== "android") return;
+        const openApp = response => {
+            if (typeof response?.notification?.request?.content?.data?.deviceCode === "string") setStarted(true);
+        };
+        Notifications.getLastNotificationResponseAsync().then(openApp).catch(() => {});
+        const listener = Notifications.addNotificationResponseReceivedListener(openApp);
+        return () => listener.remove();
+    }, []);
 
     return (
         <SafeAreaProvider>

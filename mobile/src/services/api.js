@@ -126,6 +126,20 @@ export async function meApi(token) {
     });
 }
 
+export async function registerPushTokenApi(token, pushToken, locale) {
+    return request("/notifications/push-token", {
+        method: "PUT", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ token: pushToken, locale }),
+    });
+}
+
+export async function unregisterPushTokenApi(token, pushToken) {
+    return request("/notifications/push-token", {
+        method: "DELETE", headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ token: pushToken }),
+    });
+}
+
 export async function listDevicesApi(token) {
     return request("/devices", {
         method: "GET",

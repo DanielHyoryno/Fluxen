@@ -24,9 +24,14 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(150) UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'user',
+  push_subscription JSONB,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
+
+-- DEVICE CATEGORIES
+CREATE UNIQUE INDEX IF NOT EXISTS uq_users_push_subscription_token
+  ON users ((push_subscription->>'token')) WHERE push_subscription IS NOT NULL;
 
 -- DEVICE CATEGORIES
 CREATE TABLE IF NOT EXISTS device_categories (

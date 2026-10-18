@@ -44,6 +44,10 @@ const config = {
         jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
     },
     businessTimezone: process.env.BUSINESS_TIMEZONE || "Asia/Jakarta",
+    push: {
+        enabled: toBoolean(process.env.PUSH_NOTIFICATIONS_ENABLED, false),
+        accessToken: process.env.EXPO_ACCESS_TOKEN || "",
+    },
 };
 
 if (config.isProd && !config.auth.jwtSecret) {

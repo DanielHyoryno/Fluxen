@@ -1,6 +1,7 @@
 const pool = require("../config/db");
 const env = require("../config/env");
 const { toBusinessDateKey, toBusinessMonthKey } = require("../utils/datetime");
+const { queueUsageAlertPushes } = require("./push-notification.service");
 
 async function getOwnedDeviceId(client, userId, deviceCode) {
     const q = await client.query(
@@ -33,6 +34,14 @@ function buildPendingCommand(device) {
         type: device.pending_command,
         requested_at: device.pending_command_at,
     };
+}
+
+function isHeartbeatRecord(record) {
+    return (
+        Number(record.flow_rate_lpm || 0) === 0 &&
+        Number(record.volume_delta_l || 0) === 0 &&
+        Number(record.pulse_count || 0) === 0
+    );
 }
 
 async function createUsageLimitAlertIfNeeded(client, params) {
@@ -110,13 +119,14 @@ async function createUsageLimitAlertIfNeeded(client, params) {
             limit_l: Number(config.limitValue),
         };
 
-        await client.query(
+        const insertedAlert = await client.query(
             `INSERT INTO alerts (device_id, alert_type, severity, title, message, triggered_at, status, meta)
-       VALUES ($1, $2, 'medium', $3, $4, NOW(), 'active', $5::jsonb)`,
+       VALUES ($1, $2, 'medium', $3, $4, NOW(), 'active', $5::jsonb) RETURNING id`,
             [deviceId, config.alertType, `${config.periodLabel} usage limit exceeded`, message, JSON.stringify(meta)]
         );
 
         triggeredAlerts.push({
+            alert_id: insertedAlert.rows[0].id,
             alert_type: config.alertType,
             period_key: config.periodKey,
             consumed_l: Number(config.consumedValue),
@@ -144,22 +154,28 @@ async function createTelemetry(payload) {
 
         const deviceId = deviceQ.rows[0].id;
 
-        const insertQ = await client.query(
-            `INSERT INTO measurements
-      (device_id, measured_at, flow_rate_lpm, volume_delta_l, cumulative_volume_l, pulse_count, battery_voltage, rssi_dbm)
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-      RETURNING id`,
-            [
-                deviceId,
-                payload.measured_at,
-                payload.flow_rate_lpm,
-                payload.volume_delta_l,
-                payload.cumulative_volume_l ?? null,
-                payload.pulse_count ?? null,
-                payload.battery_voltage ?? null,
-                payload.rssi_dbm ?? null,
-            ]
-        );
+        const heartbeatOnly = isHeartbeatRecord(payload);
+        let telemetryId = null;
+
+        if (!heartbeatOnly) {
+            const insertQ = await client.query(
+                `INSERT INTO measurements
+        (device_id, measured_at, flow_rate_lpm, volume_delta_l, cumulative_volume_l, pulse_count, battery_voltage, rssi_dbm)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+        RETURNING id`,
+                [
+                    deviceId,
+                    payload.measured_at,
+                    payload.flow_rate_lpm,
+                    payload.volume_delta_l,
+                    payload.cumulative_volume_l ?? null,
+                    payload.pulse_count ?? null,
+                    payload.battery_voltage ?? null,
+                    payload.rssi_dbm ?? null,
+                ]
+            );
+            telemetryId = insertQ.rows[0].id;
+        }
 
         await client.query(
             `UPDATE devices
@@ -168,14 +184,18 @@ async function createTelemetry(payload) {
             [deviceId]
         );
 
-        const triggeredAlerts = await createUsageLimitAlertIfNeeded(client, {
-            deviceId,
-            measuredAt: payload.measured_at,
-        });
+        const triggeredAlerts = heartbeatOnly
+            ? []
+            : await createUsageLimitAlertIfNeeded(client, {
+                  deviceId,
+                  measuredAt: payload.measured_at,
+              });
 
         await client.query("COMMIT");
+        queueUsageAlertPushes(triggeredAlerts);
         return {
-            telemetry_id: insertQ.rows[0].id,
+            telemetry_id: telemetryId,
+            heartbeat: heartbeatOnly,
             alerts_triggered: triggeredAlerts,
             command: buildPendingCommand(deviceQ.rows[0]),
         };
@@ -206,8 +226,15 @@ async function createTelemetryBatch(payload) {
 
         let insertedCount = 0;
         let duplicateCount = 0;
+        let heartbeatCount = 0;
+        let lastInsertedMeasuredAt = null;
 
         for (const record of payload.records) {
+            if (isHeartbeatRecord(record)) {
+                heartbeatCount += 1;
+                continue;
+            }
+
             const insertQ = await client.query(
                 `INSERT INTO measurements
          (device_id, measured_at, flow_rate_lpm, volume_delta_l, cumulative_volume_l, pulse_count, battery_voltage, rssi_dbm)
@@ -230,6 +257,7 @@ async function createTelemetryBatch(payload) {
                 duplicateCount += 1;
             } else {
                 insertedCount += 1;
+                lastInsertedMeasuredAt = record.measured_at;
             }
         }
 
@@ -240,18 +268,22 @@ async function createTelemetryBatch(payload) {
             [deviceId]
         );
 
-        const lastMeasuredAt = payload.records[payload.records.length - 1].measured_at;
-        const triggeredAlerts = await createUsageLimitAlertIfNeeded(client, {
-            deviceId,
-            measuredAt: lastMeasuredAt,
-        });
+        const triggeredAlerts =
+            insertedCount > 0
+                ? await createUsageLimitAlertIfNeeded(client, {
+                      deviceId,
+                      measuredAt: lastInsertedMeasuredAt,
+                  })
+                : [];
 
         await client.query("COMMIT");
+        queueUsageAlertPushes(triggeredAlerts);
         return {
             device_code: payload.device_code,
             received_count: payload.records.length,
             inserted_count: insertedCount,
             duplicate_count: duplicateCount,
+            heartbeat_count: heartbeatCount,
             alerts_triggered: triggeredAlerts,
             command: buildPendingCommand(deviceQ.rows[0]),
         };
@@ -329,11 +361,31 @@ async function getDailyTelemetry(userId, deviceCode, date) {
     const deviceId = await getOwnedDeviceId(pool, userId, deviceCode);
 
     const q = await pool.query(
-        `SELECT m.measured_at, m.flow_rate_lpm, m.volume_delta_l, m.cumulative_volume_l
-     FROM measurements m
-     WHERE m.device_id = $1
-       AND (m.measured_at AT TIME ZONE $3)::date = $2::date
-     ORDER BY m.measured_at ASC`,
+        `WITH hourly_measurements AS (
+         SELECT
+           date_trunc('hour', m.measured_at AT TIME ZONE $3) AS hour_local,
+           m.measured_at,
+           m.flow_rate_lpm,
+           m.volume_delta_l,
+           m.cumulative_volume_l,
+           m.pulse_count
+         FROM measurements m
+         WHERE m.device_id = $1
+           AND (m.measured_at AT TIME ZONE $3)::date = $2::date
+       )
+       SELECT
+         hour_local AT TIME ZONE $3 AS measured_at,
+         EXTRACT(HOUR FROM hour_local)::integer AS hour,
+         AVG(flow_rate_lpm) AS flow_rate_lpm,
+         AVG(flow_rate_lpm) AS avg_flow_rate_lpm,
+         MAX(flow_rate_lpm) AS peak_flow_rate_lpm,
+         SUM(volume_delta_l) AS volume_delta_l,
+         (array_agg(cumulative_volume_l ORDER BY measured_at DESC))[1] AS cumulative_volume_l,
+         COALESCE(SUM(pulse_count), 0) AS pulse_count,
+         COUNT(*)::integer AS reading_count
+       FROM hourly_measurements
+       GROUP BY hour_local
+       ORDER BY hour_local ASC`,
         [deviceId, date, env.businessTimezone]
     );
 

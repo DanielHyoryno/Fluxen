@@ -1,4 +1,6 @@
-import { Animated, Pressable, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Animated, Pressable, ScrollView, Text, View } from "react-native";
+import FailureNotice from "../../components/FailureNotice";
 import usePageInsets from "../../hooks/usePageInsets";
 import { useAuth } from "../../context/AuthContext";
 import { useDeviceTutorial } from "../../context/DeviceTutorialContext";
@@ -12,6 +14,16 @@ export default function ProfileScreen() {
     const pageInsets = usePageInsets();
     const { user, logout, locale, messages, setLocale } = useAuth();
     const { animatedStyle } = useScreenEntranceAnimation();
+    const [loggingOut, setLoggingOut] = useState(false);
+    const [logoutError, setLogoutError] = useState("");
+    async function handleLogout() {
+        if (loggingOut) return;
+        setLoggingOut(true);
+        setLogoutError("");
+        try { await logout(); }
+        catch { setLogoutError(t("pushLogoutFailed")); }
+        finally { setLoggingOut(false); }
+    }
 
     return (
         <ScrollView style={{ flex: 1, backgroundColor: "#f4f8ff" }} contentContainerStyle={[{ paddingHorizontal: 16 }, pageInsets]}>
@@ -57,8 +69,9 @@ export default function ProfileScreen() {
                 <Text style={styles.tutorialArrow} accessible={false}>›</Text>
             </Pressable>
 
-            <Pressable style={styles.logoutButton} onPress={logout}>
-                <Text style={styles.logoutText}>{messages.profile.logout}</Text>
+            <FailureNotice error={logoutError} onRetry={handleLogout} />
+            <Pressable style={styles.logoutButton} onPress={handleLogout} disabled={loggingOut} accessibilityRole="button">
+                {loggingOut ? <ActivityIndicator color="#a61d1d" /> : <Text style={styles.logoutText}>{messages.profile.logout}</Text>}
             </Pressable>
         </Animated.View>
         </ScrollView>

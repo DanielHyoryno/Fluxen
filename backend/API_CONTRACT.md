@@ -137,6 +137,11 @@ IoT must send device token in header:
 }
 ```
 
+Records whose flow, volume delta, and pulse count are all zero are treated as
+heartbeats. They update the device's `last_seen_at` and can receive a pending
+device command, but are not stored in `measurements`. The response reports them
+in `heartbeat_count` separately from `inserted_count`.
+
 Both single and batch ingest responses contain `data.command`. It is `null`
 normally, or the following object when the device must clear its provisioning
 configuration and return to BLE mode:
@@ -168,8 +173,12 @@ Header for both endpoints:
 ### Latest by Device Code
 - `GET /telemetry/latest?device_code=BV-ESP32-01`
 
-### Daily History
+### Daily History (aggregated by hour)
 - `GET /telemetry/daily?device_code=BV-ESP32-01&date=2026-02-10`
+- Returns at most 24 WIB buckets with `hour`, `measured_at`, `volume_delta_l`,
+  `avg_flow_rate_lpm`, `peak_flow_rate_lpm`, `pulse_count`, and `reading_count`.
+- `flow_rate_lpm` remains available as an alias of `avg_flow_rate_lpm` for
+  compatibility with existing mobile clients.
 
 ### Usage History (aggregated by day)
 - `GET /telemetry/history?device_code=BV-ESP32-01&from=2026-02-01&to=2026-02-10`
@@ -209,6 +218,14 @@ Header for all endpoints:
 - Marks the alert as `resolved` with current timestamp
 - Returns: `{ id, status, resolved_at }`
 - If already resolved, returns: `{ id, status: "resolved", already_resolved: true }`
+
+## Android Push Notifications
+
+- Requires migration `004_push_subscription.sql` and `PUSH_NOTIFICATIONS_ENABLED=true` on the backend.
+- `PUT /notifications/push-token` (user JWT): `{ "token": "ExpoPushToken[...]", "locale": "id" }` registers one receiving phone per account; the last registration wins. Same-phone account switching detaches its previous owner.
+- `DELETE /notifications/push-token` (user JWT): `{ "token": "ExpoPushToken[...]" }` conditionally detaches only that user's matching token.
+- Usage-limit alerts include `alert_id` in telemetry `alerts_triggered`; pushes are dispatched only after COMMIT. No Firebase private key is needed on Render when using Expo Push Service.
+- See `PUSH_NOTIFICATIONS.md` for rollout, transient retries, receipt checks and delivery limitations. Provider acceptance is not confirmation that the user received/read a notification.
 
 ## Notes for Mobile Team
 
