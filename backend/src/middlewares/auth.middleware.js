@@ -30,7 +30,12 @@ async function requireAuth(req, res, next) {
         req.auth = { expiresAt: payload.exp };
         return next();
     } catch (err) {
-        return fail(res, "Unauthorized", 401, "UNAUTHORIZED");
+        if (["JsonWebTokenError", "TokenExpiredError", "NotBeforeError"].includes(err.name)) {
+            return fail(res, "Unauthorized", 401, "UNAUTHORIZED");
+        }
+        // A DB outage is not proof of an invalid/expired session. In particular,
+        // push logout must retry instead of treating a failed revocation as success.
+        return fail(res, "Service temporarily unavailable", 503, "AUTH_UNAVAILABLE");
     }
 }
 
