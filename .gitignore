@@ -43,3 +43,7 @@ web-build/
 # misc
 *.tmp
 *.temp
+
+# Isolated test databases, caches, and generated evidence (no production data)
+/output/testing/
+/output/paper/

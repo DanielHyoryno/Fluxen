@@ -149,6 +149,15 @@ export async function listDevicesApi(token) {
     });
 }
 
+export async function getDeviceApi(token, deviceId) {
+    return request(`/devices/${deviceId}`, {
+        method: "GET",
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+}
+
 export async function listCategoriesApi(token) {
     return request("/categories", {
         method: "GET",

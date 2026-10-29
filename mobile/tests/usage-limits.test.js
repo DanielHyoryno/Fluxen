@@ -64,4 +64,19 @@ describe("UsageLimitsScreen", () => {
         expect(screen.getByText(t("Limits must be positive numbers or left empty."))).toBeTruthy();
         expect(upsertUsageLimitsApi).not.toHaveBeenCalled();
     });
+
+    test.each([
+        ["BB-LIM-001", "10", "100", 10, 100],
+        ["BB-LIM-002", "", "100", null, 100],
+        ["BB-LIM-003", "", "", null, null],
+    ])("%s | save daily %s and monthly %s", async (id, daily, monthly, expectedDaily, expectedMonthly) => {
+        upsertUsageLimitsApi.mockResolvedValue({});
+        renderUsageLimits();
+        fireEvent.changeText(await screen.findByPlaceholderText("e.g. 500"), daily);
+        fireEvent.changeText(screen.getByPlaceholderText("e.g. 15000"), monthly);
+        fireEvent.press(screen.getByText(t("Save Limits")));
+        await waitFor(() => expect(upsertUsageLimitsApi).toHaveBeenCalledWith("user-token", {
+            device_code: "TEST-ESP32-01", daily_usage_limit_l: expectedDaily, monthly_usage_limit_l: expectedMonthly,
+        }));
+    });
 });

@@ -18,6 +18,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { useAuth } from "../../context/AuthContext";
 import SectionAccordion from "../../components/SectionAccordion";
 import {
+    getDeviceApi,
     dailyTelemetryApi,
     latestTelemetryApi,
     usageAlertsApi,
@@ -182,6 +183,18 @@ export default function DeviceDashboardScreen({ route, navigation }) {
         setLimits(limitData);
     }, [device.device_code, token, today]);
 
+    const loadPage = useCallback(async () => {
+        // Wait for both requests before surfacing errors: the telemetry loader
+        // must not clear a metadata error after that request has already failed.
+        const [telemetryResult, deviceResult] = await Promise.allSettled([
+            loadAll(),
+            getDeviceApi(token, device.id),
+        ]);
+        if (telemetryResult.status === "rejected") throw telemetryResult.reason;
+        if (deviceResult.status === "rejected") throw deviceResult.reason;
+        return deviceResult.value;
+    }, [device.id, loadAll, token]);
+
     useFocusEffect(
         useCallback(() => {
             let mounted = true;
@@ -189,7 +202,10 @@ export default function DeviceDashboardScreen({ route, navigation }) {
             async function run() {
                 setLoading(true);
                 try {
-                    await loadAll();
+                    const currentDevice = await loadPage();
+                    // Route params also feed Edit, History and Limits. Refresh the
+                    // whole device on focus, not just its displayed name.
+                    if (mounted) navigation.setParams({ device: currentDevice });
                 } catch (err) {
                     if (mounted) setError(err.message || messages.dashboard.loadFailed);
                 } finally {
@@ -212,13 +228,14 @@ export default function DeviceDashboardScreen({ route, navigation }) {
                 mounted = false;
                 clearInterval(interval);
             };
-        }, [loadAll])
+        }, [loadAll, loadPage, navigation])
     );
 
     async function onRefresh() {
         setRefreshing(true);
         try {
-            await loadAll();
+            const currentDevice = await loadPage();
+            navigation.setParams({ device: currentDevice });
         } catch (err) {
             setError(err.message || messages.dashboard.refreshFailed);
         } finally {

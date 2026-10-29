@@ -1,4 +1,4 @@
-import { exportXlsxApi, loginApi } from "../src/services/api";
+import { exportXlsxApi, getDeviceApi, loginApi } from "../src/services/api";
 import { getAppLocale } from "../src/services/storage";
 import { getMessages } from "../src/constants/messages";
 import { t } from "../src/services/i18n";
@@ -28,6 +28,16 @@ describe("API service", () => {
         await expect(loginApi({ email: "test@example.com", password: "password123" })).resolves.toEqual({
             access_token: "token",
         });
+    });
+
+    test("loads fresh device metadata from the authenticated detail endpoint", async () => {
+        const device = { id: "42", device_name: "Renamed Meter", install_location: null, category_id: 2, category_name: "Garden" };
+        global.fetch.mockResolvedValue({ ok: true, json: async () => ({ success: true, data: device }) });
+
+        await expect(getDeviceApi("session-token", "42")).resolves.toEqual(device);
+        expect(global.fetch).toHaveBeenCalledWith(expect.stringMatching(/\/devices\/42$/), expect.objectContaining({
+            method: "GET", headers: { Authorization: "Bearer session-token" },
+        }));
     });
 
     test("uses the backend error message for a rejected API request", async () => {

@@ -57,7 +57,10 @@ jest.mock("react-native-calendars", () => ({
                 Pressable,
                 { testID: "calendar-over-limit", onPress: () => onDayPress({ dateString: "2026-02-15" }) },
                 React.createElement(Text, null, "Test over-limit date")
-            )
+            ),
+            ...[["calendar-mid", "2026-01-15"], ["calendar-thirty", "2026-01-30"]].map(([testID, dateString]) =>
+                React.createElement(Pressable, { key: testID, testID, onPress: () => onDayPress({ dateString }) },
+                    React.createElement(Text, null, dateString)))
         );
     },
 }));
@@ -204,5 +207,51 @@ describe("UsageHistoryScreen XLSX export", () => {
         fireEvent.press(screen.getByTestId("calendar-over-limit"));
 
         expect(Alert.alert).toHaveBeenCalledWith(t("Range limited"), t("Maximum custom range is 30 days."));
+    });
+
+    test.each([
+        ["BB-HIS-003", "calendar-mid", "2026-01-15"],
+        ["BB-HIS-004", "calendar-thirty", "2026-01-30"],
+        ["BB-HIS-005", "calendar-start", "2026-01-01"],
+    ])("%s | apply custom range ending at %s", async (id, endButton, expectedEnd) => {
+        await renderHistoryScreen();
+        fireEvent.press(screen.getByText("Custom"));
+        fireEvent.press(screen.getByText("From"));
+        fireEvent.press(screen.getByTestId("calendar-start"));
+        fireEvent.press(screen.getByTestId(endButton));
+        usageHistoryApi.mockClear();
+        fireEvent.press(screen.getByText(t("Apply")));
+        await waitFor(() => expect(usageHistoryApi).toHaveBeenCalledWith("user-token", "DEVICE-01", "2026-01-01", expectedEnd));
+        expect(Alert.alert).not.toHaveBeenCalled();
+    });
+
+    test("BB-HIS-006 | cancelling the calendar preserves the previous range", async () => {
+        await renderHistoryScreen();
+        fireEvent.press(screen.getByText("Custom"));
+        const prior = usageHistoryApi.mock.calls.at(-1)?.slice(2);
+        fireEvent.press(screen.getByText("From"));
+        fireEvent.press(screen.getByTestId("calendar-start"));
+        fireEvent.press(screen.getByText(t("Cancel")));
+        expect(usageHistoryApi.mock.calls.at(-1)?.slice(2)).toEqual(prior);
+    });
+
+    test("BB-EXP-003 | All uses the full current year independently of history", async () => {
+        exportXlsxApi.mockResolvedValue({ arrayBuffer: new Uint8Array([80, 75]).buffer });
+        saveAndShareXlsx.mockResolvedValue({ shared: true });
+        await renderHistoryScreen();
+        fireEvent.press(screen.getByText(t("Month")));
+        fireEvent.press(screen.getByText(t("All")));
+        await pressExportButton();
+        const year = new Date().getFullYear();
+        expect(exportXlsxApi).toHaveBeenCalledWith("user-token", "DEVICE-01", `${year}-01-01`, `${year}-12-31`);
+    });
+
+    test("BB-HIS-007 | bars and line switch on the history screen", async () => {
+        await renderHistoryScreen();
+        expect(screen.getByTestId("usage-chart")).toBeTruthy();
+        fireEvent.press(screen.getByText(t("Line")));
+        expect(screen.queryByTestId("usage-chart")).toBeNull();
+        fireEvent.press(screen.getByText(t("Bars")));
+        expect(screen.getByTestId("usage-chart")).toBeTruthy();
     });
 });

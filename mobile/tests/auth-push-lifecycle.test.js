@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import { Pressable, Text } from "react-native";
 import { AuthProvider, useAuth } from "../src/context/AuthContext";
-import { getAccessToken, getAppLocale, clearAccessToken } from "../src/services/storage";
+import { getAccessToken, getAppLocale, clearAccessToken, saveAppLocale } from "../src/services/storage";
 import { meApi } from "../src/services/api";
 import { unregisterCurrentPush } from "../src/services/pushNotifications";
 
@@ -54,4 +54,18 @@ test("a rejected JWT clears the local session", async () => {
     render(<AuthProvider><Harness /></AuthProvider>);
     await screen.findByText("signed-out");
     expect(clearAccessToken).toHaveBeenCalled();
+});
+
+test("BB-PRO-003 | language choice is saved and restored on a fresh mount", async () => {
+    saveAppLocale.mockResolvedValue(undefined);
+    const first = render(<AuthProvider><Harness /></AuthProvider>);
+    await screen.findByText("signed-in");
+    await act(async () => current.setLocale("id"));
+    expect(saveAppLocale).toHaveBeenCalledWith("id");
+    expect(current.locale).toBe("id");
+    first.unmount();
+    getAppLocale.mockResolvedValue("id");
+    render(<AuthProvider><Harness /></AuthProvider>);
+    await screen.findByText("signed-in");
+    expect(current.locale).toBe("id");
 });
