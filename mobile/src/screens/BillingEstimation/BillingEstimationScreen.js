@@ -258,7 +258,7 @@ export default function BillingEstimationScreen({ navigation }) {
                     ]} />
 
                     {rangePreset === "custom" ? (
-                        <View style={styles.row}>
+                        <View style={styles.customDateRow}>
                             <Pressable style={styles.customDateButton} onPress={() => openCustomPicker("from")}>
                                 <Text style={styles.customDateLabel}>{messages.billing.from}</Text>
                                 <Text style={styles.customDateValue}>{range.from}</Text>

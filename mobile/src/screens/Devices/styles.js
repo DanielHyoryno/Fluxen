@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
         overflow: "hidden",
     },
     listSectionDivider: {
-        marginTop: 2,
+        marginTop: 12,
         borderBottomWidth: 1,
         borderBottomColor: colors.track,
     },
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         gap: 8,
         flexWrap: "wrap",
-        marginBottom: 8,
+        marginBottom: 12,
     },
     filterGroupLabel: {
         color: "#6a8098",

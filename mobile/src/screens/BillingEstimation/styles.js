@@ -104,10 +104,11 @@ const styles = StyleSheet.create({
         fontWeight: "800",
         marginBottom: 10,
     },
-    row: {
+    customDateRow: {
         flexDirection: "row",
         gap: 10,
         flexWrap: "wrap",
+        marginBottom: 12,
     },
     inputGroupWide: {
         flex: 1,
