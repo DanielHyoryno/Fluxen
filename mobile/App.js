@@ -18,6 +18,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-cont
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
 import { DeviceTutorialProvider } from "./src/context/DeviceTutorialContext";
 import LoginScreen from "./src/screens/Login/LoginScreen";
+import ForgotPasswordScreen from "./src/screens/Login/ForgotPasswordScreen";
 import RegisterScreen from "./src/screens/Register/RegisterScreen";
 import DevicesScreen from "./src/screens/Devices/DevicesScreen";
 import DeviceDashboardScreen from "./src/screens/DeviceDashboard/DeviceDashboardScreen";
@@ -146,6 +147,7 @@ function RootNavigator() {
                 <Stack.Navigator>
                     <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false }} />
                     <Stack.Screen name="Register" component={RegisterScreen} options={{ headerShown: false }} />
+                    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ headerShown: false }} />
                 </Stack.Navigator>
             )}
             <StatusBar style="dark" />

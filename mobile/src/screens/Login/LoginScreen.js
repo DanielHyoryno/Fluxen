@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Animated, Easing, Image, Pressable, Text, TextInput, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
+import { t } from "../../services/i18n";
 import styles from "./styles";
 
 const fluxenLogo = require("../../../AppLogo/FluxenLogo.png");
@@ -109,6 +110,9 @@ export default function LoginScreen({ navigation, route }) {
                         </Pressable>
                     </Animated.View>
 
+                    <Pressable accessibilityRole="button" onPress={() => navigation.navigate("ForgotPassword", { email: email.trim() })}>
+                        <Text style={styles.link}>{t("accountForgotPassword")}</Text>
+                    </Pressable>
                     <Pressable onPress={() => navigation.navigate("Register")}>
                         <Text style={styles.link}>{messages.auth.noAccount}</Text>
                     </Pressable>

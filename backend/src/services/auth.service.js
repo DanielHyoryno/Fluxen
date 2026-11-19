@@ -19,6 +19,7 @@ function signAccessToken(user) {
             sub: String(user.id),
             email: user.email,
             role: user.role,
+            sv: Number(user.session_version ?? 0),
         },
         getJwtSecret(),
         { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
@@ -67,8 +68,9 @@ async function login(payload) {
     const email = payload.email.trim().toLowerCase();
 
     const userQ = await pool.query(
-        `SELECT id, full_name, email, role, password_hash, created_at
-     FROM users
+        `SELECT u.id, u.full_name, u.email, u.role, u.password_hash, u.created_at,
+            COALESCE((to_jsonb(u)->>'session_version')::integer, 0) AS session_version
+     FROM users u
      WHERE email = $1
      LIMIT 1`,
         [email]

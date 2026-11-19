@@ -126,6 +126,109 @@ test("push registration, ownership transfer, logout and telemetry dispatch", { s
     } finally { env.push.enabled = false; global.fetch = originalFetch; }
 });
 
+test("report email verifies the account once and sends an XLSX only for owned devices", { skip: !testDatabaseUrl }, async () => {
+    const env = require("../../src/config/env");
+    const originalSettings = { ...env.reportEmail };
+    const originalFetch = global.fetch;
+    const sends = [];
+    const email = "report-owner@test.local";
+    const xlsx = { device_code: "REPORT-TEST-01", from: "2026-01-01", to: "2026-12-31" };
+    try {
+        const migration = fs.readFileSync(path.join(__dirname, "../../sql/migrations/005_report_email_verification.sql"), "utf8");
+        await pool.query(migration);
+        await pool.query(migration);
+        Object.assign(env.reportEmail, { enabled: true, otpSecret: "local-test-only-".repeat(4), apiKey: "test-only", from: "sender@test.local" });
+        global.fetch = async (url, options) => {
+            if (String(url) === "https://api.resend.com/emails") {
+                sends.push(JSON.parse(options.body));
+                return { ok: true, json: async () => ({ id: "simulated-email" }) };
+            }
+            return originalFetch(url, options);
+        };
+
+        const owner = await request("/auth/register", { method: "POST", body: { full_name: "Report Owner", email, password: "password123" } });
+        const token = owner.payload.data.access_token;
+        const post = (path, body) => request(`/report-email${path}`, { method: "POST", token, body });
+        assert.equal((await request("/report-email/status")).status, 401);
+        assert.equal((await post("/xlsx", xlsx)).status, 403);
+        assert.equal((await post("/verification", { email: "other@test.local" })).status, 422);
+        assert.equal((await post("/verification", { locale: "id" })).status, 200);
+        assert.equal((await post("/verification", { locale: "id" })).status, 429);
+        assert.deepEqual(sends[0].to, [email]);
+        assert.equal(sends[0].attachments, undefined);
+        const otp = sends[0].text.match(/\b\d{6}\b/)[0];
+        assert.equal((await post("/verification/confirm", { code: otp === "000000" ? "000001" : "000000" })).status, 422);
+        assert.equal((await post("/verification/confirm", { code: otp })).status, 200);
+        assert.equal((await post("/verification/confirm", { code: otp })).status, 422);
+        assert.equal((await post("/xlsx", { ...xlsx, to: "2027-01-02" })).status, 422);
+        assert.equal((await post("/xlsx", xlsx)).status, 404);
+        assert.equal(sends.length, 1);
+
+        assert.equal((await request("/devices", { method: "POST", token, body: { device_code: xlsx.device_code, device_name: "Report meter" } })).status, 201);
+        assert.equal((await post("/xlsx", { ...xlsx, email: "other@test.local" })).status, 422);
+        assert.equal((await post("/xlsx", xlsx)).status, 202);
+        assert.deepEqual(sends[1].to, [email]);
+        assert.match(sends[1].attachments[0].filename, /\.xlsx$/);
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.load(Buffer.from(sends[1].attachments[0].content, "base64"));
+        assert.equal(workbook.worksheets.length, 2);
+    } finally { Object.assign(env.reportEmail, originalSettings); global.fetch = originalFetch; }
+});
+
+test("account email protects signup and recovery, then invalidates old sessions", { skip: !testDatabaseUrl }, async () => {
+    const env = require("../../src/config/env");
+    const originalSettings = { ...env.reportEmail };
+    const originalFetch = global.fetch;
+    const mail = [];
+    const email = "verified-account@test.local";
+    const password = "first-password-123";
+    const signup = { full_name: "Verified Account", email, password };
+    const post = (path, body) => request(`/auth${path}`, { method: "POST", body });
+    try {
+        for (const name of ["004_push_subscription.sql", "005_report_email_verification.sql", "006_account_email_security.sql"]) {
+            await pool.query(fs.readFileSync(path.join(__dirname, "../../sql/migrations", name), "utf8"));
+        }
+        Object.assign(env.reportEmail, { accountEnabled: true, otpSecret: "local-test-only-".repeat(4), apiKey: "test-only", from: "sender@test.local" });
+        global.fetch = async (url, options) => {
+            if (String(url) === "https://api.resend.com/emails") {
+                mail.push(JSON.parse(options.body));
+                return { ok: true, json: async () => ({ id: "simulated-email" }) };
+            }
+            return originalFetch(url, options);
+        };
+
+        assert.equal((await post("/register", signup)).status, 202);
+        assert.equal((await post("/login", { email, password })).status, 401);
+        const signupCode = mail[0].text.match(/\b\d{6}\b/)[0];
+        assert.equal((await post("/register/verify", { ...signup, code: signupCode === "000000" ? "000001" : "000000" })).status, 422);
+        assert.equal((await post("/register/verify", { ...signup, code: signupCode })).status, 201);
+        assert.equal((await post("/register/verify", { ...signup, code: signupCode })).status, 422);
+        const login = await post("/login", { email, password });
+        const token = login.payload.data.access_token;
+        assert.equal((await request("/report-email/status", { token })).payload.data.verified, true);
+
+        const unknown = await post("/password-reset/request", { email: "unknown@test.local" });
+        const known = await post("/password-reset/request", { email });
+        assert.deepEqual(known, unknown);
+        assert.equal(known.status, 202);
+        assert.equal(mail.length, 2);
+        const resetCode = mail[1].text.match(/\b\d{6}\b/)[0];
+        assert.notEqual(mail[0].subject, mail[1].subject);
+        assert.equal((await post("/password-reset/complete", { reset_token: "0".repeat(64), password: "new-pass-1234" })).status, 422);
+        const verified = await post("/password-reset/verify", { email, code: resetCode });
+        assert.equal(verified.status, 200);
+        const resetToken = verified.payload.data.reset_token;
+        assert.equal((await post("/password-reset/verify", { email, code: resetCode })).status, 422);
+        assert.equal((await post("/password-reset/complete", { reset_token: resetToken, password: "new-pass-1234" })).status, 200);
+        assert.equal((await post("/password-reset/complete", { reset_token: resetToken, password: "new-pass-1234" })).status, 422);
+        assert.equal((await request("/auth/me", { token })).status, 401);
+        assert.equal((await post("/login", { email, password })).status, 401);
+        const newLogin = await post("/login", { email, password: "new-pass-1234" });
+        assert.equal(newLogin.status, 200);
+        assert.equal((await request("/auth/me", { token: newLogin.payload.data.access_token })).status, 200);
+    } finally { Object.assign(env.reportEmail, originalSettings); global.fetch = originalFetch; }
+});
+
 test("critical API flow uses WIB boundaries and enforces ownership", { skip: !testDatabaseUrl }, async () => {
     const register = await request("/auth/register", {
         method: "POST",

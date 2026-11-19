@@ -78,6 +78,8 @@ const styles = StyleSheet.create({
     inputError: {
         borderColor: "#bd1e1e",
     },
+    help: { color: colors.textMuted, lineHeight: 20, marginBottom: 14 },
+    disabled: { opacity: 0.55 },
     fieldError: {
         color: "#bd1e1e",
         fontSize: 13,
@@ -86,11 +88,14 @@ const styles = StyleSheet.create({
     },
     primaryButton: {
         backgroundColor: colors.primary,
+        borderWidth: 1,
+        borderColor: colors.primary,
         borderRadius: 10,
         paddingVertical: 14,
         alignItems: "center",
         marginTop: 4,
     },
+    resendSpacing: { marginTop: 10 },
     primaryButtonText: {
         color: colors.surface,
         fontWeight: "700",

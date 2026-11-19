@@ -46,6 +46,11 @@ async function responseError(response, payload = {}) {
         INVALID_CREDENTIALS: t("invalidCredentials", {}, locale),
         BILLING_SETTINGS_NOT_FOUND: t("priceNotSet", {}, locale),
         VALIDATION_ERROR: t("invalidInput", {}, locale),
+        ACCOUNT_EMAIL_UNAVAILABLE: t("accountEmailUnavailable", {}, locale),
+        ACCOUNT_EMAIL_CODE_INVALID: t("reportEmailBadCode", {}, locale),
+        ACCOUNT_RESET_EXPIRED: t("accountResetExpired", {}, locale),
+        REPORT_EMAIL_CODE_COOLDOWN: t("reportEmailCooldown", {}, locale),
+        REPORT_EMAIL_SEND_FAILED: t("reportEmailSendFailed", {}, locale),
     };
     let message = known[code];
     if (!message && payload.message === "Invalid email or password") message = t("invalidCredentials", {}, locale);
@@ -68,8 +73,8 @@ async function readJson(response) {
     }
 }
 
-async function request(path, options = {}) {
-    return fetchWithTimeout(`${API_BASE_URL}${path}`, options, REQUEST_TIMEOUT_MS, async (response) => {
+async function request(path, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+    return fetchWithTimeout(`${API_BASE_URL}${path}`, options, timeoutMs, async (response) => {
         const payload = await readJson(response);
         if (!response.ok || payload?.success === false) throw await responseError(response, payload || {});
         if (payload?.success !== true || !Object.prototype.hasOwnProperty.call(payload, "data")) {
@@ -78,6 +83,29 @@ async function request(path, options = {}) {
         return payload.data;
     });
 }
+
+function reportEmailRequest(token, path, body, timeoutMs) {
+    return request(`/report-email${path}`, {
+        ...(body ? { method: "POST", body: JSON.stringify(body) } : {}),
+        headers: { Authorization: `Bearer ${token}`, ...(body ? { "Content-Type": "application/json" } : {}) },
+    }, timeoutMs);
+}
+
+export const reportEmailStatusApi = (token) => reportEmailRequest(token, "/status");
+export const requestReportEmailCodeApi = (token, locale) => reportEmailRequest(token, "/verification", { locale });
+export const verifyReportEmailCodeApi = (token, code) => reportEmailRequest(token, "/verification/confirm", { code });
+export const sendReportEmailApi = (token, body) => reportEmailRequest(token, "/xlsx", body, EXPORT_REQUEST_TIMEOUT_MS);
+
+function accountEmailRequest(path, body) {
+    return request(`/auth${path}`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+}
+
+export const verifyRegistrationApi = (body) => accountEmailRequest("/register/verify", body);
+export const requestPasswordResetApi = (email, locale) => accountEmailRequest("/password-reset/request", { email, locale });
+export const verifyPasswordResetApi = (email, code) => accountEmailRequest("/password-reset/verify", { email, code });
+export const completePasswordResetApi = (resetToken, password) => accountEmailRequest("/password-reset/complete", { reset_token: resetToken, password });
 
 async function requestRaw(path, options = {}) {
     return fetchWithTimeout(`${API_BASE_URL}${path}`, options, REQUEST_TIMEOUT_MS, async (response) => {

@@ -51,7 +51,7 @@ export function AuthProvider({ children }) {
     }
 
     async function register(fullName, email, password) {
-        return registerApi({ full_name: fullName, email, password });
+        return registerApi({ full_name: fullName, email, password, locale });
     }
 
     function logout() {

@@ -2,10 +2,12 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react-nativ
 import RegisterScreen from "../src/screens/Register/RegisterScreen";
 import { getMessages } from "../src/constants/messages";
 import { useAuth } from "../src/context/AuthContext";
+import { verifyRegistrationApi } from "../src/services/api";
 
 jest.mock("../src/context/AuthContext", () => ({
     useAuth: jest.fn(),
 }));
+jest.mock("../src/services/api", () => ({ verifyRegistrationApi: jest.fn() }));
 
 const messages = getMessages("en");
 
@@ -61,6 +63,22 @@ describe("RegisterScreen", () => {
                 routes: [{ name: "Login", params: { registrationSuccess: messages.auth.registerSuccess } }],
             });
         });
+    });
+
+    test("waits for OTP before showing registration success for a pending account", async () => {
+        const email = "test@example.com";
+        const { navigation } = renderRegister(jest.fn().mockResolvedValue({ email, verification_required: true }));
+        verifyRegistrationApi.mockResolvedValue({ user: { email } });
+        fireEvent.changeText(screen.getByPlaceholderText(messages.auth.fullNamePlaceholder), "Test User");
+        fireEvent.changeText(screen.getByPlaceholderText(messages.auth.emailPlaceholder), email);
+        fireEvent.changeText(screen.getByPlaceholderText(messages.auth.passwordMinPlaceholder), "password123");
+        fireEvent.press(screen.getByText(messages.auth.registerButton));
+        const otp = await screen.findByPlaceholderText("000000", {}, { timeout: 5000 });
+        expect(navigation.reset).not.toHaveBeenCalled();
+        fireEvent.changeText(otp, "123456");
+        fireEvent.press(screen.getByRole("button", { name: "Verify code" }));
+        await waitFor(() => expect(navigation.reset).toHaveBeenCalled(), { timeout: 5000 });
+        expect(verifyRegistrationApi).toHaveBeenCalledWith({ full_name: "Test User", email, password: "password123", code: "123456" });
     });
 
     test("maps duplicate email response to the email field", async () => {

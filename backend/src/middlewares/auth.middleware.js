@@ -15,18 +15,20 @@ async function requireAuth(req, res, next) {
         const payload = jwt.verify(token, getJwtSecret());
 
         const userQ = await pool.query(
-            `SELECT id, full_name, email, role, created_at
-       FROM users
+            `SELECT u.id, u.full_name, u.email, u.role, u.created_at,
+              COALESCE((to_jsonb(u)->>'session_version')::integer, 0) AS session_version
+       FROM users u
        WHERE id = $1
        LIMIT 1`,
             [payload.sub]
         );
 
-        if (userQ.rowCount === 0) {
+        const { session_version, ...user } = userQ.rows[0] || {};
+        if (userQ.rowCount === 0 || Number(payload.sv ?? 0) !== Number(session_version ?? 0)) {
             return fail(res, "Unauthorized", 401, "UNAUTHORIZED");
         }
 
-        req.user = userQ.rows[0];
+        req.user = user;
         req.auth = { expiresAt: payload.exp };
         return next();
     } catch (err) {

@@ -1,6 +1,10 @@
 import { useState } from "react";
 import { ActivityIndicator, Image, Pressable, Text, TextInput, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
+import { verifyRegistrationApi } from "../../services/api";
+import { t } from "../../services/i18n";
+import OtpResendButton from "../../components/OtpResendButton";
+import useOtpResendCooldown from "../../hooks/useOtpResendCooldown";
 import styles from "./styles";
 
 const fluxenLogo = require("../../../AppLogo/FluxenLogo.png");
@@ -14,6 +18,14 @@ export default function RegisterScreen({ navigation }) {
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState("");
     const [fieldErrors, setFieldErrors] = useState({});
+    const [verificationEmail, setVerificationEmail] = useState("");
+    const [code, setCode] = useState("");
+    const cooldown = useOtpResendCooldown();
+
+    function finishRegistration() {
+        setPassword("");
+        navigation.reset({ index: 0, routes: [{ name: "Login", params: { registrationSuccess: messages.auth.registerSuccess } }] });
+    }
 
     function validateFields() {
         const nextErrors = {};
@@ -55,20 +67,22 @@ export default function RegisterScreen({ navigation }) {
         }
     }
 
-    async function handleRegister() {
+    async function handleRegister(isResend = false) {
         setError("");
         if (!validateFields()) return;
 
         setSubmitting(true);
         try {
-            await register(fullName.trim(), email.trim(), password);
-            navigation.reset({
-                index: 0,
-                routes: [{ name: "Login", params: { registrationSuccess: messages.auth.registerSuccess } }],
-            });
+            const result = await register(fullName.trim(), email.trim(), password);
+            if (result?.verification_required) {
+                if (!isResend) cooldown.startCooldown();
+                setCode("");
+                setVerificationEmail(result.email);
+            } else finishRegistration();
         } catch (err) {
             const message = String(err.message || "");
-            if (message.toLowerCase().includes("email already used")) {
+            if (err.code === "EMAIL_ALREADY_USED" || message.toLowerCase().includes("email already used")) {
+                setVerificationEmail("");
                 setFieldErrors((current) => ({ ...current, email: messages.auth.emailAlreadyUsed }));
             } else {
                 setError(message || messages.auth.registerFailed);
@@ -78,6 +92,18 @@ export default function RegisterScreen({ navigation }) {
         }
     }
 
+    async function confirmRegistration() {
+        if (submitting || code.length !== 6) return;
+        setSubmitting(true);
+        setError("");
+        try {
+            await verifyRegistrationApi({ full_name: fullName.trim(), email: verificationEmail, password, code });
+            finishRegistration();
+        } catch (err) {
+            setError(err.message || messages.auth.registerFailed);
+        } finally { setSubmitting(false); }
+    }
+
     return (
         <View style={styles.page}>
             <View style={styles.bgBlobA} />
@@ -85,10 +111,26 @@ export default function RegisterScreen({ navigation }) {
             <View style={styles.heroWrap}>
                 <Image source={fluxenLogo} style={styles.logo} resizeMode="contain" />
                 <Text style={styles.brandTitle}>Fluxen</Text>
-                <Text style={styles.subtitle}>{messages.auth.registerTitle}</Text>
+                <Text style={styles.subtitle}>{verificationEmail ? t("reportEmailVerifyTitle") : messages.auth.registerTitle}</Text>
             </View>
 
             <View style={styles.formCard}>
+                {verificationEmail ? <>
+                    <Text style={styles.help}>{t("reportEmailCodeHint", { email: verificationEmail })}</Text>
+                    <TextInput style={styles.input} placeholder="000000" accessibilityLabel={t("reportEmailCodeLabel")}
+                        value={code} onChangeText={value => setCode(value.replace(/\D/g, ""))} keyboardType="number-pad"
+                        autoComplete="one-time-code" maxLength={6} editable={!submitting} />
+                    {error ? <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text> : null}
+                    <Pressable accessibilityRole="button" style={[styles.primaryButton, code.length !== 6 && styles.disabled]}
+                        disabled={submitting || code.length !== 6} onPress={confirmRegistration}>
+                        {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{t("reportEmailConfirm")}</Text>}
+                    </Pressable>
+                    <OtpResendButton cooldown={cooldown} busy={submitting} onResend={() => handleRegister(true)}
+                        buttonStyle={styles.primaryButton} textStyle={styles.primaryButtonText} spacingStyle={styles.resendSpacing} />
+                    <Pressable accessibilityRole="button" disabled={submitting} onPress={() => { setVerificationEmail(""); setError(""); }}>
+                        <Text style={styles.link}>{t("accountBackToForm")}</Text>
+                    </Pressable>
+                </> : <>
                 <TextInput
                     style={[styles.input, fieldErrors.fullName && styles.inputError]}
                     placeholder={messages.auth.fullNamePlaceholder}
@@ -119,7 +161,7 @@ export default function RegisterScreen({ navigation }) {
 
                 {error ? <Text style={styles.error}>{error}</Text> : null}
 
-                <Pressable style={styles.primaryButton} onPress={handleRegister} disabled={submitting}>
+                <Pressable style={styles.primaryButton} onPress={() => handleRegister()} disabled={submitting}>
                     {submitting ? (
                         <ActivityIndicator color="#fff" />
                     ) : (
@@ -130,6 +172,7 @@ export default function RegisterScreen({ navigation }) {
                 <Pressable onPress={() => navigation.goBack()}>
                     <Text style={styles.link}>{messages.auth.backToLogin}</Text>
                 </Pressable>
+                </>}
             </View>
         </View>
     );

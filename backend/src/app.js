@@ -9,6 +9,7 @@ const deviceRoutes = require("./routes/device.routes");
 const categoryRoutes = require("./routes/category.routes");
 const billingRoutes = require("./routes/billing.routes");
 const notificationRoutes = require("./routes/notification.routes");
+const reportEmailRoutes = require("./routes/report-email.routes");
 const { errorHandler, notFoundHandler } = require("./middlewares/error.middleware");
 
 const app = express();
@@ -29,6 +30,7 @@ app.use("/api/v1/devices", deviceRoutes);
 app.use("/api/v1/categories", categoryRoutes);
 app.use("/api/v1/billing", billingRoutes);
 app.use("/api/v1/notifications", notificationRoutes);
+app.use("/api/v1/report-email", reportEmailRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

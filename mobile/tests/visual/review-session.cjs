@@ -3,14 +3,14 @@
 const path = require("node:path");
 const fs = require("node:fs");
 
-module.exports = async function createReviewSession(playwright, executablePath, { tutorialSeen = true, deviceToken = "a1b2c3d4".repeat(6) } = {}) {
+module.exports = async function createReviewSession(playwright, executablePath, { tutorialSeen = true, deviceToken = "a1b2c3d4".repeat(6), appOrigin = "http://localhost:8081", authenticated = true } = {}) {
     const browser = await playwright.chromium.launch({ headless: true, executablePath });
     const context = await browser.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 1 });
-    await context.addInitScript((seen) => {
-        localStorage.setItem("wm_access_token", "visual-test-token");
+    await context.addInitScript(({ seen, signedIn }) => {
+        if (signedIn) localStorage.setItem("wm_access_token", "visual-test-token");
         if (seen) localStorage.setItem("wm_device_tutorial_seen_v1", "true");
         if (!localStorage.getItem("wm_app_locale")) localStorage.setItem("wm_app_locale", "id");
-    }, tutorialSeen);
+    }, { seen: tutorialSeen, signedIn: authenticated });
     const devices = [
         { id: 1, device_code: "METER-01", device_name: "Meter air dapur dan ruang cuci lantai bawah", category_id: 1, category_name: "Rumah utama dan area belakang", status: "online" },
         { id: 2, device_code: "METER-02", device_name: "Meter taman", category_id: 2, category_name: "Taman", status: "offline" },
@@ -18,7 +18,7 @@ module.exports = async function createReviewSession(playwright, executablePath, 
     let zeroUsage = false;
     await context.route("**/*", async (route) => {
         const url = new URL(route.request().url());
-        if (url.origin === "http://localhost:8081") return route.continue();
+        if (url.origin === appOrigin) return route.continue();
         if (url.origin !== "http://localhost:8099") return route.abort();
         const endpoint = url.pathname;
         let data = { items: [] };

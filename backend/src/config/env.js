@@ -48,6 +48,13 @@ const config = {
         enabled: toBoolean(process.env.PUSH_NOTIFICATIONS_ENABLED, false),
         accessToken: process.env.EXPO_ACCESS_TOKEN || "",
     },
+    reportEmail: {
+        enabled: toBoolean(process.env.REPORT_EMAIL_ENABLED, false),
+        accountEnabled: toBoolean(process.env.ACCOUNT_EMAIL_ENABLED, false),
+        otpSecret: process.env.REPORT_EMAIL_OTP_SECRET || "",
+        apiKey: process.env.RESEND_API_KEY || "",
+        from: process.env.REPORT_EMAIL_FROM || "",
+    },
 };
 
 if (config.isProd && !config.auth.jwtSecret) {
