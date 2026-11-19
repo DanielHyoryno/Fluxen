@@ -2,12 +2,12 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react-nativ
 import RegisterScreen from "../src/screens/Register/RegisterScreen";
 import { getMessages } from "../src/constants/messages";
 import { useAuth } from "../src/context/AuthContext";
-import { verifyRegistrationApi } from "../src/services/api";
+import { confirmFirebaseRegistrationApi, verifyRegistrationApi } from "../src/services/api";
 
 jest.mock("../src/context/AuthContext", () => ({
     useAuth: jest.fn(),
 }));
-jest.mock("../src/services/api", () => ({ verifyRegistrationApi: jest.fn() }));
+jest.mock("../src/services/api", () => ({ confirmFirebaseRegistrationApi: jest.fn(), verifyRegistrationApi: jest.fn() }));
 
 const messages = getMessages("en");
 
@@ -91,5 +91,22 @@ describe("RegisterScreen", () => {
         fireEvent.press(screen.getByText(messages.auth.registerButton));
 
         expect(await screen.findByText(messages.auth.emailAlreadyUsed)).toBeTruthy();
+    });
+
+    test("checks link verification without asking for a six-digit OTP", async () => {
+        const email = "link@example.test";
+        const { navigation } = renderRegister(jest.fn().mockResolvedValue({ email, verification_required: true, verification_method: "link" }));
+        confirmFirebaseRegistrationApi.mockRejectedValueOnce(new Error("Not verified")).mockResolvedValueOnce({ user: { email } });
+        fireEvent.changeText(screen.getByPlaceholderText(messages.auth.fullNamePlaceholder), "Test User");
+        fireEvent.changeText(screen.getByPlaceholderText(messages.auth.emailPlaceholder), email);
+        fireEvent.changeText(screen.getByPlaceholderText(messages.auth.passwordMinPlaceholder), "password123");
+        fireEvent.press(screen.getByText(messages.auth.registerButton));
+        fireEvent.press(await screen.findByRole("button", { name: "I’ve verified my email" }));
+        expect(await screen.findByText("Not verified")).toBeTruthy();
+        expect(screen.queryByLabelText("Verification code")).toBeNull();
+        expect(navigation.reset).not.toHaveBeenCalled();
+        fireEvent.press(screen.getByRole("button", { name: "I’ve verified my email" }));
+        await waitFor(() => expect(navigation.reset).toHaveBeenCalled());
+        expect(confirmFirebaseRegistrationApi).toHaveBeenCalledWith({ full_name: "Test User", email, password: "password123" });
     });
 });

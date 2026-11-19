@@ -1,7 +1,6 @@
 import { getLanguageTag, formatValue, t, useLocale } from "../../services/i18n";
 import FailureNotice from "../../components/FailureNotice";
 import DailyUsageBarChart from "../../components/DailyUsageBarChart";
-import ReportEmailAction from "../../components/ReportEmailAction";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     ActivityIndicator,
@@ -176,7 +175,7 @@ function UsageLineChart({ data, chartWidth }) {
     );
 }
 
-export default function UsageHistoryScreen({ route, navigation }) {
+export default function UsageHistoryScreen({ route }) {
     useLocale();
     const { device } = route.params;
     const { token } = useAuth();
@@ -800,8 +799,6 @@ export default function UsageHistoryScreen({ route, navigation }) {
                             <Text style={styles.exportButtonText}>{t("Export XLSX")}</Text>
                         )}
                     </Pressable>
-                    <ReportEmailAction token={token} deviceCode={device.device_code} range={exportRange}
-                        onOpenProfile={navigation ? () => navigation.navigate("MainTabs", { screen: "Profile" }) : undefined} />
                 </View>
             </SectionAccordion>
         </Animated.ScrollView>

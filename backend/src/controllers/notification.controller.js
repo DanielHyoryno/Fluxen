@@ -14,7 +14,7 @@ async function register(req, res) {
     const parsed = registerPushSchema.safeParse(req.body);
     if (!parsed.success) return fail(res, "Invalid push registration", 422, "VALIDATION_ERROR");
     if (!env.push.enabled) return fail(res, "Push notifications are not enabled", 503, "PUSH_NOT_READY");
-    try { return ok(res, await registerPushSubscription(req.user.id, parsed.data, req.auth.expiresAt)); }
+    try { return ok(res, await registerPushSubscription(req.user.id, parsed.data, req.auth.expiresAt, req.auth.firebaseAuthTime)); }
     catch (error) { return handleFailure(res, error); }
 }
 

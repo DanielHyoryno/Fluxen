@@ -1,8 +1,9 @@
 const pool = require("../config/db");
 
-async function registerPushSubscription(userId, { token, locale }, expiresAt) {
+async function registerPushSubscription(userId, { token, locale }, expiresAt, firebaseAuthTime) {
     if (!Number.isFinite(expiresAt) || expiresAt * 1000 <= Date.now()) throw new Error("INVALID_PUSH_SESSION");
     const subscription = { token, locale, expires_at: new Date(expiresAt * 1000).toISOString() };
+    if (Number.isSafeInteger(firebaseAuthTime)) subscription.firebase_auth_time = firebaseAuthTime;
     const client = await pool.connect();
     try {
         await client.query("BEGIN");

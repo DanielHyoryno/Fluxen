@@ -48,6 +48,11 @@ async function responseError(response, payload = {}) {
         VALIDATION_ERROR: t("invalidInput", {}, locale),
         ACCOUNT_EMAIL_UNAVAILABLE: t("accountEmailUnavailable", {}, locale),
         ACCOUNT_EMAIL_CODE_INVALID: t("reportEmailBadCode", {}, locale),
+        ACCOUNT_EMAIL_NOT_VERIFIED: t("firebaseEmailNotVerified", {}, locale),
+        ACCOUNT_APP_UPDATE_REQUIRED: t("firebaseAppUpdateRequired", {}, locale),
+        ACCOUNT_LINK_PASSWORD_INVALID: t("firebaseLinkPasswordInvalid", {}, locale),
+        ACCOUNT_LINK_CONFLICT: t("firebaseLinkConflict", {}, locale),
+        ACCOUNT_PASSWORD_REJECTED: t("firebasePasswordRejected", {}, locale),
         ACCOUNT_RESET_EXPIRED: t("accountResetExpired", {}, locale),
         REPORT_EMAIL_CODE_COOLDOWN: t("reportEmailCooldown", {}, locale),
         REPORT_EMAIL_SEND_FAILED: t("reportEmailSendFailed", {}, locale),
@@ -98,11 +103,19 @@ export const sendReportEmailApi = (token, body) => reportEmailRequest(token, "/x
 
 function accountEmailRequest(path, body) {
     return request(`/auth${path}`, {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+        method: "POST", headers: { "Content-Type": "application/json", "X-Fluxen-Auth-Link": "1" }, body: JSON.stringify(body),
     });
 }
 
 export const verifyRegistrationApi = (body) => accountEmailRequest("/register/verify", body);
+export const confirmFirebaseRegistrationApi = (body) => accountEmailRequest("/firebase/register/confirm", body);
+function firebaseLinkRequest(token, path, body) {
+    return request(`/auth/firebase/link${path}`, {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }, body: JSON.stringify(body),
+    });
+}
+export const requestFirebaseLinkApi = (token, password, locale) => firebaseLinkRequest(token, "/request", { password, locale });
+export const confirmFirebaseLinkApi = (token, password) => firebaseLinkRequest(token, "/confirm", { password });
 export const requestPasswordResetApi = (email, locale) => accountEmailRequest("/password-reset/request", { email, locale });
 export const verifyPasswordResetApi = (email, code) => accountEmailRequest("/password-reset/verify", { email, code });
 export const completePasswordResetApi = (resetToken, password) => accountEmailRequest("/password-reset/complete", { reset_token: resetToken, password });
@@ -130,6 +143,7 @@ export async function registerApi(body) {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            "X-Fluxen-Auth-Link": "1",
         },
         body: JSON.stringify(body),
     });

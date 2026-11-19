@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text } from "react-native";
 import { t } from "../services/i18n";
 import { colors } from "../theme/tokens";
 
-export default function OtpResendButton({ cooldown, onResend, busy, buttonStyle, textStyle, spacingStyle }) {
+export default function OtpResendButton({ cooldown, onResend, busy, buttonStyle, textStyle, spacingStyle, labelKey }) {
     const waiting = cooldown.seconds > 0;
     const disabled = busy || waiting;
     return (
@@ -11,7 +11,8 @@ export default function OtpResendButton({ cooldown, onResend, busy, buttonStyle,
             style={({ pressed }) => [buttonStyle, spacingStyle, styles.outline,
                 pressed && !disabled && styles.pressed, disabled && styles.disabled]}>
             <Text style={[textStyle, styles.label, disabled && styles.disabledLabel]}>
-                {waiting ? t("reportEmailResendCountdown", { seconds: cooldown.seconds }) : t("reportEmailResend")}
+                {waiting ? t(labelKey ? "firebaseResendLinkCountdown" : "reportEmailResendCountdown", { seconds: cooldown.seconds })
+                    : t(labelKey || "reportEmailResend")}
             </Text>
         </Pressable>
     );

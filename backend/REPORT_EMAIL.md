@@ -1,5 +1,7 @@
 # XLSX report email
 
+This document describes the legacy Resend path. For the Firebase link-based rollout, see [Firebase Auth setup](FIREBASE_AUTH.md). In Firebase mode, XLSX remains available to download/share, not send directly by email.
+
 New registrations verify a six-digit email code before the account is created when account email is enabled. Existing accounts can keep signing in and verify once from Profile. The same verified address allows password recovery and XLSX delivery; downloading still works without verification. Usage-limit alerts are not sent by email.
 
 To enable actual email outside the mocked UI test:

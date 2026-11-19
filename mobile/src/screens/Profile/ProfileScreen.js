@@ -13,7 +13,7 @@ export default function ProfileScreen() {
     useLocale();
     const tutorial = useDeviceTutorial();
     const pageInsets = usePageInsets();
-    const { user, token, logout, locale, messages, setLocale } = useAuth();
+    const { user, token, logout, locale, messages, setLocale, applySession } = useAuth();
     const { animatedStyle } = useScreenEntranceAnimation();
     const [loggingOut, setLoggingOut] = useState(false);
     const [logoutError, setLogoutError] = useState("");
@@ -40,7 +40,7 @@ export default function ProfileScreen() {
 
                 <Text style={styles.label}>{messages.profile.email}</Text>
                 <Text style={styles.value}>{user?.email || "-"}</Text>
-                {user?.email && token ? <ReportEmailAction token={token} verifyOnly /> : null}
+                {user?.email && token ? <ReportEmailAction token={token} verifyOnly onSessionChange={applySession} /> : null}
             </View>
 
             <View style={styles.card}>

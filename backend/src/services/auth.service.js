@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
 const env = require("../config/env");
+const { firebaseAccount } = require("./firebase-account.service");
 
 const SALT_ROUNDS = 10;
 const ACCESS_TOKEN_EXPIRES_IN = env.auth.jwtExpiresIn;
@@ -13,13 +14,14 @@ function getJwtSecret() {
     return env.auth.jwtSecret;
 }
 
-function signAccessToken(user) {
+function signAccessToken(user, firebaseAuthTime) {
     return jwt.sign(
         {
             sub: String(user.id),
             email: user.email,
             role: user.role,
             sv: Number(user.session_version ?? 0),
+            ...(user.firebase_uid ? { fat: firebaseAuthTime } : {}),
         },
         getJwtSecret(),
         { expiresIn: ACCESS_TOKEN_EXPIRES_IN }
@@ -34,6 +36,10 @@ function sanitizeUser(user) {
         role: user.role,
         created_at: user.created_at,
     };
+}
+
+function createSession(user, firebaseAuthTime) {
+    return { user: sanitizeUser(user), access_token: signAccessToken(user, firebaseAuthTime), token_type: "Bearer" };
 }
 
 async function register(payload) {
@@ -69,6 +75,7 @@ async function login(payload) {
 
     const userQ = await pool.query(
         `SELECT u.id, u.full_name, u.email, u.role, u.password_hash, u.created_at,
+            to_jsonb(u)->>'firebase_uid' AS firebase_uid,
             COALESCE((to_jsonb(u)->>'session_version')::integer, 0) AS session_version
      FROM users u
      WHERE email = $1
@@ -81,7 +88,11 @@ async function login(payload) {
     }
 
     const user = userQ.rows[0];
-    const matched = await bcrypt.compare(payload.password, user.password_hash);
+    if (user.firebase_uid) {
+        const authTime = await firebaseAccount.verifyPassword(user, payload.password);
+        return createSession(user, authTime);
+    }
+    const matched = user.password_hash && await bcrypt.compare(payload.password, user.password_hash);
     if (!matched) {
         throw new Error("INVALID_CREDENTIALS");
     }
@@ -99,4 +110,5 @@ module.exports = {
     register,
     login,
     getJwtSecret,
+    createSession,
 };

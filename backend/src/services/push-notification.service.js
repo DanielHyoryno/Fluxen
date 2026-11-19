@@ -1,6 +1,7 @@
 const pool = require("../config/db");
 const env = require("../config/env");
 const { unregisterPushSubscription } = require("./push-subscription.service");
+const { firebaseProvider } = require("./firebase-auth.provider");
 
 const EXPO_API = "https://exp.host/--/api/v2/push";
 const pending = new Set();
@@ -38,7 +39,8 @@ async function expoRequest(endpoint, body) {
 
 async function getRecipient(alertId) {
     const result = await pool.query(
-        `SELECT a.id, a.alert_type, a.meta, d.device_name, d.device_code, u.id AS user_id, u.push_subscription
+        `SELECT a.id, a.alert_type, a.meta, d.device_name, d.device_code, u.id AS user_id, u.push_subscription,
+                to_jsonb(u)->>'firebase_uid' AS firebase_uid, u.email AS user_email
          FROM alerts a JOIN devices d ON d.id = a.device_id JOIN users u ON u.id = d.user_id
          WHERE a.id = $1 AND a.status = 'active' AND d.pending_command IS NULL
            AND a.alert_type IN ('USAGE_LIMIT_DAILY', 'USAGE_LIMIT_MONTHLY')`, [alertId]
@@ -48,6 +50,9 @@ async function getRecipient(alertId) {
     if (!subscription?.token) return null;
     const expiry = Date.parse(subscription.expires_at);
     if (!Number.isFinite(expiry) || expiry <= Date.now()) return null;
+    if (alert.firebase_uid && !await firebaseProvider.isSessionCurrent(alert.firebase_uid, alert.user_email, subscription.firebase_auth_time)) {
+        return null;
+    }
     return alert;
 }
 

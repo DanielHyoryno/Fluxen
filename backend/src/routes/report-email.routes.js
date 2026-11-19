@@ -4,6 +4,8 @@ const { requireAuth } = require("../middlewares/auth.middleware");
 const { rateLimit } = require("../middlewares/rate-limit.middleware");
 const { ok, fail } = require("../utils/response");
 const service = require("../services/report-email.service");
+const { firebaseAccount } = require("../services/firebase-account.service");
+const { firebaseAuth } = require("../config/env");
 
 const router = express.Router();
 const locale = z.enum(["id", "en"]).default("id");
@@ -32,12 +34,18 @@ function handler(action, schema, successMessage, status = 200) {
 }
 
 router.use(requireAuth);
-router.get("/status", rateLimit({ max: 20 }), handler(service.getStatus, null, "Report email status"));
-router.post("/verification", rateLimit({ max: 5, windowMs: 3600000 }),
+router.get("/status", rateLimit({ max: 20 }), handler(
+    (user) => (firebaseAuth.enabled ? firebaseAccount.getLinkStatus(user) : service.getStatus(user)), null, "Email status"
+));
+function legacyEmailOnly(req, res, next) {
+    if (firebaseAuth.enabled) return fail(res, "Resend delivery is disabled", 503, "REPORT_EMAIL_UNAVAILABLE");
+    return next();
+}
+router.post("/verification", legacyEmailOnly, rateLimit({ max: 5, windowMs: 3600000 }),
     handler((user, body) => service.requestCode(user, body.locale), requestSchema, "Verification request accepted"));
-router.post("/verification/confirm", rateLimit({ max: 20, windowMs: 3600000 }),
+router.post("/verification/confirm", legacyEmailOnly, rateLimit({ max: 20, windowMs: 3600000 }),
     handler((user, body) => service.verifyCode(user, body.code), verifySchema, "Email verified"));
-router.post("/xlsx", rateLimit({ max: 5, windowMs: 3600000 }),
+router.post("/xlsx", legacyEmailOnly, rateLimit({ max: 5, windowMs: 3600000 }),
     handler(service.sendReport, reportSchema, "Report email accepted for delivery", 202));
 
 module.exports = router;

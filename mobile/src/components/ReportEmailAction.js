@@ -1,7 +1,8 @@
 import { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { t, useLocale } from "../services/i18n";
-import { reportEmailStatusApi, requestReportEmailCodeApi, sendReportEmailApi, verifyReportEmailCodeApi } from "../services/api";
+import { confirmFirebaseLinkApi, reportEmailStatusApi, requestFirebaseLinkApi, requestReportEmailCodeApi,
+    sendReportEmailApi, verifyReportEmailCodeApi } from "../services/api";
 import { colors } from "../theme/tokens";
 import useOtpResendCooldown from "../hooks/useOtpResendCooldown";
 import OtpResendButton from "./OtpResendButton";
@@ -14,12 +15,14 @@ const errors = {
     REPORT_EMAIL_SEND_FAILED: "reportEmailSendFailed",
 };
 
-export default function ReportEmailAction({ token, deviceCode, range, verifyOnly = false, onOpenProfile }) {
+export default function ReportEmailAction({ token, deviceCode, range, verifyOnly = false, onOpenProfile, onSessionChange }) {
     const locale = useLocale();
     const inFlight = useRef(false);
     const [busy, setBusy] = useState(false);
     const [verificationEmail, setVerificationEmail] = useState("");
     const [code, setCode] = useState("");
+    const [linkStep, setLinkStep] = useState("");
+    const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [feedback, setFeedback] = useState(null);
     const [needsProfile, setNeedsProfile] = useState(false);
@@ -58,6 +61,11 @@ export default function ReportEmailAction({ token, deviceCode, range, verifyOnly
     function onSendPress() {
         return run(async () => {
             const status = await reportEmailStatusApi(token);
+            if (verifyOnly && status.verification_method === "link" && !status.verified) {
+                setVerificationEmail(status.email);
+                setLinkStep("password");
+                return;
+            }
             if (!status.verified) {
                 if (verifyOnly) return requestCode();
                 setNeedsProfile(true);
@@ -81,9 +89,51 @@ export default function ReportEmailAction({ token, deviceCode, range, verifyOnly
         });
     }
 
+    function sendLink(isResend = false) {
+        return run(async () => {
+            await requestFirebaseLinkApi(token, password, locale);
+            if (!isResend) cooldown.startCooldown();
+            setLinkStep("wait");
+        });
+    }
+
+    function confirmLink() {
+        return run(async () => {
+            const session = await confirmFirebaseLinkApi(token, password);
+            await onSessionChange(session);
+            setPassword("");
+            setLinkStep("");
+            setVerificationEmail("");
+            setFeedback({ key: "accountEmailVerified" });
+        });
+    }
+
     return (
         <View style={styles.section} testID="report-email-action">
-            {verificationEmail ? (
+            {linkStep ? (
+                <View style={styles.verification}>
+                    <Text style={styles.title}>{t("reportEmailVerifyTitle")}</Text>
+                    <Text style={styles.hint}>{t(linkStep === "password" ? "firebaseLinkPasswordHint" : "firebaseVerifyLinkHint", { email: verificationEmail })}</Text>
+                    {linkStep === "password" ? (
+                        <TextInput style={[styles.input, styles.passwordInput]} value={password} onChangeText={setPassword}
+                            placeholder={t("firebaseLinkPassword")} accessibilityLabel={t("firebaseLinkPassword")}
+                            placeholderTextColor={colors.textMuted} secureTextEntry autoComplete="current-password"
+                            maxLength={100} editable={!busy} />
+                    ) : null}
+                    <Pressable accessibilityRole="button" disabled={busy || !password}
+                        onPress={linkStep === "password" ? () => sendLink() : confirmLink}
+                        style={[styles.button, styles.primary, (busy || !password) && styles.disabled]}>
+                        <Text style={[styles.buttonText, styles.primaryText]}>{t(linkStep === "password" ? "firebaseSendLink" : "firebaseVerifyDone")}</Text>
+                    </Pressable>
+                    {linkStep === "wait" ? <OtpResendButton cooldown={cooldown} busy={busy} onResend={() => sendLink(true)}
+                        labelKey="firebaseResendLink" buttonStyle={styles.button} textStyle={styles.buttonText} /> : null}
+                    <Pressable accessibilityRole="button" disabled={busy} onPress={() => {
+                        setLinkStep(""); setPassword(""); setVerificationEmail(""); setError("");
+                    }} style={styles.button}>
+                        <Text style={styles.buttonText}>{t("firebaseCancelLink")}</Text>
+                    </Pressable>
+                </View>
+            ) : verificationEmail ? (
                 <View style={styles.verification}>
                     <Text style={styles.title}>{t("reportEmailVerifyTitle")}</Text>
                     <Text style={styles.hint}>{t("reportEmailCodeHint", { email: verificationEmail })}</Text>
@@ -121,6 +171,7 @@ const styles = StyleSheet.create({
     title: { fontWeight: "700", color: colors.text },
     hint: { color: colors.textMuted, lineHeight: 20 },
     input: { color: colors.text, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 8, minHeight: 44, paddingHorizontal: 12, fontSize: 17, letterSpacing: 3 },
+    passwordInput: { fontSize: 15, letterSpacing: 0 },
     button: { minHeight: 44, paddingHorizontal: 12, paddingVertical: 10, justifyContent: "center", alignItems: "center", backgroundColor: colors.surface, borderRadius: 10, borderWidth: 1, borderColor: colors.border },
     buttonText: { color: colors.primary, fontWeight: "700", textAlign: "center" },
     primary: { backgroundColor: colors.primary, borderColor: colors.primary },

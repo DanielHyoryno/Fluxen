@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const pool = require("../config/db");
 const { getJwtSecret } = require("../services/auth.service");
+const { firebaseProvider } = require("../services/firebase-auth.provider");
 const { fail } = require("../utils/response");
 
 async function requireAuth(req, res, next) {
@@ -16,6 +17,7 @@ async function requireAuth(req, res, next) {
 
         const userQ = await pool.query(
             `SELECT u.id, u.full_name, u.email, u.role, u.created_at,
+              to_jsonb(u)->>'firebase_uid' AS firebase_uid,
               COALESCE((to_jsonb(u)->>'session_version')::integer, 0) AS session_version
        FROM users u
        WHERE id = $1
@@ -23,13 +25,16 @@ async function requireAuth(req, res, next) {
             [payload.sub]
         );
 
-        const { session_version, ...user } = userQ.rows[0] || {};
+        const { session_version, firebase_uid, ...user } = userQ.rows[0] || {};
         if (userQ.rowCount === 0 || Number(payload.sv ?? 0) !== Number(session_version ?? 0)) {
+            return fail(res, "Unauthorized", 401, "UNAUTHORIZED");
+        }
+        if (firebase_uid && !await firebaseProvider.isSessionCurrent(firebase_uid, user.email, payload.fat)) {
             return fail(res, "Unauthorized", 401, "UNAUTHORIZED");
         }
 
         req.user = user;
-        req.auth = { expiresAt: payload.exp };
+        req.auth = { expiresAt: payload.exp, ...(firebase_uid ? { firebaseAuthTime: payload.fat } : {}) };
         return next();
     } catch (err) {
         if (["JsonWebTokenError", "TokenExpiredError", "NotBeforeError"].includes(err.name)) {

@@ -13,7 +13,7 @@ test("an accepted reset request does not unlock the password form until OTP veri
     verifyPasswordResetApi.mockRejectedValueOnce(new Error("Invalid code")).mockResolvedValueOnce({ reset_token: "reset-token" });
     completePasswordResetApi.mockResolvedValue({ password_reset: true });
     render(<ForgotPasswordScreen navigation={navigation} route={{ params: { email } }} />);
-    fireEvent.press(screen.getByRole("button", { name: "Send code" }));
+    fireEvent.press(screen.getByRole("button", { name: "Send reset instructions" }));
     const input = await screen.findByLabelText("Verification code");
     expect(requestPasswordResetApi).toHaveBeenCalledWith(email, "en");
     expect(screen.queryByLabelText("New password")).toBeNull();
@@ -28,4 +28,16 @@ test("an accepted reset request does not unlock the password form until OTP veri
     expect(completePasswordResetApi).toHaveBeenCalledWith("reset-token", "new-password");
     await screen.findByRole("button", { name: "Save new password" });
     expect(navigation.reset).toHaveBeenCalledWith(expect.objectContaining({ routes: [expect.objectContaining({ name: "Login" })] }));
+});
+
+test("Firebase recovery directs the user to an email link instead of an OTP", async () => {
+    const navigation = { reset: jest.fn(), goBack: jest.fn() };
+    requestPasswordResetApi.mockResolvedValueOnce({ accepted: true, verification_method: "link" });
+    render(<ForgotPasswordScreen navigation={navigation} route={{ params: { email: "person@example.test" } }} />);
+    fireEvent.press(screen.getByRole("button", { name: "Send reset instructions" }));
+    expect(await screen.findByText(/open the reset link/)).toBeTruthy();
+    expect(screen.queryByLabelText("Verification code")).toBeNull();
+    expect(screen.queryByLabelText("New password")).toBeNull();
+    fireEvent.press(screen.getByRole("button", { name: "Back to login" }));
+    expect(navigation.goBack).toHaveBeenCalled();
 });

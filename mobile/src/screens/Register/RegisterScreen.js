@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ActivityIndicator, Image, Pressable, Text, TextInput, View } from "react-native";
 import { useAuth } from "../../context/AuthContext";
-import { verifyRegistrationApi } from "../../services/api";
+import { confirmFirebaseRegistrationApi, verifyRegistrationApi } from "../../services/api";
 import { t } from "../../services/i18n";
 import OtpResendButton from "../../components/OtpResendButton";
 import useOtpResendCooldown from "../../hooks/useOtpResendCooldown";
@@ -19,6 +19,7 @@ export default function RegisterScreen({ navigation }) {
     const [error, setError] = useState("");
     const [fieldErrors, setFieldErrors] = useState({});
     const [verificationEmail, setVerificationEmail] = useState("");
+    const [verificationMethod, setVerificationMethod] = useState("code");
     const [code, setCode] = useState("");
     const cooldown = useOtpResendCooldown();
 
@@ -78,6 +79,7 @@ export default function RegisterScreen({ navigation }) {
                 if (!isResend) cooldown.startCooldown();
                 setCode("");
                 setVerificationEmail(result.email);
+                setVerificationMethod(result.verification_method || "code");
             } else finishRegistration();
         } catch (err) {
             const message = String(err.message || "");
@@ -93,17 +95,21 @@ export default function RegisterScreen({ navigation }) {
     }
 
     async function confirmRegistration() {
-        if (submitting || code.length !== 6) return;
+        if (submitting || (verificationMethod !== "link" && code.length !== 6)) return;
         setSubmitting(true);
         setError("");
         try {
-            await verifyRegistrationApi({ full_name: fullName.trim(), email: verificationEmail, password, code });
+            const data = { full_name: fullName.trim(), email: verificationEmail, password };
+            if (verificationMethod === "link") await confirmFirebaseRegistrationApi(data);
+            else await verifyRegistrationApi({ ...data, code });
             finishRegistration();
         } catch (err) {
             setError(err.message || messages.auth.registerFailed);
         } finally { setSubmitting(false); }
     }
 
+    const usesLink = verificationMethod === "link";
+    const cannotVerify = submitting || (!usesLink && code.length !== 6);
     return (
         <View style={styles.page}>
             <View style={styles.bgBlobA} />
@@ -116,16 +122,17 @@ export default function RegisterScreen({ navigation }) {
 
             <View style={styles.formCard}>
                 {verificationEmail ? <>
-                    <Text style={styles.help}>{t("reportEmailCodeHint", { email: verificationEmail })}</Text>
-                    <TextInput style={styles.input} placeholder="000000" accessibilityLabel={t("reportEmailCodeLabel")}
+                    <Text style={styles.help}>{t(usesLink ? "firebaseVerifyLinkHint" : "reportEmailCodeHint", { email: verificationEmail })}</Text>
+                    {!usesLink ? <TextInput style={styles.input} placeholder="000000" accessibilityLabel={t("reportEmailCodeLabel")}
                         value={code} onChangeText={value => setCode(value.replace(/\D/g, ""))} keyboardType="number-pad"
-                        autoComplete="one-time-code" maxLength={6} editable={!submitting} />
+                        autoComplete="one-time-code" maxLength={6} editable={!submitting} /> : null}
                     {error ? <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text> : null}
-                    <Pressable accessibilityRole="button" style={[styles.primaryButton, code.length !== 6 && styles.disabled]}
-                        disabled={submitting || code.length !== 6} onPress={confirmRegistration}>
-                        {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{t("reportEmailConfirm")}</Text>}
+                    <Pressable accessibilityRole="button" style={[styles.primaryButton, cannotVerify && styles.disabled]}
+                        disabled={cannotVerify} onPress={confirmRegistration}>
+                        {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{t(usesLink ? "firebaseVerifyDone" : "reportEmailConfirm")}</Text>}
                     </Pressable>
                     <OtpResendButton cooldown={cooldown} busy={submitting} onResend={() => handleRegister(true)}
+                        labelKey={usesLink ? "firebaseResendLink" : undefined}
                         buttonStyle={styles.primaryButton} textStyle={styles.primaryButtonText} spacingStyle={styles.resendSpacing} />
                     <Pressable accessibilityRole="button" disabled={submitting} onPress={() => { setVerificationEmail(""); setError(""); }}>
                         <Text style={styles.link}>{t("accountBackToForm")}</Text>

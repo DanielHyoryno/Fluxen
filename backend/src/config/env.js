@@ -43,6 +43,12 @@ const config = {
         jwtSecret: process.env.JWT_SECRET || "",
         jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
     },
+    firebaseAuth: {
+        enabled: toBoolean(process.env.FIREBASE_AUTH_ENABLED),
+        projectId: (process.env.FIREBASE_AUTH_PROJECT_ID || "").trim(),
+        apiKey: (process.env.FIREBASE_AUTH_API_KEY || "").trim(),
+        serviceAccountFile: (process.env.GOOGLE_APPLICATION_CREDENTIALS || "").trim(),
+    },
     businessTimezone: process.env.BUSINESS_TIMEZONE || "Asia/Jakarta",
     push: {
         enabled: toBoolean(process.env.PUSH_NOTIFICATIONS_ENABLED, false),

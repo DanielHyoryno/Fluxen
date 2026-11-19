@@ -43,13 +43,15 @@ export function AuthProvider({ children }) {
         restore();
     }, []);
 
-    async function login(email, password) {
-        const result = await loginApi({ email, password });
+    async function applySession(result) {
         await saveAccessToken(result.access_token);
         setToken(result.access_token);
         setUser(result.user);
     }
 
+    async function login(email, password) {
+        await applySession(await loginApi({ email, password }));
+    }
     async function register(fullName, email, password) {
         return registerApi({ full_name: fullName, email, password, locale });
     }
@@ -85,6 +87,7 @@ export function AuthProvider({ children }) {
             locale,
             messages: activeMessages,
             login,
+            applySession,
             register,
             logout,
             setLocale: changeLocale,

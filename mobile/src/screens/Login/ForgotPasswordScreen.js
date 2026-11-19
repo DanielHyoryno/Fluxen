@@ -40,10 +40,10 @@ export default function ForgotPasswordScreen({ navigation, route }) {
             return;
         }
         return run(async () => {
-            await requestPasswordResetApi(address, locale);
+            const result = await requestPasswordResetApi(address, locale);
             if (!isResend) cooldown.startCooldown();
             setCode("");
-            setStep("code");
+            setStep(result?.verification_method === "link" ? "link" : "code");
         });
     }
 
@@ -66,8 +66,10 @@ export default function ForgotPasswordScreen({ navigation, route }) {
         });
     }
 
-    const action = step === "email" ? () => sendCode() : step === "code" ? confirmCode : submitPassword;
-    const label = step === "email" ? t("accountSendCode") : step === "code" ? t("reportEmailConfirm") : t("accountSavePassword");
+    const action = step === "email" ? () => sendCode() : step === "link" ? () => navigation.goBack()
+        : step === "code" ? confirmCode : submitPassword;
+    const label = step === "email" ? t("firebaseResetRequest") : step === "link" ? t("accountBackToLogin")
+        : step === "code" ? t("reportEmailConfirm") : t("accountSavePassword");
     const disabled = busy || (step === "code" && code.length !== 6);
     return (
         <ScrollView style={{ flex: 1, backgroundColor: "#f5f7fb" }} contentContainerStyle={[styles.page, { flex: undefined, flexGrow: 1, paddingVertical: 24 }]} keyboardShouldPersistTaps="handled">
@@ -78,11 +80,11 @@ export default function ForgotPasswordScreen({ navigation, route }) {
             </View>
             <View style={styles.formCard}>
                 {step === "email" ? <>
-                    <Text style={styles.help}>{t("accountResetRequestHelp")}</Text>
+                    <Text style={styles.help}>{t("firebaseRecoveryHint")}</Text>
                     <TextInput style={styles.input} accessibilityLabel={t("accountEmailLabel")} placeholder={t("accountEmailLabel")}
                         autoCapitalize="none" keyboardType="email-address" autoComplete="email" maxLength={150} editable={!busy}
                         value={email} onChangeText={setEmail} />
-                </> : step === "code" ? <>
+                </> : step === "link" ? <Text style={styles.help}>{t("firebaseResetLinkHint")}</Text> : step === "code" ? <>
                     <Text style={styles.help}>{t("accountResetCodeHelp")}</Text>
                     <TextInput style={styles.input} accessibilityLabel={t("reportEmailCodeLabel")} placeholder="000000"
                         keyboardType="number-pad" autoComplete="one-time-code" maxLength={6} value={code} editable={!busy}
@@ -98,11 +100,12 @@ export default function ForgotPasswordScreen({ navigation, route }) {
                     style={[styles.primaryButton, disabled && styles.disabled]}>
                     {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>{label}</Text>}
                 </Pressable>
-                {step === "code" ? <OtpResendButton cooldown={cooldown} busy={busy} onResend={() => sendCode(true)}
+                {step === "code" || step === "link" ? <OtpResendButton cooldown={cooldown} busy={busy} onResend={() => sendCode(true)}
+                    labelKey={step === "link" ? "firebaseResendLink" : undefined}
                     buttonStyle={styles.primaryButton} textStyle={styles.primaryButtonText} spacingStyle={styles.resendSpacing} /> : null}
-                <Pressable accessibilityRole="button" disabled={busy} onPress={() => navigation.goBack()}>
+                {step !== "link" ? <Pressable accessibilityRole="button" disabled={busy} onPress={() => navigation.goBack()}>
                     <Text style={styles.link}>{t("accountBackToLogin")}</Text>
-                </Pressable>
+                </Pressable> : null}
             </View>
         </ScrollView>
     );
